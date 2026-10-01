@@ -226,20 +226,51 @@ main{flex:1;min-width:0;padding:20px;max-width:1180px;outline:none}
 .ochart>ul{padding-top:0}
 .ochart>ul>li{padding-top:0}
 .ochart>ul>li::before,.ochart>ul>li::after{display:none}
-.pcard{direction:rtl;width:132px;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--paper);border:1px solid var(--line);border-top:4px solid var(--brand);border-radius:12px;padding:10px 8px 9px;box-shadow:var(--shadow);cursor:pointer;color:var(--ink);white-space:normal;transition:transform .12s,border-color .12s;font:inherit}
-.pcard:hover{transform:translateY(-2px);border-color:var(--brand)}
-.pcard.f{border-top-color:var(--female)}
-.pcard.f:hover{border-color:var(--female)}
-.pcard.dead{border-style:dashed;border-top-style:solid}
-.pcard.ref{opacity:.55;border-style:dotted;border-top-style:solid}
-.pcard.root{box-shadow:0 0 0 3px var(--gold-l),var(--shadow);border-top-color:var(--gold)}
-.pcard .av{margin-bottom:4px}
-.pcard .nm{font-size:15.5px;line-height:1.3}
-.pcard .sub{font-size:11.5px;color:var(--ink-3);line-height:1.45}
-.pcard .sp{font-size:11px;color:var(--gold);margin-top:3px;line-height:1.4}
-.ktog{margin-top:6px;min-height:28px;padding:0 10px;border-radius:999px;border:1.5px solid var(--line);background:var(--paper-2);color:var(--ink-2);font-size:12.5px;font-weight:700;cursor:pointer;position:relative;z-index:1}
-.ktog:hover{border-color:var(--brand);color:var(--brand-d)}
+/* ألوان الجنسين */
+:root{--m1:#0b6e8a;--m2:#2bb3d9;--mbg:#e7f5fa;--mbg2:#ffffff;--mline:#9fd3e4;--f1:#b5306b;--f2:#ee7aa8;--fbg:#fdeef4;--fbg2:#ffffff;--fline:#efb6cd}
+:root[data-theme="dark"]{--m1:#5cc8e6;--m2:#1d7f9c;--mbg:#11303a;--mbg2:#172225;--mline:#24576a;--f1:#f39ac0;--f2:#9c2f5e;--fbg:#3a1a2a;--fbg2:#26171e;--fline:#6b2f4b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--m1:#5cc8e6;--m2:#1d7f9c;--mbg:#11303a;--mbg2:#172225;--mline:#24576a;--f1:#f39ac0;--f2:#9c2f5e;--fbg:#3a1a2a;--fbg2:#26171e;--fline:#6b2f4b}}
+@keyframes cardIn{from{opacity:0;transform:translateY(-8px) scale(.96)}}
+.pcard{--c1:var(--m1);--c2:var(--m2);--bg:var(--mbg);--bg2:var(--mbg2);--ln:var(--mline);
+  direction:rtl;width:136px;display:flex;flex-direction:column;align-items:center;gap:1px;position:relative;overflow:hidden;
+  background:linear-gradient(170deg,var(--bg) 0%,var(--bg2) 75%);border:1.5px solid var(--ln);border-radius:16px;padding:16px 8px 10px;
+  box-shadow:0 2px 6px rgba(15,40,50,.06),0 8px 20px -8px color-mix(in srgb,var(--c1) 35%,transparent);cursor:pointer;color:var(--ink);white-space:normal;font:inherit;
+  transition:transform .18s cubic-bezier(.2,.8,.3,1.3),box-shadow .18s,border-color .18s,opacity .18s;animation:cardIn .35s both}
+.pcard::before{content:"";position:absolute;inset:0 0 auto;height:5px;background:linear-gradient(90deg,var(--c1),var(--c2))}
+.pcard.f{--c1:var(--f1);--c2:var(--f2);--bg:var(--fbg);--bg2:var(--fbg2);--ln:var(--fline)}
+.pcard:hover,.pcard:focus-visible{transform:translateY(-4px) scale(1.04);border-color:var(--c1);box-shadow:0 0 0 4px color-mix(in srgb,var(--c2) 22%,transparent),0 14px 28px -10px color-mix(in srgb,var(--c1) 60%,transparent);z-index:3;outline:none}
+.pcard:active{transform:translateY(-1px) scale(.99)}
+.pcard .av{width:46px;height:46px;font-size:19px;margin-bottom:5px;color:#fff;background:linear-gradient(140deg,var(--c2),var(--c1));box-shadow:0 4px 10px -3px color-mix(in srgb,var(--c1) 70%,transparent);outline:none}
+.pcard .gx{position:absolute;top:10px;left:9px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--c1);background:color-mix(in srgb,var(--c2) 18%,transparent)}
+.pcard .nm{font-size:16px;line-height:1.3;color:var(--c1);font-weight:700}
+.pcard .sub{font-size:11.5px;color:var(--ink-2);line-height:1.45}
+.pcard .sub.yr{color:var(--ink-3)}
+.pcard .sp{font-size:11px;margin-top:4px;line-height:1.4;padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--gold) 14%,transparent);color:var(--gold)}
+.pcard.dead{filter:saturate(.45);border-style:dashed}
+.pcard.dead .av{opacity:.8}
+.pcard.dead .yr::after{content:" · رحمه الله"}
+.pcard.dead.f .yr::after{content:" · رحمها الله"}
+.pcard.ref{opacity:.5;border-style:dotted;animation:none}
+.pcard.ref:hover{opacity:.9}
+.pcard.root{box-shadow:0 0 0 4px color-mix(in srgb,var(--gold) 30%,transparent),0 12px 26px -10px color-mix(in srgb,var(--gold) 70%,transparent);border-color:var(--gold)}
+.pcard.root::before{background:linear-gradient(90deg,#c08a2e,#f0c46a,#c08a2e)}
+.pcard.lit{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 40%,transparent),0 10px 22px -10px color-mix(in srgb,var(--gold) 70%,transparent);transform:translateY(-2px)}
+.ochart li.litline::before,.ochart li.litline::after,.ochart li.litend::before,.ochart li.litend::after,.ochart li.litline>ul::before{border-color:var(--gold)!important}
+.ochart li::before,.ochart li::after,.ochart ul ul::before{transition:border-color .18s}
+.ktog{margin-top:7px;min-height:28px;padding:0 11px;border-radius:999px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink-2);font-size:12.5px;font-weight:700;cursor:pointer;position:relative;z-index:1;box-shadow:0 2px 6px rgba(0,0,0,.06);transition:transform .15s,background .15s,color .15s}
+.ktog:hover{transform:scale(1.08)}
+.ktog.m{border-color:var(--mline);color:var(--m1)}
+.ktog.f{border-color:var(--fline);color:var(--f1)}
+.ktog.m:hover{background:var(--m1);color:#fff}
+.ktog.f:hover{background:var(--f1);color:#fff}
 .ktog i{font-style:normal}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;border:1.5px solid var(--line);background:var(--paper)}
+.legend .lm{border-color:var(--mline);color:var(--m1);background:var(--mbg)}
+.legend .lf{border-color:var(--fline);color:var(--f1);background:var(--fbg)}
+.legend .ld{border-style:dashed;color:var(--ink-2)}
+.legend .lr{border-color:var(--gold);color:var(--gold)}
+@media (prefers-reduced-motion: reduce){.pcard{animation:none;transition:none}.pcard:hover{transform:none}}
 .ochart li>ul{padding-top:20px}
 .ochart li>.ktog+ul::before{height:20px}
 .ochart li>ul>li{padding-top:20px}
