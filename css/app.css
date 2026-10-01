@@ -205,6 +205,51 @@ main{flex:1;min-width:0;padding:20px;max-width:1180px;outline:none}
 .tog{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--paper-2);cursor:pointer;margin-inline-end:4px;font-weight:700;vertical-align:middle}
 .tog.leaf{visibility:hidden}
 
+/* ===== شجرة البطاقات ===== */
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--paper);padding:6px 14px;min-height:36px;font-weight:600;cursor:pointer;color:var(--ink-2);font-size:14px}
+.seg button.on{background:var(--brand);color:#fff}
+.ochart-box{position:relative}
+.ochart-wrap{direction:ltr;overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);height:calc(100vh - 250px);min-height:420px;padding:24px 16px 40px;cursor:grab;-webkit-overflow-scrolling:touch}
+.ochart-wrap.grab{cursor:grabbing;user-select:none}
+.ochart{display:inline-block;min-width:100%;text-align:center;white-space:nowrap}
+.ochart ul{display:flex;justify-content:center;padding:26px 0 0;margin:0;position:relative}
+.ochart li{list-style:none;position:relative;padding:26px 7px 0;display:flex;flex-direction:column;align-items:center}
+.ochart li::before,.ochart li::after{content:"";position:absolute;top:0;right:50%;width:50%;height:26px;border-top:2px solid var(--line)}
+.ochart li::after{right:auto;left:50%;border-left:2px solid var(--line)}
+.ochart li:only-child::before,.ochart li:only-child::after{display:none}
+.ochart li:only-child{padding-top:0}
+.ochart li:first-child::before,.ochart li:last-child::after{border:0}
+.ochart li:last-child::before{border-right:2px solid var(--line);border-radius:0 8px 0 0}
+.ochart li:first-child::after{border-radius:8px 0 0 0}
+.ochart ul ul::before{content:"";position:absolute;top:0;left:50%;height:26px;border-left:2px solid var(--line)}
+.ochart>ul{padding-top:0}
+.ochart>ul>li{padding-top:0}
+.ochart>ul>li::before,.ochart>ul>li::after{display:none}
+.pcard{direction:rtl;width:132px;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--paper);border:1px solid var(--line);border-top:4px solid var(--brand);border-radius:12px;padding:10px 8px 9px;box-shadow:var(--shadow);cursor:pointer;color:var(--ink);white-space:normal;transition:transform .12s,border-color .12s;font:inherit}
+.pcard:hover{transform:translateY(-2px);border-color:var(--brand)}
+.pcard.f{border-top-color:var(--female)}
+.pcard.f:hover{border-color:var(--female)}
+.pcard.dead{border-style:dashed;border-top-style:solid}
+.pcard.ref{opacity:.55;border-style:dotted;border-top-style:solid}
+.pcard.root{box-shadow:0 0 0 3px var(--gold-l),var(--shadow);border-top-color:var(--gold)}
+.pcard .av{margin-bottom:4px}
+.pcard .nm{font-size:15.5px;line-height:1.3}
+.pcard .sub{font-size:11.5px;color:var(--ink-3);line-height:1.45}
+.pcard .sp{font-size:11px;color:var(--gold);margin-top:3px;line-height:1.4}
+.ktog{margin-top:6px;min-height:28px;padding:0 10px;border-radius:999px;border:1.5px solid var(--line);background:var(--paper-2);color:var(--ink-2);font-size:12.5px;font-weight:700;cursor:pointer;position:relative;z-index:1}
+.ktog:hover{border-color:var(--brand);color:var(--brand-d)}
+.ktog i{font-style:normal}
+.ochart li>ul{padding-top:20px}
+.ochart li>.ktog+ul::before{height:20px}
+.ochart li>ul>li{padding-top:20px}
+.ochart li>ul>li::before,.ochart li>ul>li::after{height:20px}
+.zoomer{position:absolute;bottom:12px;left:12px;display:flex;flex-direction:column;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.zoomer button{width:40px;height:38px;border:0;background:none;font-size:19px;cursor:pointer;color:var(--ink)}
+.zoomer button:hover{background:var(--brand-l)}
+.zoomer span{font-size:11px;color:var(--ink-3);padding:2px 0}
+@media (max-width:640px){.ochart-wrap{height:calc(100vh - 290px)}.pcard{width:112px}.pcard .nm{font-size:14.5px}}
+
 /* ===== التقارير ===== */
 .rep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .rep-item{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper);text-decoration:none;color:var(--ink);text-align:start;cursor:pointer;width:100%}

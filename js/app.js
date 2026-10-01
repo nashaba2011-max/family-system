@@ -340,26 +340,77 @@ function treeKids(p){
     .sort((a, b) => (a.birth_date || "9").localeCompare(b.birth_date || "9") || a.serial - b.serial);
 }
 function treeRoots(){ return S.people.filter(p => !S.byId.get(p.father_id) && !S.byId.get(p.mother_id) && treeKids(p).length); }
+let TREE_MODE = (() => { try{ return localStorage.getItem("fa-tree-mode") || "cards"; }catch(e){ return "cards"; } })();
+let TREE_Z = 1;
 function renderTree(rootId){
   const roots = treeRoots().sort((a, b) => descCount(b) - descCount(a));
   const root = S.byId.get(rootId) || roots[0];
+  const cards = TREE_MODE === "cards", F = root ? treeSet(root) : new Set();
+  const big = F.size > 40;
   $("#view").innerHTML = `
     <div class="page-h"><h2>شجرة العائلة</h2><div class="acts">
+      <div class="seg" role="group" aria-label="طريقة العرض"><button type="button" class="${cards ? "on" : ""}" data-mode="cards" aria-pressed="${cards}">بطاقات</button><button type="button" class="${cards ? "" : "on"}" data-mode="list" aria-pressed="${!cards}">قائمة</button></div>
       <button class="btn small" type="button" id="tPick">البدء من شخص…</button>
       <button class="btn small" type="button" id="tOpen">فتح الكل</button>
       <button class="btn small" type="button" id="tClose">طي الكل</button>
       <button class="btn small" type="button" id="tPrint">نسخة للطباعة</button></div></div>
     ${roots.length > 1 ? `<div class="toolbar"><select class="inp" id="tRoot" aria-label="رأس الشجرة">${roots.map(r => `<option value="${r.id}" ${r.id === root?.id ? "selected" : ""}>${esc(fullName(r, 3))} — ${descCount(r)} من الذرية</option>`).join("")}${root && !roots.includes(root) ? `<option value="${root.id}" selected>${esc(fullName(root, 3))}</option>` : ""}</select></div>` : ""}
-    <p class="muted" style="font-size:13px;margin:0 0 10px">الأبناء يظهرون تحت الأب وتحت الأم. الإطار المتقطع = متوفى، والإطار الباهت = يظهر كاملاً تحت أبيه. اضغط على الاسم لفتح الملف.</p>
-    <div class="card tree" id="treeBox">${root ? `<ul>${nodeHtml(root, 0, new Set(), treeSet(root), false)}</ul>` : '<p class="empty">لا توجد روابط أب وأبناء بعد</p>'}</div>`;
+    <p class="muted" style="font-size:13px;margin:0 0 10px">الأبناء يظهرون تحت الأب وتحت الأم. ${cards ? "الشريط الأزرق = ذكر، الوردي = أنثى، الإطار المتقطع = متوفى، الباهت = يظهر كاملاً تحت أبيه. اسحب للتنقل، واضغط البطاقة لفتح الملف." : "الإطار المتقطع = متوفى، والإطار الباهت = يظهر كاملاً تحت أبيه. اضغط على الاسم لفتح الملف."}</p>
+    ${!root ? '<div class="card"><p class="empty">لا توجد روابط أب وأبناء بعد</p></div>'
+      : cards ? `<div class="ochart-box"><div class="ochart-wrap" id="treeBox"><div class="ochart" id="ochart"><ul>${cardHtml(root, 0, new Set(), F, false, big ? 3 : 4)}</ul></div></div>
+          <div class="zoomer" role="group" aria-label="التكبير"><button type="button" id="zIn" aria-label="تكبير">+</button><span id="zPct">100%</span><button type="button" id="zOut" aria-label="تصغير">−</button><button type="button" id="zFit" aria-label="ملاءمة الشاشة" title="ملاءمة الشاشة">⤢</button></div></div>`
+      : `<div class="card tree" id="treeBox"><ul>${nodeHtml(root, 0, new Set(), F, false)}</ul></div>`}`;
+  $$("[data-mode]").forEach(b => b.onclick = () => { TREE_MODE = b.dataset.mode; try{ localStorage.setItem("fa-tree-mode", TREE_MODE); }catch(e){} renderTree(root?.id); });
   if($("#tRoot")) $("#tRoot").onchange = e => location.hash = "#/tree/" + e.target.value;
   $("#tPick").onclick = async () => { const p = await pickPerson("بداية الشجرة"); if(p) location.hash = "#/tree/" + p.id; };
-  $("#tOpen").onclick = () => $$("#treeBox li>ul").forEach(u => { u.hidden = false; u.parentElement.querySelector(".tog").textContent = "−"; });
-  $("#tClose").onclick = () => $$("#treeBox>ul>li>ul>li ul").forEach(u => { { u.hidden = true; u.parentElement.querySelector(".tog").textContent = "+"; } });
   $("#tPrint").onclick = () => { REP_ARGS.person = root?.id || null; location.hash = "#/report/tree"; };
-  $("#treeBox").onclick = e => {
-    const t = e.target.closest(".tog"); if(t && !t.classList.contains("leaf")){ const u = t.parentElement.querySelector(":scope>ul"); u.hidden = !u.hidden; t.textContent = u.hidden ? "+" : "−"; }
-  };
+  if(!root) return;
+  if(!cards){
+    $("#tOpen").onclick = () => $$("#treeBox li>ul").forEach(u => { u.hidden = false; u.parentElement.querySelector(".tog").textContent = "−"; });
+    $("#tClose").onclick = () => $$("#treeBox>ul>li>ul>li ul").forEach(u => { u.hidden = true; u.parentElement.querySelector(".tog").textContent = "+"; });
+    $("#treeBox").onclick = e => { const t = e.target.closest(".tog"); if(t && !t.classList.contains("leaf")){ const u = t.parentElement.querySelector(":scope>ul"); u.hidden = !u.hidden; t.textContent = u.hidden ? "+" : "−"; } };
+    return;
+  }
+  // ===== عرض البطاقات =====
+  const wrap = $("#treeBox"), chart = $("#ochart");
+  const setTog = (b, open) => { b.setAttribute("aria-expanded", open); b.querySelector("i").textContent = open ? "−" : "+"; };
+  const setZ = z => { TREE_Z = Math.min(1.6, Math.max(.15, Math.round(z * 100) / 100)); chart.style.zoom = TREE_Z; $("#zPct").textContent = Math.round(TREE_Z * 100) + "%"; };
+  const center = () => { wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2; };
+  setZ(TREE_Z); requestAnimationFrame(center);
+  $("#zIn").onclick = () => setZ(TREE_Z + .1);
+  $("#zOut").onclick = () => setZ(TREE_Z - .1);
+  $("#zFit").onclick = () => { setZ(1); setZ(Math.min(1, (wrap.clientWidth - 24) / chart.scrollWidth)); requestAnimationFrame(center); };
+  $("#tOpen").onclick = () => { $$("#ochart ul[hidden]").forEach(u => u.hidden = false); $$("#ochart .ktog").forEach(b => setTog(b, true)); requestAnimationFrame(center); };
+  $("#tClose").onclick = () => { $$("#ochart>ul>li>ul li>ul").forEach(u => { u.hidden = true; setTog(u.parentElement.querySelector(":scope>.ktog"), false); }); requestAnimationFrame(center); };
+  wrap.addEventListener("click", e => {
+    const t = e.target.closest(".ktog"); if(!t) return;
+    const u = t.parentElement.querySelector(":scope>ul"); u.hidden = !u.hidden; setTog(t, !u.hidden);
+  });
+  // السحب بالفأرة للتنقل
+  wrap.addEventListener("pointerdown", e => { if(e.pointerType !== "mouse" || e.target.closest("button")) return; TREE_DRAG = {wrap, x:e.clientX, y:e.clientY, l:wrap.scrollLeft, t:wrap.scrollTop}; wrap.classList.add("grab"); });
+}
+let TREE_DRAG = null;
+window.addEventListener("pointermove", e => { const d = TREE_DRAG; if(!d) return; d.wrap.scrollLeft = d.l - (e.clientX - d.x); d.wrap.scrollTop = d.t - (e.clientY - d.y); });
+window.addEventListener("pointerup", () => { if(TREE_DRAG){ TREE_DRAG.wrap.classList.remove("grab"); TREE_DRAG = null; } });
+function cardHtml(p, depth, seen, F, viaMother, openDepth){
+  if(seen.has(p.id)) return ""; seen.add(p.id);
+  const kids = nodeKids(p, F).reverse(); // الشجرة داخلياً من اليسار لليمين؛ نعكس ليكون الأكبر على اليمين
+  const sp = spousesOf(p).filter(s => s.person || s.name).map(s => s.person ? s.person.name1 : s.name.split(" ")[0]);
+  const fa = viaMother && S.byId.get(p.father_id);
+  const yrs = [p.birth_date?.slice(0, 4), isDead(p) ? (p.death_date?.slice(0, 4) || "متوفى") : ""].filter(Boolean).join(" – ");
+  const open = depth < openDepth - 1;
+  return `<li><button type="button" class="pcard ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""} ${depth === 0 ? "root" : ""}" data-open="${p.id}">
+      ${avatar(p)}<b class="nm">${esc(p.name1)}</b>
+      <span class="sub">${esc(fa ? `ابن${isM(p) ? "" : "ة"} ${fa.name1}` : p.name2 ? (isM(p) ? "بن " : "بنت ") + p.name2 : (p.family || ""))}</span>
+      <span class="sub">#${p.serial}${yrs ? " · " + esc(yrs) : ""}</span>
+      ${sp.length ? `<span class="sp">${isM(p) ? "زوجته" : "زوجها"}: ${esc(sp.join("، "))}</span>` : ""}
+    </button>
+    ${kids.length ? `<button type="button" class="ktog" aria-expanded="${open}" aria-label="الأبناء"><i>${open ? "−" : "+"}</i> ${kids.length}</button>
+      <ul ${open ? "" : "hidden"}>${kids.map(k => k.ref ? refCard(k.p) : cardHtml(k.p, depth + 1, seen, F, !isM(p), openDepth)).join("")}</ul>` : ""}</li>`;
+}
+function refCard(c){
+  const f = S.byId.get(c.father_id);
+  return `<li><button type="button" class="pcard ref ${isM(c) ? "" : "f"}" data-open="${c.id}">${avatar(c)}<b class="nm">${esc(c.name1)}</b><span class="sub">#${c.serial}</span><span class="sub">تحت أبيه ${esc(f ? f.name1 : "")}</span></button></li>`;
 }
 /* كل ذرية الشخص من جهة الأب والأم */
 function treeSet(root){

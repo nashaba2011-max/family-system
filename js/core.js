@@ -70,7 +70,9 @@ function spousesOf(p){
     const other = S.byId.get(isM(p) ? k.mother_id : k.father_id);
     if(other && !ids.has(other.id)){ ids.add(other.id); own.push({ord:null, person:other, name:"", own:false}); }
   });
-  return own;
+  // اسم مكتوب يدوياً لنفس الشخص المربوط كسجل — لا نكرره
+  const linked = own.filter(x => x.person).map(x => norm(longName(x.person)));
+  return own.filter(x => x.person || !linked.some(n => n && (n === norm(x.name) || n.startsWith(norm(x.name)) || norm(x.name).startsWith(n))));
 }
 function spouseLabel(s){ return s.person ? nameTag(s.person) : s.name; }
 function descendantsByGen(p, maxGen = 12){
