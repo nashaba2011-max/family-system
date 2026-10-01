@@ -239,8 +239,8 @@ async function renderReport(key){
         <div class="field"><label for="rpG">الجنس</label><select class="inp" id="rpG" data-a="gender">${opt(["ذكر","أنثى"], REP_ARGS.gender, "الكل")}</select></div>
         <div class="field"><label for="rpS">الحالة</label><select class="inp" id="rpS" data-a="status">${opt(["على قيد الحياة","متوفى"], REP_ARGS.status, "الكل")}</select></div>
         <div class="field"><label for="rpGov">المحافظة</label><select class="inp" id="rpGov" data-a="gov">${opt(lk("governorate"), REP_ARGS.gov, "الكل")}</select></div>
-        <div class="field"><label for="rpB">الفرع</label><select class="inp" id="rpB" data-a="branch">${opt(lk("branch"), REP_ARGS.branch, "الكل")}</select></div>
-        <div class="field"><label for="rpF">العائلة</label><select class="inp" id="rpF" data-a="family">${opt(lk("family"), REP_ARGS.family, "الكل")}</select></div>` : ""}
+        <div class="field"><label for="rpB">الفرع</label><select class="inp" id="rpB" data-a="branch">${opt(lkUsed("branch"), REP_ARGS.branch, "الكل")}</select></div>
+        <div class="field"><label for="rpF">العائلة</label><select class="inp" id="rpF" data-a="family">${opt(lkUsed("family"), REP_ARGS.family, "الكل")}</select></div>` : ""}
     </div>` : ""}
     <div class="rep-paper" id="rpOut"><div class="spin"></div></div>`;
   let out = null;

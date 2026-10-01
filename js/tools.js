@@ -242,7 +242,7 @@ function renderWhatsapp(){
       <p class="muted" style="font-size:13px">اكتب <b>{الاسم}</b> ليُستبدل بالاسم الأول لكل شخص، و<b>{الاسم_الكامل}</b> للاسم الكامل.</p>
       <div class="toolbar" style="margin:0">
         <select class="inp" id="waSrc" aria-label="المستلمون"><option value="sel" ${WA.src === "sel" ? "selected" : ""}>المحددون من شاشة البحث (${S.sel.size})</option><option value="all" ${WA.src === "all" ? "selected" : ""}>كل الأحياء الذين لديهم هاتف</option></select>
-        <select class="inp" id="waBranch" aria-label="الفرع" ${WA.src === "sel" ? "hidden" : ""}>${opt(lk("branch"), WA.branch, "كل الفروع")}</select>
+        <select class="inp" id="waBranch" aria-label="الفرع" ${WA.src === "sel" ? "hidden" : ""}>${opt(lkUsed("branch"), WA.branch, "كل الفروع")}</select>
         <select class="inp" id="waGov" aria-label="المحافظة" ${WA.src === "sel" ? "hidden" : ""}>${opt(lk("governorate"), WA.gov, "كل المحافظات")}</select>
       </div>
     </div>

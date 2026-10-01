@@ -98,6 +98,8 @@ function lineChain(p, key = "father_id", max = 30){
 
 /* القوائم */
 function lk(kind){ return (S.lookups[kind] || []).map(x => x.name); }
+/* القائمة + القيم المكتوبة يدوياً في السجلات (للفرز والتقارير) */
+function lkUsed(kind, col = kind){ return [...new Set([...lk(kind), ...S.people.map(p => p[col]).filter(Boolean)])]; }
 function areasOf(gov){ return (S.lookups.area || []).filter(a => !gov || a.parent === gov).map(a => a.name); }
 function govOfArea(area){ return (S.lookups.area || []).find(a => a.name === area)?.parent || ""; }
 

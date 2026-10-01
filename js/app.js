@@ -260,8 +260,8 @@ function renderList(){
       <select class="inp" id="fStatus" aria-label="الحالة">${opt(["على قيد الحياة","متوفى"], LIST.status, "كل الحالات")}</select>
       <select class="inp" id="fGov" aria-label="المحافظة">${opt(lk("governorate"), LIST.gov, "كل المحافظات")}</select>
       <select class="inp" id="fArea" aria-label="المنطقة">${opt(areasOf(LIST.gov), LIST.area, "كل المناطق")}</select>
-      <select class="inp" id="fBranch" aria-label="الفرع">${opt(lk("branch"), LIST.branch, "كل الفروع")}</select>
-      <select class="inp" id="fFamily" aria-label="العائلة">${opt(lk("family"), LIST.family, "كل العائلات")}</select>
+      <select class="inp" id="fBranch" aria-label="الفرع">${opt(lkUsed("branch"), LIST.branch, "كل الفروع")}</select>
+      <select class="inp" id="fFamily" aria-label="العائلة">${opt(lkUsed("family"), LIST.family, "كل العائلات")}</select>
       <select class="inp" id="fMarital" aria-label="الحالة الاجتماعية">${opt(lk("marital"), LIST.marital, "كل الحالات الاجتماعية")}</select>
     </div>
     <div class="toolbar" style="align-items:center">
