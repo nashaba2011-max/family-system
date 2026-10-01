@@ -350,8 +350,8 @@ function renderTree(rootId){
       <button class="btn small" type="button" id="tClose">طي الكل</button>
       <button class="btn small" type="button" id="tPrint">نسخة للطباعة</button></div></div>
     ${roots.length > 1 ? `<div class="toolbar"><select class="inp" id="tRoot" aria-label="رأس الشجرة">${roots.map(r => `<option value="${r.id}" ${r.id === root?.id ? "selected" : ""}>${esc(fullName(r, 3))} — ${descCount(r)} من الذرية</option>`).join("")}${root && !roots.includes(root) ? `<option value="${root.id}" selected>${esc(fullName(root, 3))}</option>` : ""}</select></div>` : ""}
-    <p class="muted" style="font-size:13px;margin:0 0 10px">الأبناء يظهرون تلقائياً من حقلي الأب والأم. الإطار المتقطع = متوفى. اضغط على الاسم لفتح الملف.</p>
-    <div class="card tree" id="treeBox">${root ? `<ul>${nodeHtml(root, 0, new Set())}</ul>` : '<p class="empty">لا توجد روابط أب وأبناء بعد</p>'}</div>`;
+    <p class="muted" style="font-size:13px;margin:0 0 10px">الأبناء يظهرون تحت الأب وتحت الأم. الإطار المتقطع = متوفى، والإطار الباهت = يظهر كاملاً تحت أبيه. اضغط على الاسم لفتح الملف.</p>
+    <div class="card tree" id="treeBox">${root ? `<ul>${nodeHtml(root, 0, new Set(), treeSet(root), false)}</ul>` : '<p class="empty">لا توجد روابط أب وأبناء بعد</p>'}</div>`;
   if($("#tRoot")) $("#tRoot").onchange = e => location.hash = "#/tree/" + e.target.value;
   $("#tPick").onclick = async () => { const p = await pickPerson("بداية الشجرة"); if(p) location.hash = "#/tree/" + p.id; };
   $("#tOpen").onclick = () => $$("#treeBox li>ul").forEach(u => { u.hidden = false; u.parentElement.querySelector(".tog").textContent = "−"; });
@@ -361,11 +361,28 @@ function renderTree(rootId){
     const t = e.target.closest(".tog"); if(t && !t.classList.contains("leaf")){ const u = t.parentElement.querySelector(":scope>ul"); u.hidden = !u.hidden; t.textContent = u.hidden ? "+" : "−"; }
   };
 }
-function descCount(p){ let n = 0; const seen = new Set(); (function w(x){ treeKids(x).forEach(k => { if(!seen.has(k.id)){ seen.add(k.id); n++; w(k); } }); })(p); return n; }
-function nodeHtml(p, depth, seen){
+/* كل ذرية الشخص من جهة الأب والأم */
+function treeSet(root){
+  const F = new Set([root.id]), q = [root];
+  while(q.length){ const x = q.shift(); childrenOf(x).forEach(k => { if(!F.has(k.id)){ F.add(k.id); q.push(k); } }); }
+  return F;
+}
+function descCount(p){ return treeSet(p).size - 1; }
+/* أبناء العقدة: تحت الأب كاملين؛ وتحت الأم كاملين إلا إذا كان أبوهم ضمن نفس الشجرة (يظهر كإشارة فقط لتجنّب التكرار) */
+function nodeKids(p, F){
+  return childrenOf(p).filter(c => isM(p) ? c.father_id === p.id : c.mother_id === p.id)
+    .map(c => ({p:c, ref: !isM(p) && !!c.father_id && F.has(c.father_id)}));
+}
+function nodeHtml(p, depth, seen, F, viaMother){
   if(seen.has(p.id)) return ""; seen.add(p.id);
-  const kids = treeKids(p);
+  const kids = nodeKids(p, F);
   const sp = spousesOf(p).filter(s => s.person || s.name).map(s => s.person ? s.person.name1 : s.name.split(" ")[0]);
-  return `<li><button type="button" class="tog ${kids.length ? "" : "leaf"}" aria-label="فتح/طي">${depth < 2 ? "−" : "+"}</button><button type="button" class="node ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""}" data-open="${p.id}">${avatar(p, "sm")}<span><b>${esc(p.name1)}</b> <small>#${p.serial}${kids.length ? ` · ${kids.length} أبناء` : ""}${sp.length ? ` · ${isM(p) ? "زوجته" : "زوجها"} ${esc(sp.join("، "))}` : ""}</small></span></button>
-    ${kids.length ? `<ul ${depth < 2 ? "" : "hidden"}>${kids.map(k => nodeHtml(k, depth + 1, seen)).join("")}</ul>` : ""}</li>`;
+  const fa = viaMother && S.byId.get(p.father_id);
+  const sub = [`#${p.serial}`, kids.length && `${kids.length} أبناء`, sp.length && `${isM(p) ? "زوجته" : "زوجها"} ${sp.join("، ")}`, fa && `ابن${isM(p) ? "" : "ة"} ${fa.name1} ${fa.name2 || ""}`.trim()].filter(Boolean).join(" · ");
+  return `<li><button type="button" class="tog ${kids.length ? "" : "leaf"}" aria-label="فتح/طي">${depth < 2 ? "−" : "+"}</button><button type="button" class="node ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""}" data-open="${p.id}">${avatar(p, "sm")}<span><b>${esc(p.name1)}</b> <small>${esc(sub)}</small></span></button>
+    ${kids.length ? `<ul ${depth < 2 ? "" : "hidden"}>${kids.map(k => k.ref ? refHtml(k.p) : nodeHtml(k.p, depth + 1, seen, F, !isM(p))).join("")}</ul>` : ""}</li>`;
+}
+function refHtml(c){
+  const f = S.byId.get(c.father_id);
+  return `<li><button type="button" class="tog leaf" tabindex="-1" aria-hidden="true"></button><button type="button" class="node ref ${isM(c) ? "" : "f"}" data-open="${c.id}">${avatar(c, "sm")}<span><b>${esc(c.name1)}</b> <small>#${c.serial} · يظهر تحت أبيه ${esc(f ? f.name1 : "")}</small></span></button></li>`;
 }

@@ -84,9 +84,10 @@ const REPORTS = [
       const r = lineReport(m, "father_id", "أب الأم"); r.html = `<p>الأم: <b>${esc(longName(m))}</b> (#${m.serial})</p>` + r.html; return r; }},
   {key:"tree", grp:"الأسرة والنسب", t:"شجرة العائلة للطباعة", d:"الشجرة الكاملة لذرية شخص", params:["person?"],
     build(){ const roots = treeRoots().sort((a, b) => descCount(b) - descCount(a)); const p = P() || roots[0]; if(!p) return {html:'<p class="muted">لا توجد شجرة</p>', rows:[]};
-      const seen = new Set();
-      const node = x => { if(seen.has(x.id)) return ""; seen.add(x.id); const k = treeKids(x); return `<li><b>${esc(x.name1)}</b> <small>(#${x.serial}${isDead(x) ? "، متوفى" : ""})</small>${k.length ? `<ul>${k.map(node).join("")}</ul>` : ""}</li>`; };
-      return {html:`<p>ذرية <b>${esc(longName(p))}</b> — ${descCount(p)} فرداً</p><div class="tree-p"><ul>${node(p)}</ul></div>`, rows:[]}; }},
+      const seen = new Set(), F = treeSet(p);
+      const node = (x, viaM) => { if(seen.has(x.id)) return ""; seen.add(x.id); const k = nodeKids(x, F); const fa = viaM && S.byId.get(x.father_id);
+        return `<li><b>${esc(x.name1)}</b> <small>(#${x.serial}${fa ? "، ابن" + (isM(x) ? " " : "ة ") + esc(fa.name1) : ""}${isDead(x) ? "، متوفى" : ""})</small>${k.length ? `<ul>${k.map(c => c.ref ? `<li style="color:#7f8b8d">${esc(c.p.name1)} <small>(#${c.p.serial}، تحت أبيه)</small></li>` : node(c.p, !isM(x))).join("")}</ul>` : ""}</li>`; };
+      return {html:`<p>ذرية <b>${esc(longName(p))}</b> — ${descCount(p)} فرداً</p><div class="tree-p"><ul>${node(p, false)}</ul></div>`, rows:[]}; }},
   {key:"book", grp:"الأسرة والنسب", t:"كتاب العائلة", d:"كل رب أسرة مع زوجاته وأبنائه، جيلاً بعد جيل", params:["filters"],
     build(){
       const heads = F().filter(x => isM(x) && (childrenOf(x).length || spousesOf(x).length));

@@ -200,6 +200,7 @@ main{flex:1;min-width:0;padding:20px;max-width:1180px;outline:none}
 .node:hover{border-color:var(--brand)}
 .node.f{border-color:color-mix(in srgb,var(--female) 40%,var(--line))}
 .node.dead{border-style:dashed}
+.node.ref{opacity:.6;border-style:dotted}
 .node small{color:var(--ink-3);font-size:12px}
 .tog{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--paper-2);cursor:pointer;margin-inline-end:4px;font-weight:700;vertical-align:middle}
 .tog.leaf{visibility:hidden}
