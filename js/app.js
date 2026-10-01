@@ -340,6 +340,7 @@ function treeKids(p){
     .sort((a, b) => (a.birth_date || "9").localeCompare(b.birth_date || "9") || a.serial - b.serial);
 }
 function treeRoots(){ return S.people.filter(p => !S.byId.get(p.father_id) && !S.byId.get(p.mother_id) && treeKids(p).length); }
+const GI_M = '<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5"/><path d="m21 3-6.75 6.75"/><circle cx="10" cy="14" r="6"/></svg>', GI_F = '<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15v7"/><path d="M9 19h6"/><circle cx="12" cy="9" r="6"/></svg>';
 let TREE_MODE = (() => { try{ return localStorage.getItem("fa-tree-mode") || "cards"; }catch(e){ return "cards"; } })();
 let TREE_Z = 1;
 function renderTree(rootId){
@@ -355,7 +356,7 @@ function renderTree(rootId){
       <button class="btn small" type="button" id="tClose">طي الكل</button>
       <button class="btn small" type="button" id="tPrint">نسخة للطباعة</button></div></div>
     ${roots.length > 1 ? `<div class="toolbar"><select class="inp" id="tRoot" aria-label="رأس الشجرة">${roots.map(r => `<option value="${r.id}" ${r.id === root?.id ? "selected" : ""}>${esc(fullName(r, 3))} — ${descCount(r)} من الذرية</option>`).join("")}${root && !roots.includes(root) ? `<option value="${root.id}" selected>${esc(fullName(root, 3))}</option>` : ""}</select></div>` : ""}
-    ${cards ? `<div class="legend"><span class="lm">♂ ذكر</span><span class="lf">♀ أنثى</span><span class="ld">متوفى</span><span class="lr">رأس الشجرة</span><span class="muted" style="border:0;background:none;padding:3px 0">مرّر على أي بطاقة لتضيء سلسلة آبائه · اسحب للتنقل · اضغط البطاقة لفتح الملف</span></div>` : `<p class="muted" style="font-size:13px;margin:0 0 10px">الأبناء يظهرون تحت الأب وتحت الأم. الإطار المتقطع = متوفى، والإطار الباهت = يظهر كاملاً تحت أبيه. اضغط على الاسم لفتح الملف.</p>`}
+    ${cards ? `<div class="legend"><span class="lm">${GI_M} ذكر</span><span class="lf">${GI_F} أنثى</span><span class="ld">متوفى</span><span class="lr">رأس الشجرة</span><span class="muted" style="border:0;background:none;padding:3px 0">مرّر على البطاقة (أو المسها مرة على الجوال) لتضيء سلسلة آبائها · اضغط مرة ثانية لفتح الملف · اسحب للتنقل</span></div>` : `<p class="muted" style="font-size:13px;margin:0 0 10px">الأبناء يظهرون تحت الأب وتحت الأم. الإطار المتقطع = متوفى، والإطار الباهت = يظهر كاملاً تحت أبيه. اضغط على الاسم لفتح الملف.</p>`}
     ${!root ? '<div class="card"><p class="empty">لا توجد روابط أب وأبناء بعد</p></div>'
       : cards ? `<div class="ochart-box"><div class="ochart-wrap" id="treeBox"><div class="ochart" id="ochart"><ul>${cardHtml(root, 0, new Set(), F, false, big ? 3 : 4)}</ul></div></div>
           <div class="zoomer" role="group" aria-label="التكبير"><button type="button" id="zIn" aria-label="تكبير">+</button><span id="zPct">100%</span><button type="button" id="zOut" aria-label="تصغير">−</button><button type="button" id="zFit" aria-label="ملاءمة الشاشة" title="ملاءمة الشاشة">⤢</button></div></div>`
@@ -391,9 +392,16 @@ function renderTree(rootId){
   const clearLit = () => $$("#ochart .lit, #ochart .litline, #ochart .litend").forEach(x => x.classList.remove("lit", "litline", "litend"));
   const light = card => { clearLit(); let li = card.closest("li"); card.classList.add("lit"); li.classList.add("litend");
     while(li){ if(!li.classList.contains("litend")) li.classList.add("litline"); const up = li.parentElement.closest("li"); if(!up) break; up.querySelector(":scope>.pcard").classList.add("lit"); li = up; } };
-  wrap.addEventListener("pointerover", e => { const c = e.target.closest(".pcard"); if(c) light(c); });
+  wrap.addEventListener("pointerover", e => { if(e.pointerType === "mouse"){ const c = e.target.closest(".pcard"); if(c) light(c); } });
+  // اللمس: لمسة أولى تُضيء السلسلة، والثانية تفتح الملف
+  let lastPtr = "mouse";
+  wrap.addEventListener("pointerdown", e => { lastPtr = e.pointerType; }, true);
+  wrap.addEventListener("click", e => {
+    const c = e.target.closest(".pcard"); if(!c || lastPtr === "mouse") return;
+    if(!c.classList.contains("sel")){ e.preventDefault(); e.stopPropagation(); $$("#ochart .pcard.sel").forEach(x => x.classList.remove("sel")); c.classList.add("sel"); light(c); }
+  }, true);
   wrap.addEventListener("focusin", e => { const c = e.target.closest(".pcard"); if(c) light(c); });
-  wrap.addEventListener("pointerleave", clearLit);
+  wrap.addEventListener("pointerleave", e => { if(e.pointerType === "mouse") clearLit(); });
   wrap.addEventListener("pointerdown", e => { if(e.pointerType !== "mouse" || e.target.closest("button")) return; TREE_DRAG = {wrap, x:e.clientX, y:e.clientY, l:wrap.scrollLeft, t:wrap.scrollTop}; wrap.classList.add("grab"); });
 }
 let TREE_DRAG = null;
@@ -407,7 +415,7 @@ function cardHtml(p, depth, seen, F, viaMother, openDepth){
   const yrs = [p.birth_date?.slice(0, 4), isDead(p) ? (p.death_date?.slice(0, 4) || "متوفى") : ""].filter(Boolean).join(" – ");
   const open = depth < openDepth - 1;
   return `<li><button type="button" class="pcard ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""} ${depth === 0 ? "root" : ""}" data-open="${p.id}" style="animation-delay:${Math.min(depth, 6) * 60}ms" aria-label="${esc(fullName(p, 3))}، ${isM(p) ? "ذكر" : "أنثى"}">
-      <span class="gx" aria-hidden="true">${isM(p) ? "♂" : "♀"}</span>${avatar(p)}<b class="nm">${esc(p.name1)}</b>
+      <span class="gx">${isM(p) ? GI_M : GI_F}</span>${avatar(p)}<b class="nm">${esc(p.name1)}</b>
       <span class="sub">${esc(fa ? `ابن${isM(p) ? "" : "ة"} ${fa.name1}` : p.name2 ? (isM(p) ? "بن " : "بنت ") + p.name2 : (p.family || ""))}</span>
       <span class="sub ${isDead(p) ? "yr" : ""}">#${p.serial}${yrs ? " · " + esc(yrs) : ""}</span>
       ${sp.length ? `<span class="sp">${isM(p) ? "زوجته" : "زوجها"}: ${esc(sp.join("، "))}</span>` : ""}
@@ -417,7 +425,7 @@ function cardHtml(p, depth, seen, F, viaMother, openDepth){
 }
 function refCard(c){
   const f = S.byId.get(c.father_id);
-  return `<li><button type="button" class="pcard ref ${isM(c) ? "" : "f"}" data-open="${c.id}"><span class="gx" aria-hidden="true">${isM(c) ? "♂" : "♀"}</span>${avatar(c)}<b class="nm">${esc(c.name1)}</b><span class="sub">#${c.serial}</span><span class="sub">تحت أبيه ${esc(f ? f.name1 : "")}</span></button></li>`;
+  return `<li><button type="button" class="pcard ref ${isM(c) ? "" : "f"}" data-open="${c.id}"><span class="gx">${isM(c) ? GI_M : GI_F}</span>${avatar(c)}<b class="nm">${esc(c.name1)}</b><span class="sub">#${c.serial}</span><span class="sub">تحت أبيه ${esc(f ? f.name1 : "")}</span></button></li>`;
 }
 /* كل ذرية الشخص من جهة الأب والأم */
 function treeSet(root){
