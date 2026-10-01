@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f4c5c">
+<title>برنامج عائلة النشابة</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- ===== الدخول ===== -->
+<section id="vLogin" class="login" hidden>
+  <div class="login-card">
+    <div class="login-art" aria-hidden="true">
+      <svg viewBox="0 0 120 120" width="88" height="88"><circle cx="60" cy="22" r="11" fill="currentColor"/><circle cx="28" cy="70" r="10" fill="currentColor" opacity=".85"/><circle cx="92" cy="70" r="10" fill="currentColor" opacity=".85"/><circle cx="14" cy="106" r="7" fill="currentColor" opacity=".6"/><circle cx="42" cy="106" r="7" fill="currentColor" opacity=".6"/><circle cx="78" cy="106" r="7" fill="currentColor" opacity=".6"/><circle cx="106" cy="106" r="7" fill="currentColor" opacity=".6"/><path d="M60 33v18M28 51h64M28 51v9M92 51v9M28 80v10M14 90h28M14 90v9M42 90v9M92 80v10M78 90h28M78 90v9M106 90v9" stroke="currentColor" stroke-width="3" fill="none"/></svg>
+    </div>
+    <h1>برنامج عائلة النشابة</h1>
+    <p class="muted">سجل الأفراد والأنساب والتقارير</p>
+    <form id="loginForm" novalidate>
+      <label for="lEmail">البريد الإلكتروني</label>
+      <input class="inp ltr" id="lEmail" type="email" autocomplete="username" inputmode="email" required>
+      <label for="lPass">كلمة السر</label>
+      <input class="inp ltr" id="lPass" type="password" autocomplete="current-password" required>
+      <div class="err" id="lErr" role="alert"></div>
+      <button class="btn primary block" id="lBtn" type="submit">دخول</button>
+      <div class="login-links">
+        <button class="linkbtn" type="button" id="lForgot">نسيت كلمة السر</button>
+        <button class="linkbtn" type="button" id="lSignup">أول مرة؟ أنشئ كلمة سر</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ===== التطبيق ===== -->
+<div id="app" hidden>
+  <header class="topbar">
+    <button class="iconbtn only-mobile" id="navBtn" type="button" aria-label="القائمة" aria-controls="sidenav" aria-expanded="false">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <a class="brand" href="#/home">برنامج عائلة النشابة<small id="crumb"></small></a>
+    <button class="iconbtn" id="themeBtn" type="button" aria-label="تبديل الوضع الليلي">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+    </button>
+  </header>
+
+  <div class="shell">
+    <nav class="sidenav" id="sidenav" aria-label="القائمة الرئيسية">
+      <div class="who" id="whoAmI"></div>
+      <a href="#/home" data-nav="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>الرئيسية</a>
+      <div class="nav-h">السجلات</div>
+      <a href="#/add" data-nav="add" data-perm="add"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>إضافة سجل</a>
+      <a href="#/edit" data-nav="edit" data-perm="edit"><svg viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16z"/></svg>تعديل سجل</a>
+      <a href="#/delete" data-nav="delete" data-perm="delete"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>حذف سجل</a>
+      <a href="#/list" data-nav="list"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>البحث والملفات</a>
+      <div class="nav-h">العائلة</div>
+      <a href="#/tree" data-nav="tree"><svg viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="5" rx="1"/><rect x="2.5" y="16.5" width="6" height="5" rx="1"/><rect x="15.5" y="16.5" width="6" height="5" rx="1"/><path d="M12 7.5V12M5.5 16.5V12h13v4.5"/></svg>شجرة العائلة</a>
+      <a href="#/reports" data-nav="reports"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7M9 8h3"/></svg>التقارير</a>
+      <a href="#/whatsapp" data-nav="whatsapp"><svg viewBox="0 0 24 24"><path d="M4 20l1.4-4A8 8 0 1 1 8 18.7z"/><path d="M9 9.5c.3 2.2 2.3 4.3 4.6 4.8l1.2-1.2 2 1-.4 1.6c-3.6.4-8-3.5-8-7.6L10 7.8l1 2z"/></svg>مراسلة واتساب</a>
+      <div class="nav-h" data-admin>الإدارة</div>
+      <a href="#/settings" data-nav="settings" data-admin><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>الإعدادات والقوائم</a>
+      <a href="#/users" data-nav="users" data-admin><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.6 6.5-5.6s5.9 2 6.5 5.6M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c2 .7 3.2 2.5 3.5 5.4"/></svg>المستخدمون</a>
+      <a href="#/data" data-nav="data"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v3h16v-3"/></svg>استيراد وتصدير</a>
+      <button type="button" class="navout" id="logoutBtn"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg>تسجيل الخروج</button>
+    </nav>
+    <div class="scrim" id="scrim" hidden></div>
+    <main id="view" tabindex="-1"></main>
+  </div>
+</div>
+
+<!-- ===== حوارات ===== -->
+<dialog id="dAsk" aria-labelledby="askT" class="dlg small">
+  <form id="askForm" method="dialog">
+    <h3 id="askT"></h3>
+    <p id="askMsg"></p>
+    <input class="inp" id="askInp" hidden>
+    <div class="dlg-f"><button class="btn" type="button" id="askNo">إلغاء</button><button class="btn primary" type="button" id="askYes">موافق</button></div>
+  </form>
+</dialog>
+
+<dialog id="dPick" aria-labelledby="pickT" class="dlg">
+  <div class="dlg-h"><h3 id="pickT">اختيار شخص</h3><button class="iconbtn" type="button" onclick="this.closest('dialog').close()" aria-label="إغلاق">✕</button></div>
+  <div class="dlg-b">
+    <input class="inp" id="pickQ" type="search" placeholder="اكتب الاسم أو رقم التسلسل أو الرقم الشخصي" aria-label="بحث">
+    <div class="pick-list" id="pickList"></div>
+  </div>
+</dialog>
+
+<dialog id="dModal" aria-labelledby="modalT" class="dlg">
+  <div class="dlg-h"><h3 id="modalT"></h3><button class="iconbtn" type="button" onclick="this.closest('dialog').close()" aria-label="إغلاق">✕</button></div>
+  <div class="dlg-b" id="modalB"></div>
+  <div class="dlg-f" id="modalF" hidden></div>
+</dialog>
+
+<div id="printArea" class="report"></div>
+
+<script src="js/config.js?v=1"></script>
+<script src="js/core.js?v=1"></script>
+<script src="js/record.js?v=1"></script>
+<script src="js/reports.js?v=1"></script>
+<script src="js/tools.js?v=1"></script>
+<script src="js/app.js?v=1"></script>
+</body>
+</html>
