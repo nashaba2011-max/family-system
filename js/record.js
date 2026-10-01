@@ -125,11 +125,19 @@ function derivedHtml(){
   const lnk = x => x ? `<a href="#/rec/${x.id}">${esc(fullName(x, 3))}</a>` : "—";
   const others = p.id ? S.spouses.filter(s => s.spouse_id === p.id).map(s => S.byId.get(s.person_id)).filter(Boolean) : [];
   const kids = p.id ? childrenOf(p) : [];
+  // الجد/الجدة يُقرآن من سجل الأب أو الأم؛ زر «ربط» يحدّث سجل الوالد مباشرة
+  const slot = (label, parent, key, side) => {
+    const gp = parent && S.byId.get(parent[key]);
+    const canLink = parent && R.editable && can("edit");
+    const btn = canLink ? ` <button type="button" class="btn small" data-gp="${parent.id}:${key}">${gp ? "تغيير" : "+ ربط"}</button>` : "";
+    const empty = parent ? "—" : `<small class="muted">اربط ${side} أولاً</small>`;
+    return `<div><span>${label}: </span>${gp ? lnk(gp) : empty}${btn}</div>`;
+  };
   return `<div class="derived">
-    <div><span>الجد لأب: </span>${lnk(f && S.byId.get(f.father_id))}</div>
-    <div><span>الجدة لأب: </span>${lnk(f && S.byId.get(f.mother_id))}</div>
-    <div><span>الجد لأم: </span>${lnk(m && S.byId.get(m.father_id))}</div>
-    <div><span>الجدة لأم: </span>${lnk(m && S.byId.get(m.mother_id))}</div>
+    ${slot("الجد لأب", f, "father_id", "الأب")}
+    ${slot("الجدة لأب", f, "mother_id", "الأب")}
+    ${slot("الجد لأم", m, "father_id", "الأم")}
+    ${slot("الجدة لأم", m, "mother_id", "الأم")}
     ${others.length ? `<div><span>${isM(p) ? "مسجل زوجاً لـ" : "مسجلة زوجة لـ"}: </span>${others.map(lnk).join("، ")}</div>` : ""}
     ${kids.length ? `<div class="wide" style="grid-column:1/-1"><span>الأبناء (${kids.length}): </span>${kids.map(k => `<a href="#/rec/${k.id}">${esc(k.name1)}</a>`).join("، ")}</div>` : ""}
   </div>`;
@@ -190,6 +198,19 @@ function bindRecord(){
     }
     const u = e.target.closest("[data-unlink]");
     if(u){ readForm(); R.p[u.dataset.unlink] = null; if(u.dataset.unlink === "mother_id") R.p.mother_name = ""; setDirty(true); drawRecord("t2"); return; }
+    const gpb = e.target.closest("[data-gp]");
+    if(gpb){
+      readForm(); const [pid, key] = gpb.dataset.gp.split(":"); const parent = S.byId.get(+pid); const isF = key === "father_id";
+      const pick = await pickPerson(`${isF ? "اختيار الجد" : "اختيار الجدة"} — ${isF ? "أبو" : "أم"} ${fullName(parent, 3)}`,
+        {filter: x => x.id !== parent.id && x.gender !== (isF ? "أنثى" : "ذكر") && !isDescendant(parent.id, x.id)});
+      if(!pick) return;
+      const upd = {[key]: pick.id};
+      if(isF && !parent.name2){ upd.name2 = pick.name1; upd.name3 = pick.name2 || null; upd.name4 = pick.name3 || null; upd.name5 = pick.name4 || null; upd.name6 = pick.name5 || null; }
+      const {data, error} = await db.from("fa_people").update(upd).eq("id", parent.id).select().single();
+      if(error){ toast(errMsg(error), true); return; }
+      upsertLocal(data); toast(`تم الربط في سجل ${fullName(parent, 3)} ✓`);
+      const dirty = S.dirty; drawRecord("t2"); setDirty(dirty); return;
+    }
     const sp = e.target.closest("[data-sp]");
     if(sp && R.editable){
       readForm(); const i = +sp.dataset.sp;
