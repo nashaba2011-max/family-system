@@ -237,7 +237,7 @@ const WA = {msg:"السلام عليكم {الاسم}،\n", src:"sel", branch:""
 function renderWhatsapp(){
   if(!S.sel.size && WA.src === "sel") WA.src = "all";
   $("#view").innerHTML = `
-    <div class="page-h"><h2>مراسلة واتساب</h2></div>
+    <div class="page-h"><h2>مراسلة واتساب</h2><div class="acts"><a class="btn wa" data-contact href="${esc(contactLink())}" target="_blank" rel="noopener">تواصل مع إدارة البرنامج</a></div></div>
     <div class="card">
       <div class="field"><label for="waMsg">نص الرسالة</label><textarea class="inp" id="waMsg" maxlength="2000">${esc(WA.msg)}</textarea></div>
       <p class="muted" style="font-size:13px">اكتب <b>{الاسم}</b> ليُستبدل بالاسم الأول لكل شخص، و<b>{الاسم_الكامل}</b> للاسم الكامل.</p>

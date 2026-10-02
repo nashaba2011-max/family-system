@@ -113,6 +113,10 @@ function waNumber(phone){
   if(d.length === 8) d = COUNTRY_CODE + d;
   return d.length >= 10 ? d : "";
 }
+/* رابط التواصل مع الإدارة — يُعبّأ في كل عنصر يحمل data-contact */
+function contactLink(){ return waLink(CONTACT_WA, "السلام عليكم، بخصوص برنامج عائلة النشابة: "); }
+document.addEventListener("DOMContentLoaded", fillContact);
+function fillContact(){ $$("[data-contact]").forEach(a => a.href = contactLink()); $$("[data-contact-num]").forEach(s => s.textContent = CONTACT_WA.replace(/(\d{4})(\d{4})/, "$1 $2")); }
 function waLink(phone, text = ""){ const n = waNumber(phone); return n ? `https://wa.me/${n}${text ? "?text=" + encodeURIComponent(text) : ""}` : ""; }
 
 /* ===== البيانات ===== */
