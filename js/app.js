@@ -8,7 +8,7 @@ const ROUTES = {
   new:      {title:"سجل جديد", render:serial => renderRecord(null, +serial), perm:"add"},
   list:     {title:"البحث والملفات", render:renderList},
   family:   {title:"الأسرة", render:id => renderFamily(+id)},
-  tree:     {title:"شجرة العائلة", render:id => renderTree(id ? +id : null)},
+  tree:     {title:"شجرة العائلة", render:id => { TREE_MODE = "cards"; renderTree(id ? +id : null); }},
   reports:  {title:"التقارير", render:renderReports},
   report:   {title:"تقرير", render:key => renderReport(key)},
   whatsapp: {title:"مراسلة واتساب", render:renderWhatsapp},
@@ -341,7 +341,8 @@ function treeKids(p){
 }
 function treeRoots(){ return S.people.filter(p => !S.byId.get(p.father_id) && !S.byId.get(p.mother_id) && treeKids(p).length); }
 const GI_M = '<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5"/><path d="m21 3-6.75 6.75"/><circle cx="10" cy="14" r="6"/></svg>', GI_F = '<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15v7"/><path d="M9 19h6"/><circle cx="12" cy="9" r="6"/></svg>';
-let TREE_MODE = (() => { try{ return localStorage.getItem("fa-tree-mode") || "cards"; }catch(e){ return "cards"; } })();
+let TREE_MODE = "cards"; // الشجرة تفتح دائماً بالبطاقات
+try{ localStorage.removeItem("fa-tree-mode"); }catch(e){}
 let TREE_Z = 1;
 function renderTree(rootId){
   const roots = treeRoots().sort((a, b) => descCount(b) - descCount(a));
@@ -361,7 +362,7 @@ function renderTree(rootId){
       : cards ? `<div class="ochart-box"><div class="ochart-wrap" id="treeBox"><div class="ochart" id="ochart"><ul>${cardHtml(root, 0, new Set(), F, false, big ? 3 : 4)}</ul></div></div>
           <div class="zoomer" role="group" aria-label="التكبير"><button type="button" id="zIn" aria-label="تكبير">+</button><span id="zPct">100%</span><button type="button" id="zOut" aria-label="تصغير">−</button><button type="button" id="zFit" aria-label="ملاءمة الشاشة" title="ملاءمة الشاشة">⤢</button></div></div>`
       : `<div class="card tree" id="treeBox"><ul>${nodeHtml(root, 0, new Set(), F, false)}</ul></div>`}`;
-  $$("[data-mode]").forEach(b => b.onclick = () => { TREE_MODE = b.dataset.mode; try{ localStorage.setItem("fa-tree-mode", TREE_MODE); }catch(e){} renderTree(root?.id); });
+  $$("[data-mode]").forEach(b => b.onclick = () => { TREE_MODE = b.dataset.mode; renderTree(root?.id); });
   if($("#tRoot")) $("#tRoot").onchange = e => location.hash = "#/tree/" + e.target.value;
   $("#tPick").onclick = async () => { const p = await pickPerson("بداية الشجرة"); if(p) location.hash = "#/tree/" + p.id; };
   $("#tPrint").onclick = () => { REP_ARGS.person = root?.id || null; location.hash = "#/report/tree"; };
