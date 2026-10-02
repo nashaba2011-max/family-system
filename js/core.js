@@ -171,6 +171,8 @@ function errMsg(e){
   if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return "تعذر الاتصال بالإنترنت — حاول مرة أخرى";
   if(/User already registered/i.test(m)) return "هذا البريد لديه حساب — استخدم «دخول» أو «نسيت كلمة السر»";
   if(/Password should be/i.test(m)) return "كلمة السر يجب أن تكون 6 أحرف على الأقل";
+  if(/different from the old password/i.test(m)) return "كلمة السر الجديدة لازم تختلف عن القديمة";
+  if(/reauthentication|Session expired|JWT/i.test(m)) return "انتهت الجلسة — سجّل خروج ثم ادخل مرة ثانية وحاول";
   return m || "حدث خطأ غير متوقع";
 }
 function toast(msg, bad = false){

@@ -89,6 +89,17 @@ $("#lSignup").onclick = async () => {
   if(error){ $("#lErr").textContent = errMsg(error); return; }
   $("#lErr").textContent = data.session ? "" : "تم إنشاء الحساب — افتح رسالة التأكيد في بريدك ثم ادخل";
 };
+$("#pwBtn").onclick = async () => {
+  closeNav();
+  const p1 = await ask("تغيير كلمة السر", "اكتب كلمة السر الجديدة (6 أحرف على الأقل)", {input:true, type:"password", okText:"متابعة"});
+  if(p1 === null) return;
+  if(p1.length < 6){ toast("كلمة السر يجب أن تكون 6 أحرف على الأقل", true); return; }
+  const p2 = await ask("تأكيد كلمة السر", "اكتب كلمة السر الجديدة مرة ثانية", {input:true, type:"password", okText:"حفظ"});
+  if(p2 === null) return;
+  if(p1 !== p2){ toast("كلمتا السر غير متطابقتين — حاول مرة ثانية", true); return; }
+  const {error} = await db.auth.updateUser({password:p1});
+  toast(error ? errMsg(error) : "تم تغيير كلمة السر ✓", !!error);
+};
 $("#logoutBtn").onclick = async () => {
   if(S.dirty && !(await ask("تغييرات غير محفوظة", "الخروج سيلغي التعديلات. متابعة؟", {danger:true}))) return;
   S.dirty = false; await db.auth.signOut();
