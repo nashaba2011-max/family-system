@@ -202,6 +202,7 @@ async function readImport(e){
       for(const k of ["birth_date","death_date"]) if(k in o){ const d = xlDate(o[k]); if(d === undefined){ errs.push(`سطر ${line}: تاريخ غير مفهوم «${o[k]}»`); return; } row[k] = d; }
       if(row.cpr != null){ row.cpr = String(row.cpr).replace(/\D/g, ""); if(!/^\d{9}$/.test(row.cpr)){ errs.push(`سطر ${line}: الرقم الشخصي يجب أن يكون 9 أرقام`); return; } }
       if(row.gender && !["ذكر","أنثى"].includes(row.gender)){ const g = norm(row.gender); row.gender = /^(ذكر|m|male)$/.test(g) ? "ذكر" : /^(انثي|f|female)$/.test(g) ? "أنثى" : null; }
+      if(row.affiliation != null) row.affiliation = /زواج|نسيب|صهر/.test(row.affiliation) ? "منتسب بالزواج" : /عائل|نسب/.test(row.affiliation) ? "من العائلة" : null;
       if(row.status != null) row.status = /متوف/.test(row.status) ? "متوفى" : "على قيد الحياة";
       if(row.area && !row.governorate) row.governorate = govOfArea(row.area) || null;
       serials.add(serial); rows.push({row, fa, mo});

@@ -9,7 +9,7 @@ const COLS = {
   address:["العنوان", p => [p.house_no && "منزل " + p.house_no, p.flat_no && "شقة " + p.flat_no, p.road_no && "طريق " + p.road_no, p.block_no && "مجمع " + p.block_no].filter(Boolean).join("، ")],
   phone:["الهاتف", p => [p.phone, p.phone2].filter(Boolean).join(" / ")], email:["البريد", p => p.email], branch:["الفرع", p => p.branch], family:["العائلة", p => p.family],
   blood:["فصيلة الدم", p => p.blood], education:["المؤهل", p => p.education], specialization:["التخصص", p => p.specialization], job:["الوظيفة", p => p.job],
-  workside:["جهة العمل", p => p.workside], marital:["الحالة الاجتماعية", p => p.marital], hobby:["الهواية", p => p.hobby],
+  workside:["جهة العمل", p => p.workside], marital:["الحالة الاجتماعية", p => p.marital], aff:["الانتساب", p => p.affiliation], hobby:["الهواية", p => p.hobby],
   death:["تاريخ الوفاة", p => fmtDate(p.death_date)], burial:["مكان الدفن", p => p.burial_place], kids:["الأبناء", p => childrenOf(p).length || ""],
 };
 function peopleTable(list, cols){
@@ -101,6 +101,15 @@ const REPORTS = [
           ${kids.length ? `<div><span style="color:#5d6b6e">الأبناء (${kids.length}): </span>${esc(kids.map(k => k.name1 + (isDead(k) ? " (متوفى)" : "")).join("، "))}</div>` : ""}</div>`; });
       return {html:html || '<p class="muted">لا توجد أسر</p>', sub:filterNote(REP_ARGS),
         rows:heads.map(h => ({"#":h.serial, "رب الأسرة":longName(h), "الجيل":depth(h) + 1, "الزوجات":spousesOf(h).map(spouseLabel).join("، "), "الأبناء":childrenOf(h).map(k => k.name1).join("، ")}))};
+    }},
+  {key:"inlaws", grp:"الأسرة والنسب", t:"المنتسبون إلى العائلة بالزواج", d:"الأزواج والزوجات من عوائل أخرى، ومن تزوجوا من العائلة", params:[],
+    build(){
+      const l = S.people.filter(p => p.affiliation === "منتسب بالزواج").sort((a, b) => (a.family || "").localeCompare(b.family || "", "ar") || a.serial - b.serial);
+      const inFam = p => spousesOf(p).filter(s => s.person && s.person.affiliation === "من العائلة").map(s => nameTag(s.person));
+      const rows = l.map(p => ({"#":p.serial, "الاسم":fullName(p, 4), "عائلته الأصلية":p.family || "", "الجنس":p.gender || "", "متزوج من":inFam(p).join("، "), "الأبناء":childrenOf(p).length || "", "الحالة":p.status}));
+      const fams = new Map(); l.forEach(p => fams.set(p.family || "غير محدد", (fams.get(p.family || "غير محدد") || 0) + 1));
+      return {html:`<p>${l.length} منتسباً من ${fams.size} عائلات: ${esc([...fams].map(([f, n]) => `${f} (${n})`).join("، "))}</p>` +
+        `<table><thead><tr>${Object.keys(rows[0] || {"#":1}).map(k => `<th>${k}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${Object.values(r).map(v => `<td>${esc(v)}</td>`).join("")}</tr>`).join("")}</tbody></table>`, rows};
     }},
   {key:"marriages", grp:"الأسرة والنسب", t:"سجل الزواج", d:"كل الأزواج والزوجات المسجلين", params:[],
     build(){ const rows = S.spouses.map(s => ({p:S.byId.get(s.person_id), s})).filter(x => x.p).sort((a, b) => a.p.serial - b.p.serial || a.s.ord - b.s.ord);

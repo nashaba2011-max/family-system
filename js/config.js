@@ -38,6 +38,7 @@ const FIELDS = {
   name6:{label:"الجد الرابع", xl:"الجد الرابع"},
   family:{label:"العائلة", lk:"family", free:1, xl:"العائلة"},
   branch:{label:"الفرع", lk:"branch", free:1, xl:"الفرع"},
+  affiliation:{label:"الانتساب للعائلة", opts:["من العائلة","منتسب بالزواج"], xl:"الانتساب"},
   nickname:{label:"الكنية / اللقب", lk:"nickname", free:1, xl:"الكنية"},
   gender:{label:"الجنس", opts:["ذكر","أنثى"], xl:"الجنس"},
   marital:{label:"الحالة الاجتماعية", lk:"marital", xl:"الحالة الاجتماعية"},

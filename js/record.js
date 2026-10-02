@@ -5,7 +5,7 @@ const TABS = [
   ["t1","البيانات الشخصية"],["t2","النسب والزواج"],["t3","السكن والاتصال"],["t4","التعليم والعمل"],["t5","الحالة والصحة"],["t6","الملاحظات"],
 ];
 const TAB_FIELDS = {
-  t1:["serial","cpr","name1","name2","name3","name4","name5","name6","family","branch","nickname","gender","birth_date","_age","birth_place"],
+  t1:["serial","cpr","name1","name2","name3","name4","name5","name6","family","branch","affiliation","nickname","gender","birth_date","_age","birth_place"],
   t3:["phone","phone2","email","governorate","area","house_no","flat_no","road_no","block_no"],
   t4:["education","specialization","job","workside","hobby"],
   t5:["status","death_date","burial_place","marital","blood"],
@@ -72,7 +72,7 @@ function drawRecord(activeTab){
       <div class="photo" id="rPhoto" role="${R.editable ? "button" : "img"}" tabindex="${R.editable ? 0 : -1}" aria-label="الصورة الشخصية">${R.editable ? "إضافة صورة" : "لا توجد صورة"}</div>
       <input type="file" id="rFile" accept="image/*" hidden>
       <div class="rec-name"><h2 id="rTitle">${esc(longName(p) || "اسم جديد")}</h2>
-        <div class="meta"><span class="chip gold">رقم ${esc(p.serial)}</span>${p.gender ? `<span class="chip ${isM(p) ? "" : "f"}">${esc(p.gender)}</span>` : ""}${isDead(p) ? '<span class="chip dead">متوفى</span>' : ""}${ageOf(p) !== "" ? `<span class="chip">${ageOf(p)} سنة</span>` : ""}${p.branch ? `<span class="chip">فرع ${esc(p.branch)}</span>` : ""}</div>
+        <div class="meta"><span class="chip gold">رقم ${esc(p.serial)}</span>${p.gender ? `<span class="chip ${isM(p) ? "" : "f"}">${esc(p.gender)}</span>` : ""}${isDead(p) ? '<span class="chip dead">متوفى</span>' : ""}${ageOf(p) !== "" ? `<span class="chip">${ageOf(p)} سنة</span>` : ""}${p.branch ? `<span class="chip">فرع ${esc(p.branch)}</span>` : ""}${p.affiliation === "منتسب بالزواج" ? '<span class="chip inlaw">منتسب بالزواج</span>' : ""}</div>
         ${R.editable ? "" : '<p class="muted" style="font-size:13px;margin:6px 0 0">للعرض فقط — ليست لديك صلاحية التعديل.</p>'}
       </div>
       ${R.editable && !R.isNew ? `<button class="btn small" type="button" id="rRmPhoto" ${p.photo_path ? "" : "hidden"}>حذف الصورة</button>` : ""}
@@ -272,6 +272,12 @@ async function saveRecord(){
   row.serial = parseInt(p.serial, 10);
   if(row.phone) row.phone = row.phone.replace(/[\s-]/g, ""); if(row.phone2) row.phone2 = row.phone2.replace(/[\s-]/g, "");
   if(row.status !== "متوفى"){ row.death_date = null; row.burial_place = null; }
+  // الانتساب تلقائياً إن تُرك فارغاً: ابن/بنت لأحد من العائلة، أو من عائلة النشابة = من العائلة
+  if(!row.affiliation){
+    const par = [S.byId.get(row.father_id), S.byId.get(row.mother_id)].filter(Boolean);
+    if(par.some(x => x.affiliation === "من العائلة") || /^النشاب[ةه]$/.test(row.family || "")) row.affiliation = "من العائلة";
+    else if(R.spouses.some(s => S.byId.get(s.spouse_id)?.affiliation === "من العائلة")) row.affiliation = "منتسب بالزواج";
+  }
   if(row.mother_id) row.mother_name = null;
   delete row.photo_path;
   const btn = $("#rSave"); btn.disabled = true; btn.textContent = "جاري الحفظ…";

@@ -161,6 +161,7 @@ function renderHome(){
       <div class="stat"><b>${m}</b><span>ذكور</span></div>
       <div class="stat"><b>${f}</b><span>إناث</span></div>
       <div class="stat"><b>${fams}</b><span>آباء لهم أبناء</span></div>
+      <a class="stat" href="#/report/inlaws" style="text-decoration:none"><b>${P.filter(p => p.affiliation === "منتسب بالزواج").length}</b><span>منتسبون بالزواج</span></a>
     </div>
     <div class="tiles">
       ${tile("#/add","add","إضافة سجل","ملف جديد برقم تسلسل", 'data-perm="add"')}
@@ -235,7 +236,7 @@ async function deletePerson(p, after){
 }
 
 /* ===== البحث والملفات ===== */
-const LIST = {q:"", gender:"", status:"", gov:"", area:"", branch:"", family:"", marital:"", page:0, sort:"serial"};
+const LIST = {q:"", gender:"", status:"", gov:"", area:"", branch:"", family:"", marital:"", aff:"", page:0, sort:"serial"};
 const PAGE = 50;
 function filterPeople(F = LIST){
   const words = norm(F.q).split(" ").filter(Boolean), t = norm(F.q);
@@ -243,7 +244,7 @@ function filterPeople(F = LIST){
     (!F.gender || p.gender === F.gender) && (!F.status || p.status === F.status) &&
     (!F.gov || p.governorate === F.gov) && (!F.area || p.area === F.area) &&
     (!F.branch || p.branch === F.branch) && (!F.family || p.family === F.family) &&
-    (!F.marital || p.marital === F.marital) &&
+    (!F.marital || p.marital === F.marital) && (!F.aff || (p.affiliation || "غير محدد") === F.aff) &&
     (!words.length || String(p.serial) === t || (p.cpr || "").includes(t) || (p.phone || "").includes(t) || (p.phone2 || "").includes(t) ||
       words.every(w => norm([longName(p), p.nickname, p.branch].join(" ")).split(" ").some(x => x.startsWith(w)))));
 }
@@ -263,6 +264,7 @@ function renderList(){
       <select class="inp" id="fBranch" aria-label="الفرع">${opt(lkUsed("branch"), LIST.branch, "كل الفروع")}</select>
       <select class="inp" id="fFamily" aria-label="العائلة">${opt(lkUsed("family"), LIST.family, "كل العائلات")}</select>
       <select class="inp" id="fMarital" aria-label="الحالة الاجتماعية">${opt(lk("marital"), LIST.marital, "كل الحالات الاجتماعية")}</select>
+      <select class="inp" id="fAff" aria-label="الانتساب للعائلة">${opt(["من العائلة","منتسب بالزواج","غير محدد"], LIST.aff, "كل أنواع الانتساب")}</select>
     </div>
     <div class="toolbar" style="align-items:center">
       <span class="muted" id="lCount"></span><span style="flex:1"></span>
@@ -277,7 +279,7 @@ function renderList(){
     <div class="pager" id="lPager"></div>`;
   applyPerms();
   const bind = (id, key, reset) => $(id).addEventListener(id === "#fQ" ? "input" : "change", e => { LIST[key] = e.target.value; LIST.page = 0; if(reset) reset(); drawList(); });
-  bind("#fQ","q"); bind("#fGender","gender"); bind("#fStatus","status"); bind("#fArea","area"); bind("#fBranch","branch"); bind("#fFamily","family"); bind("#fMarital","marital");
+  bind("#fQ","q"); bind("#fGender","gender"); bind("#fStatus","status"); bind("#fArea","area"); bind("#fBranch","branch"); bind("#fFamily","family"); bind("#fMarital","marital"); bind("#fAff","aff");
   bind("#fGov","gov", () => { LIST.area = ""; $("#fArea").innerHTML = opt(areasOf(LIST.gov), "", "كل المناطق"); });
   $("#lSelAll").onclick = () => { filterPeople().forEach(p => S.sel.add(p.id)); drawList(); };
   $("#lSelNone").onclick = () => { S.sel.clear(); drawList(); };
