@@ -506,3 +506,4 @@ dialog.lb::backdrop{background:rgba(0,0,0,.6)}
 .bk-card{border-inline-start:4px solid var(--gold)}
 .bk-last{margin:0 0 12px;font-size:14px;color:var(--ink-2)}
 .bk-warn{color:var(--danger);font-weight:700}
+.page-h .hello{display:flex;align-items:center;gap:12px;flex-wrap:wrap}

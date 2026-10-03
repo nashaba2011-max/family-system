@@ -169,7 +169,7 @@ function renderHome(){
   const bdays = P.filter(p => p.birth_date && !isDead(p) && +p.birth_date.slice(5, 7) === mon).length;
   const recent = P.slice().sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || "")).slice(0, 6);
   $("#view").innerHTML = `
-    <div class="page-h"><h2>أهلاً ${esc(S.me.display_name || "")}</h2><div class="acts"><a class="btn primary" href="#/add" data-perm="add">+ إضافة سجل</a><a class="btn" href="#/list">بحث</a><a class="btn" href="#/about">من نحن</a></div></div>
+    <div class="page-h"><div class="hello"><h2>أهلاً ${esc(S.me.display_name || "")}</h2><a class="btn" href="#/about">من نحن</a></div><div class="acts"><a class="btn primary" href="#/add" data-perm="add">+ إضافة سجل</a><a class="btn" href="#/list">بحث</a></div></div>
     <div class="stats">
       <div class="stat gold"><b>${P.length}</b><span>إجمالي الأفراد</span></div>
       <div class="stat"><b>${alive}</b><span>على قيد الحياة</span></div>
