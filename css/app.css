@@ -679,3 +679,7 @@ a.visits-pill:hover{border-color:var(--brand)}
 /* رقم المتوفين أسود في الوضعين، مع حد فاتح رفيع في الوضع الليلي ليبقى مقروءاً */
 :root[data-theme="dark"] .stat.st-dead b{-webkit-text-stroke:1px rgba(255,255,255,.75);text-shadow:0 0 10px rgba(255,255,255,.18)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .stat.st-dead b{-webkit-text-stroke:1px rgba(255,255,255,.75);text-shadow:0 0 10px rgba(255,255,255,.18)}}
+/* لون الأسماء حسب الجنس */
+.nm-m{color:var(--st-m)}
+.nm-f{color:var(--st-f)}
+#rTitle.nm-m{color:var(--st-m)}#rTitle.nm-f{color:var(--st-f)}

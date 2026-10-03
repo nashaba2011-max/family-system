@@ -35,7 +35,7 @@ function fieldHtml(k, v){
 function linkHtml(key, label, person, nameOnly){
   const has = person || nameOnly;
   return `<div class="field"><label>${label}</label><div class="linkf">
-    <button type="button" class="pv ${has ? "" : "empty"}" data-link="${key}" ${R.editable ? "" : "disabled"}>${person ? esc(fullName(person, 4)) + ` <small class="muted">#${person.serial}</small>` : nameOnly ? esc(nameOnly) + ' <small class="muted">(غير مسجل)</small>' : R.editable ? "اختر من السجلات…" : "—"}</button>
+    <button type="button" class="pv ${has ? "" : "empty"}" data-link="${key}" ${R.editable ? "" : "disabled"}>${person ? nm(person, fullName(person, 4)) + ` <small class="muted">#${person.serial}</small>` : nameOnly ? esc(nameOnly) + ' <small class="muted">(غير مسجل)</small>' : R.editable ? "اختر من السجلات…" : "—"}</button>
     ${person ? `<a class="btn small" href="#/rec/${person.id}" title="فتح السجل">فتح</a>` : ""}
     ${has && R.editable ? `<button type="button" class="btn small" data-unlink="${key}" aria-label="إزالة">✕</button>` : ""}</div></div>`;
 }
@@ -71,7 +71,7 @@ function drawRecord(activeTab){
     <div class="rec-top">
       <div class="photo" id="rPhoto" role="${R.editable ? "button" : "img"}" tabindex="${R.editable ? 0 : -1}" aria-label="الصورة الشخصية">${R.editable ? "إضافة صورة" : "لا توجد صورة"}</div>
       <input type="file" id="rFile" accept="image/*" hidden>
-      <div class="rec-name"><h2 id="rTitle">${esc(longName(p) || "اسم جديد")}</h2>
+      <div class="rec-name"><h2 id="rTitle" class="${gcls(p)}">${esc(longName(p) || "اسم جديد")}</h2>
         <div class="meta"><span class="chip gold">رقم ${esc(p.serial)}</span>${p.gender ? `<span class="chip ${isM(p) ? "" : "f"}">${esc(p.gender)}</span>` : ""}${isDead(p) ? '<span class="chip dead">متوفى</span>' : ""}${ageOf(p) !== "" ? `<span class="chip">${ageOf(p)} سنة</span>` : ""}${p.branch ? `<span class="chip">فرع ${esc(p.branch)}</span>` : ""}${p.affiliation === "منتسب بالزواج" ? '<span class="chip inlaw">منتسب بالزواج</span>' : ""}</div>
         ${R.editable ? "" : '<p class="muted" style="font-size:13px;margin:6px 0 0">للعرض فقط — ليست لديك صلاحية التعديل.</p>'}
       </div>
@@ -113,7 +113,7 @@ function spouseRows(){
     const s = R.spouses.find(x => x.ord === i) || {ord:i, spouse_id:null, spouse_name:""};
     const sp = S.byId.get(s.spouse_id);
     h += `<div class="spouse-row"><span class="n">${i}</span>
-      <div class="linkf"><button type="button" class="pv ${sp ? "" : "empty"}" data-sp="${i}" ${R.editable ? "" : "disabled"}>${sp ? esc(fullName(sp, 4)) + ` <small class="muted">#${sp.serial}</small>` : R.editable ? `اختر ${word} من السجلات…` : "—"}</button></div>
+      <div class="linkf"><button type="button" class="pv ${sp ? "" : "empty"}" data-sp="${i}" ${R.editable ? "" : "disabled"}>${sp ? nm(sp, fullName(sp, 4)) + ` <small class="muted">#${sp.serial}</small>` : R.editable ? `اختر ${word} من السجلات…` : "—"}</button></div>
       <input class="inp sp-name" data-spname="${i}" placeholder="أو اكتب الاسم إن لم يكن مسجلاً" value="${esc(sp ? "" : s.spouse_name)}" ${sp || !R.editable ? "disabled" : ""} aria-label="اسم ${word} ${i}">
       ${R.editable && (sp || s.spouse_name) ? `<button type="button" class="btn small" data-spclr="${i}" aria-label="إزالة">✕</button>` : "<span></span>"}</div>`;
   }
@@ -122,7 +122,7 @@ function spouseRows(){
 function derivedHtml(){
   const p = R.p; if(R.isNew && !p.father_id && !p.mother_id) return "";
   const f = S.byId.get(p.father_id), m = S.byId.get(p.mother_id);
-  const lnk = x => x ? `<a href="#/rec/${x.id}">${esc(fullName(x, 3))}</a>` : "—";
+  const lnk = x => x ? `<a href="#/rec/${x.id}">${nm(x, fullName(x, 3))}</a>` : "—";
   const others = p.id ? S.spouses.filter(s => s.spouse_id === p.id).map(s => S.byId.get(s.person_id)).filter(Boolean) : [];
   const kids = p.id ? childrenOf(p) : [];
   // الجد/الجدة يُقرآن من سجل الأب أو الأم؛ زر «ربط» يحدّث سجل الوالد مباشرة
@@ -164,7 +164,7 @@ function bindRecord(){
     $$(".tabpane").forEach(pn => pn.hidden = pn.dataset.pane !== t.dataset.tab);
   });
   form.addEventListener("input", e => { if(R.editable) setDirty(true);
-    if(["name1","name2","name3","name4","name5","name6","family"].includes(e.target.name)){ readForm(); $("#rTitle").textContent = longName(R.p) || "اسم جديد"; }
+    if(["name1","name2","name3","name4","name5","name6","family","gender"].includes(e.target.name)){ readForm(); $("#rTitle").textContent = longName(R.p) || "اسم جديد"; $("#rTitle").className = gcls(R.p); }
     if(e.target.name === "birth_date" || e.target.name === "death_date"){ readForm(); $("#f__age").value = ageOf(R.p); }
   });
   form.addEventListener("change", e => {

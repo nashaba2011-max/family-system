@@ -38,6 +38,9 @@ function fullName(p, parts = 4){
 }
 function longName(p){ return fullName(p, 6); }
 function shortName(p){ return p ? [p.name1, p.name2].filter(Boolean).join(" ") : ""; }
+/* لون الاسم حسب الجنس: ذكر أزرق، أنثى وردي */
+function gcls(p){ return !p ? "" : p.gender === "ذكر" ? "nm-m" : p.gender === "أنثى" ? "nm-f" : ""; }
+function nm(p, text){ const c = gcls(p); return c ? `<span class="${c}">${esc(text)}</span>` : esc(text); }
 function nameTag(p){ return p ? `${fullName(p, 3)} (${p.serial})` : ""; }
 
 /* العلاقات العائلية */
@@ -213,7 +216,7 @@ function avatar(p, cls = ""){
   return `<span class="av ${cls} ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""}" aria-hidden="true">${esc((p?.name1 || "؟").trim().charAt(0))}</span>`;
 }
 function personBtn(p, sub = ""){
-  return `<button type="button" class="pbtn" data-open="${p.id}">${avatar(p, "sm")}<span><b>${esc(fullName(p, 3))}</b><small>#${p.serial}${sub ? " · " + esc(sub) : ""}${isDead(p) ? " · متوفى" : ""}</small></span></button>`;
+  return `<button type="button" class="pbtn" data-open="${p.id}">${avatar(p, "sm")}<span><b>${nm(p, fullName(p, 3))}</b><small>#${p.serial}${sub ? " · " + esc(sub) : ""}${isDead(p) ? " · متوفى" : ""}</small></span></button>`;
 }
 
 /* اختيار شخص من السجلات */
@@ -228,7 +231,7 @@ function pickPerson(title, {filter = null, allowNone = false} = {}){
       if(words.length) list = list.filter(p => String(p.serial) === t || (p.cpr || "").includes(t) ||
         words.every(w => norm(longName(p)).split(" ").some(x => x.startsWith(w))));
       $("#pickList").innerHTML = (allowNone ? `<button type="button" class="pick-row none" data-pid="0">— بدون —</button>` : "") +
-        (list.slice(0, 60).map(p => `<button type="button" class="pick-row" data-pid="${p.id}">${avatar(p, "sm")}<span><b>${esc(fullName(p, 4))}</b><small>#${p.serial}${p.birth_date ? " · " + fmtDate(p.birth_date) : ""}</small></span></button>`).join("")
+        (list.slice(0, 60).map(p => `<button type="button" class="pick-row" data-pid="${p.id}">${avatar(p, "sm")}<span><b>${nm(p, fullName(p, 4))}</b><small>#${p.serial}${p.birth_date ? " · " + fmtDate(p.birth_date) : ""}</small></span></button>`).join("")
         || `<p class="empty">لا توجد نتائج</p>`);
     };
     q.oninput = render;

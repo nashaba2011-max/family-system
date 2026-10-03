@@ -14,7 +14,7 @@ const COLS = {
 };
 function peopleTable(list, cols){
   if(!list.length) return `<p class="muted">لا توجد سجلات</p>`;
-  return `<table><thead><tr>${cols.map(c => `<th>${COLS[c][0]}</th>`).join("")}</tr></thead><tbody>${list.map(p => `<tr>${cols.map(c => `<td>${esc(COLS[c][1](p) ?? "")}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  return `<table><thead><tr>${cols.map(c => `<th>${COLS[c][0]}</th>`).join("")}</tr></thead><tbody>${list.map(p => `<tr>${cols.map(c => `<td>${c === "name" || c === "longname" ? nm(p, COLS[c][1](p) ?? "") : esc(COLS[c][1](p) ?? "")}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
 }
 function peopleRows(list, cols, extra = {}){ return list.map(p => Object.assign({...extra}, Object.fromEntries(cols.map(c => [COLS[c][0], COLS[c][1](p) ?? ""])))); }
 function reportFrame(title, sub, body){
@@ -58,36 +58,36 @@ const REPORTS = [
   {key:"siblings", grp:"الأسرة والنسب", t:"الإخوة والأخوات", d:"إخوة شخص محدد، أو كل مجموعات الإخوة", params:["person?"],
     build(){
       const p = P();
-      if(p){ const l = siblingsOf(p); return {html:`<p>إخوة وأخوات <b>${esc(longName(p))}</b></p>` + `<table><thead><tr><th>#</th><th>الاسم</th><th>القرابة</th><th>العمر</th><th>الحالة</th></tr></thead><tbody>${l.map(x => `<tr><td>${x.serial}</td><td>${esc(fullName(x, 4))}</td><td>${isM(x) ? "أخ" : "أخت"} ${siblingKind(p, x)}</td><td>${ageOf(x)}</td><td>${esc(x.status)}</td></tr>`).join("")}</tbody></table>`, rows:peopleRows(l, ["serial","name","gender","age","status"])}; }
+      if(p){ const l = siblingsOf(p); return {html:`<p>إخوة وأخوات <b>${nm(p, longName(p))}</b></p>` + `<table><thead><tr><th>#</th><th>الاسم</th><th>القرابة</th><th>العمر</th><th>الحالة</th></tr></thead><tbody>${l.map(x => `<tr><td>${x.serial}</td><td>${nm(x, fullName(x, 4))}</td><td>${isM(x) ? "أخ" : "أخت"} ${siblingKind(p, x)}</td><td>${ageOf(x)}</td><td>${esc(x.status)}</td></tr>`).join("")}</tbody></table>`, rows:peopleRows(l, ["serial","name","gender","age","status"])}; }
       const fathers = S.people.filter(x => isM(x) && childrenOf(x).length > 1).sort(bySerial);
-      return {html:fathers.map(f => `<h2>أبناء ${esc(fullName(f, 3))} (${childrenOf(f).length})</h2>${peopleTable(childrenOf(f), ["serial","name","gender","birth","age","status"])}`).join("") || '<p class="muted">لا توجد مجموعات إخوة</p>',
+      return {html:fathers.map(f => `<h2>أبناء ${nm(f, fullName(f, 3))} (${childrenOf(f).length})</h2>${peopleTable(childrenOf(f), ["serial","name","gender","birth","age","status"])}`).join("") || '<p class="muted">لا توجد مجموعات إخوة</p>',
         rows:fathers.flatMap(f => peopleRows(childrenOf(f), ["serial","name","gender","birth","age","status"], {"الأب": fullName(f, 3)}))};
     }},
   {key:"children", grp:"الأسرة والنسب", t:"الأبناء", d:"أبناء شخص محدد، أو قائمة الآباء وعدد أبنائهم", params:["person?"],
     build(){
       const p = P();
-      if(p){ const l = childrenOf(p); return {html:`<p>أبناء <b>${esc(longName(p))}</b> (${l.length})</p>` + peopleTable(l, ["serial","name","mother","gender","birth","age","status","marital"]), rows:peopleRows(l, ["serial","name","mother","gender","birth","age","status"])}; }
+      if(p){ const l = childrenOf(p); return {html:`<p>أبناء <b>${nm(p, longName(p))}</b> (${l.length})</p>` + peopleTable(l, ["serial","name","mother","gender","birth","age","status","marital"]), rows:peopleRows(l, ["serial","name","mother","gender","birth","age","status"])}; }
       const l = S.people.filter(x => childrenOf(x).length).sort((a, b) => childrenOf(b).length - childrenOf(a).length);
-      return {html:`<table><thead><tr><th>#</th><th>الاسم</th><th>الأبناء</th><th>الذكور</th><th>الإناث</th><th>الأحفاد</th></tr></thead><tbody>${l.map(x => { const k = childrenOf(x); return `<tr><td>${x.serial}</td><td>${esc(fullName(x, 4))}</td><td>${k.length}</td><td>${k.filter(isM).length}</td><td>${k.filter(y => !isM(y)).length}</td><td>${k.reduce((n, y) => n + childrenOf(y).length, 0)}</td></tr>`; }).join("")}</tbody></table>`,
+      return {html:`<table><thead><tr><th>#</th><th>الاسم</th><th>الأبناء</th><th>الذكور</th><th>الإناث</th><th>الأحفاد</th></tr></thead><tbody>${l.map(x => { const k = childrenOf(x); return `<tr><td>${x.serial}</td><td>${nm(x, fullName(x, 4))}</td><td>${k.length}</td><td>${k.filter(isM).length}</td><td>${k.filter(y => !isM(y)).length}</td><td>${k.reduce((n, y) => n + childrenOf(y).length, 0)}</td></tr>`; }).join("")}</tbody></table>`,
         rows:l.map(x => ({"#":x.serial, "الاسم":fullName(x, 4), "الأبناء":childrenOf(x).length}))};
     }},
   {key:"grandchildren", grp:"الأسرة والنسب", t:"الأحفاد والذرية", d:"ذرية شخص مقسمة حسب الأجيال", params:["person"],
     build(){ const p = P(); if(!p) return needPerson(); const g = descendantsByGen(p);
       const names = ["الأبناء","الأحفاد","أبناء الأحفاد"];
-      return {html:`<p>ذرية <b>${esc(longName(p))}</b>: ${g.reduce((n, x) => n + x.length, 0)} فرداً في ${g.length} أجيال</p>` + g.map((x, i) => `<h2>${names[i] || "الجيل " + (i + 1)} (${x.length})</h2>${peopleTable(x, ["serial","name","parents","age","status"])}`).join(""),
+      return {html:`<p>ذرية <b>${nm(p, longName(p))}</b>: ${g.reduce((n, x) => n + x.length, 0)} فرداً في ${g.length} أجيال</p>` + g.map((x, i) => `<h2>${names[i] || "الجيل " + (i + 1)} (${x.length})</h2>${peopleTable(x, ["serial","name","parents","age","status"])}`).join(""),
         rows:g.flatMap((x, i) => peopleRows(x, ["serial","name","parents","age","status"], {"الجيل": names[i] || i + 1}))}; }},
   {key:"father_line", grp:"الأسرة والنسب", t:"شجرة النسب من جهة الأب", d:"سلسلة الآباء والأجداد صعوداً", params:["person"],
     build(){ const p = P(); if(!p) return needPerson(); return lineReport(p, "father_id", "الأب"); }},
   {key:"mother_line", grp:"الأسرة والنسب", t:"شجرة النسب من جهة الأم", d:"الأم وأبوها وأجدادها", params:["person"],
     build(){ const p = P(); if(!p) return needPerson(); const m = S.byId.get(p.mother_id);
       if(!m) return {html:`<p>الأم ${p.mother_name ? "«" + esc(p.mother_name) + "» غير مسجلة" : "غير محددة"} في البرنامج.</p>`, rows:[]};
-      const r = lineReport(m, "father_id", "أب الأم"); r.html = `<p>الأم: <b>${esc(longName(m))}</b> (#${m.serial})</p>` + r.html; return r; }},
+      const r = lineReport(m, "father_id", "أب الأم"); r.html = `<p>الأم: <b>${nm(m, longName(m))}</b> (#${m.serial})</p>` + r.html; return r; }},
   {key:"tree", grp:"الأسرة والنسب", t:"شجرة العائلة للطباعة", d:"الشجرة الكاملة لذرية شخص", params:["person?"],
     build(){ const roots = treeRoots().sort((a, b) => descCount(b) - descCount(a)); const p = P() || roots[0]; if(!p) return {html:'<p class="muted">لا توجد شجرة</p>', rows:[]};
       const seen = new Set(), F = treeSet(p);
       const node = (x, viaM) => { if(seen.has(x.id)) return ""; seen.add(x.id); const k = nodeKids(x, F); const fa = viaM && S.byId.get(x.father_id);
         return `<li><b>${esc(x.name1)}</b> <small>(#${x.serial}${fa ? "، ابن" + (isM(x) ? " " : "ة ") + esc(fa.name1) : ""}${isDead(x) ? "، متوفى" : ""})</small>${k.length ? `<ul>${k.map(c => c.ref ? `<li style="color:#7f8b8d">${esc(c.p.name1)} <small>(#${c.p.serial}، تحت أبيه)</small></li>` : node(c.p, !isM(x))).join("")}</ul>` : ""}</li>`; };
-      return {html:`<p>ذرية <b>${esc(longName(p))}</b> — ${descCount(p)} فرداً</p><div class="tree-p"><ul>${node(p, false)}</ul></div>`, rows:[]}; }},
+      return {html:`<p>ذرية <b>${nm(p, longName(p))}</b> — ${descCount(p)} فرداً</p><div class="tree-p"><ul>${node(p, false)}</ul></div>`, rows:[]}; }},
   {key:"book", grp:"الأسرة والنسب", t:"كتاب العائلة", d:"كل رب أسرة مع زوجاته وأبنائه، جيلاً بعد جيل", params:["filters"],
     build(){
       const heads = F().filter(x => isM(x) && (childrenOf(x).length || spousesOf(x).length));
@@ -96,7 +96,7 @@ const REPORTS = [
       let lastD = -1, html = "";
       heads.forEach(h => { const d = depth(h); if(d !== lastD){ html += `<h2>الجيل ${d + 1}</h2>`; lastD = d; }
         const sp = spousesOf(h).map(spouseLabel).filter(Boolean), kids = childrenOf(h);
-        html += `<div style="margin:0 0 10px;padding:8px 10px;border:1px solid #dfe6e8;border-radius:6px;break-inside:avoid"><b>${esc(longName(h))}</b> <small>#${h.serial}${h.birth_date ? " · مواليد " + h.birth_date.slice(0, 4) : ""}${isDead(h) ? " · متوفى" : ""}</small>
+        html += `<div style="margin:0 0 10px;padding:8px 10px;border:1px solid #dfe6e8;border-radius:6px;break-inside:avoid"><b>${nm(h, longName(h))}</b> <small>#${h.serial}${h.birth_date ? " · مواليد " + h.birth_date.slice(0, 4) : ""}${isDead(h) ? " · متوفى" : ""}</small>
           ${sp.length ? `<div><span style="color:#5d6b6e">الزوجات: </span>${esc(sp.join("، "))}</div>` : ""}
           ${kids.length ? `<div><span style="color:#5d6b6e">الأبناء (${kids.length}): </span>${esc(kids.map(k => k.name1 + (isDead(k) ? " (متوفى)" : "")).join("، "))}</div>` : ""}</div>`; });
       return {html:html || '<p class="muted">لا توجد أسر</p>', sub:filterNote(REP_ARGS),
@@ -148,7 +148,7 @@ const REPORTS = [
     build(){ const l = F().filter(isDead).sort((a, b) => (b.death_date || "").localeCompare(a.death_date || "") || bySerial(a, b)); const c = ["serial","longname","death","age","burial"];
       return {html:`<p>${l.length} متوفى (العمر = العمر عند الوفاة)</p>` + peopleTable(l, c), rows:peopleRows(l, c)}; }},
   {key:"notes", grp:"حسب البيانات", t:"الملاحظات", d:"كل السجلات التي فيها ملاحظات", params:["filters"],
-    build(){ const l = F().filter(p => p.notes); return {html:l.map(p => `<h2>${esc(fullName(p, 4))} #${p.serial}</h2><p style="white-space:pre-wrap;margin:0">${esc(p.notes)}</p>`).join("") || '<p class="muted">لا توجد ملاحظات</p>', rows:l.map(p => ({"#":p.serial, "الاسم":fullName(p, 4), "الملاحظات":p.notes}))}; }},
+    build(){ const l = F().filter(p => p.notes); return {html:l.map(p => `<h2>${nm(p, fullName(p, 4))} #${p.serial}</h2><p style="white-space:pre-wrap;margin:0">${esc(p.notes)}</p>`).join("") || '<p class="muted">لا توجد ملاحظات</p>', rows:l.map(p => ({"#":p.serial, "الاسم":fullName(p, 4), "الملاحظات":p.notes}))}; }},
   {key:"phones", grp:"حسب البيانات", t:"دليل الهواتف", d:"أرقام التواصل للأحياء", params:["filters"],
     build(){ const l = F().filter(p => !isDead(p) && (p.phone || p.phone2 || p.email)).sort((a, b) => a.name1.localeCompare(b.name1, "ar")); const c = ["name","phone","email","area"];
       return {html:peopleTable(l, c), rows:peopleRows(l, c), sub:filterNote(REP_ARGS)}; }},
@@ -179,7 +179,7 @@ const REPORTS = [
       let html = "", rows = [];
       sel.forEach(m => { const x = l.filter(p => +p.birth_date.slice(5, 7) === m).sort((a, b) => a.birth_date.slice(8) - b.birth_date.slice(8));
         if(!x.length && !REP_ARGS.month) return;
-        html += `<h2>${months[m - 1]} (${x.length})</h2>` + `<table><thead><tr><th>اليوم</th><th>الاسم</th><th>العمر هذا العام</th><th>الهاتف</th></tr></thead><tbody>${x.map(p => `<tr><td>${+p.birth_date.slice(8)}</td><td>${esc(fullName(p, 4))}</td><td>${+todayISO().slice(0, 4) - +p.birth_date.slice(0, 4)}</td><td>${esc(p.phone || "")}</td></tr>`).join("")}</tbody></table>`;
+        html += `<h2>${months[m - 1]} (${x.length})</h2>` + `<table><thead><tr><th>اليوم</th><th>الاسم</th><th>العمر هذا العام</th><th>الهاتف</th></tr></thead><tbody>${x.map(p => `<tr><td>${+p.birth_date.slice(8)}</td><td>${nm(p, fullName(p, 4))}</td><td>${+todayISO().slice(0, 4) - +p.birth_date.slice(0, 4)}</td><td>${esc(p.phone || "")}</td></tr>`).join("")}</tbody></table>`;
         rows = rows.concat(x.map(p => ({"الشهر":months[m - 1], "اليوم":+p.birth_date.slice(8), "الاسم":fullName(p, 4), "الهاتف":p.phone || ""}))); });
       return {html:html || '<p class="muted">لا توجد تواريخ ميلاد مسجلة لهذه الفترة</p>', rows};
     }},
@@ -191,7 +191,7 @@ const REPORTS = [
       const checks = [["الجنس", p => !p.gender], ["تاريخ الميلاد", p => !p.birth_date], ["الأب", p => !p.father_id], ["الأم", p => !p.mother_id && !p.mother_name], ["الرقم الشخصي", p => !p.cpr && !isDead(p)], ["الهاتف", p => !p.phone && !isDead(p)], ["المنطقة", p => !p.area && !isDead(p)]];
       const l = F().map(p => ({p, miss:checks.filter(c => c[1](p)).map(c => c[0])})).filter(x => x.miss.length).sort((a, b) => b.miss.length - a.miss.length || a.p.serial - b.p.serial);
       const summary = `<table style="max-width:420px"><tbody>${checks.map(([t, f]) => `<tr><td>بدون ${t}</td><td>${F().filter(f).length}</td></tr>`).join("")}</tbody></table>`;
-      return {html:summary + `<h2>السجلات (${l.length})</h2><table><thead><tr><th>#</th><th>الاسم</th><th>الناقص</th></tr></thead><tbody>${l.map(x => `<tr><td>${x.p.serial}</td><td>${esc(fullName(x.p, 4))}</td><td>${esc(x.miss.join("، "))}</td></tr>`).join("")}</tbody></table>`,
+      return {html:summary + `<h2>السجلات (${l.length})</h2><table><thead><tr><th>#</th><th>الاسم</th><th>الناقص</th></tr></thead><tbody>${l.map(x => `<tr><td>${x.p.serial}</td><td>${nm(x.p, fullName(x.p, 4))}</td><td>${esc(x.miss.join("، "))}</td></tr>`).join("")}</tbody></table>`,
         rows:l.map(x => ({"#":x.p.serial, "الاسم":fullName(x.p, 4), "الناقص":x.miss.join("، ")}))};
     }},
 ];
@@ -200,7 +200,7 @@ REPORTS.forEach((r, i) => r.no = i + 1);
 function lineReport(p, key, word){
   const chain = [p, ...lineChain(p, key)];
   return {html:`<p>سلسلة النسب: <b>${esc(chain.map(x => x.name1).join(" بن "))}${chain.at(-1).family ? " " + esc(chain.at(-1).family) : ""}</b></p>` +
-    `<table><thead><tr><th>الدرجة</th><th>#</th><th>الاسم</th><th>الميلاد</th><th>الوفاة</th><th>الأم</th></tr></thead><tbody>${chain.map((x, i) => `<tr><td>${i === 0 ? "الشخص" : i === 1 ? word : "الجد " + (i - 1)}</td><td>${x.serial}</td><td>${esc(fullName(x, 3))}</td><td>${fmtDate(x.birth_date)}</td><td>${fmtDate(x.death_date)}</td><td>${esc(nameTag(S.byId.get(x.mother_id)) || x.mother_name || "")}</td></tr>`).join("")}</tbody></table>`,
+    `<table><thead><tr><th>الدرجة</th><th>#</th><th>الاسم</th><th>الميلاد</th><th>الوفاة</th><th>الأم</th></tr></thead><tbody>${chain.map((x, i) => `<tr><td>${i === 0 ? "الشخص" : i === 1 ? word : "الجد " + (i - 1)}</td><td>${x.serial}</td><td>${nm(x, fullName(x, 3))}</td><td>${fmtDate(x.birth_date)}</td><td>${fmtDate(x.death_date)}</td><td>${esc(nameTag(S.byId.get(x.mother_id)) || x.mother_name || "")}</td></tr>`).join("")}</tbody></table>`,
     rows:chain.map((x, i) => ({"الدرجة":i, "#":x.serial, "الاسم":fullName(x, 3)}))};
 }
 
@@ -210,7 +210,7 @@ async function personReport(p, long){
   const url = await photoUrl(p.photo_path);
   const f = S.byId.get(p.father_id), m = S.byId.get(p.mother_id);
   let h = `<div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:6px">${url ? `<img class="ph" src="${esc(url)}" alt="">` : ""}<div style="flex:1">
-    <div style="font-size:20px;font-weight:700;color:#1c2c47">${esc(longName(p))}</div>
+    <div style="font-size:20px;font-weight:700;color:#1c2c47">${nm(p, longName(p))}</div>
     ${kv([["رقم التسلسل", p.serial], ["الرقم الشخصي", p.cpr], ["الفرع", p.branch], ["الكنية", p.nickname]])}</div></div>`;
   h += `<h2>البيانات الأساسية</h2>` + kv([["الجنس", p.gender], ["تاريخ الميلاد", fmtDate(p.birth_date)], ["العمر", ageOf(p) !== "" ? ageOf(p) + " سنة" : ""], ["مكان الميلاد", p.birth_place], ["الحالة", p.status], ...(isDead(p) ? [["تاريخ الوفاة", fmtDate(p.death_date)], ["مكان الدفن", p.burial_place]] : []), ["الحالة الاجتماعية", p.marital], ["فصيلة الدم", p.blood]]);
   h += `<h2>السكن والاتصال</h2>` + kv([["المحافظة", p.governorate], ["المنطقة", p.area], ["العنوان", COLS.address[1](p)], ["الهاتف", p.phone], ["هاتف آخر", p.phone2], ["البريد", p.email]]);
@@ -243,7 +243,7 @@ async function renderReport(key){
       <button class="btn" type="button" id="rpXls">تصدير Excel</button>
       <a class="btn" href="#/reports">كل التقارير</a></div></div>
     ${hasP || hasF || hasM ? `<div class="card rep-params">
-      ${hasP ? `<div class="field"><label>الشخص${r.params.includes("person?") ? " (اختياري)" : ""}</label><div class="linkf"><button type="button" class="pv ${p ? "" : "empty"}" id="rpPerson">${p ? esc(fullName(p, 4)) + ` <small class="muted">#${p.serial}</small>` : "اختر…"}</button>${p ? `<button class="btn small" type="button" id="rpClr" aria-label="إزالة">✕</button>` : ""}</div></div>` : ""}
+      ${hasP ? `<div class="field"><label>الشخص${r.params.includes("person?") ? " (اختياري)" : ""}</label><div class="linkf"><button type="button" class="pv ${p ? "" : "empty"}" id="rpPerson">${p ? nm(p, fullName(p, 4)) + ` <small class="muted">#${p.serial}</small>` : "اختر…"}</button>${p ? `<button class="btn small" type="button" id="rpClr" aria-label="إزالة">✕</button>` : ""}</div></div>` : ""}
       ${hasM ? `<div class="field"><label for="rpMonth">الشهر</label><select class="inp" id="rpMonth"><option value="">كل الشهور</option>${months.map((m, i) => `<option value="${i + 1}" ${String(i + 1) === REP_ARGS.month ? "selected" : ""}>${m}</option>`).join("")}</select></div>` : ""}
       ${hasF ? `
         <div class="field"><label for="rpG">الجنس</label><select class="inp" id="rpG" data-a="gender">${opt(["ذكر","أنثى"], REP_ARGS.gender, "الكل")}</select></div>

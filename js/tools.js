@@ -343,7 +343,7 @@ function renderWhatsapp(){
 function drawWa(){
   let list = WA.src === "sel" ? S.people.filter(p => S.sel.has(p.id)) : S.people.filter(p => !isDead(p) && (!WA.branch || p.branch === WA.branch) && (!WA.gov || p.governorate === WA.gov));
   const ok = list.filter(p => waNumber(p.phone)), bad = list.length - ok.length;
-  $("#waBody").innerHTML = (ok.length ? ok.map(p => `<tr><td class="num">${p.serial}</td><td>${esc(fullName(p, 3))}</td><td class="ltr" style="text-align:start">${esc(p.phone)}</td>
+  $("#waBody").innerHTML = (ok.length ? ok.map(p => `<tr><td class="num">${p.serial}</td><td>${nm(p, fullName(p, 3))}</td><td class="ltr" style="text-align:start">${esc(p.phone)}</td>
       <td style="text-align:end">${WA.sent.has(p.id) ? '<span class="chip">✓ فُتحت</span> ' : ""}<a class="btn small wa" data-wa="${p.id}" href="#" target="_blank" rel="noopener">إرسال</a></td></tr>`).join("")
     : `<tr><td colspan="4" class="empty">${WA.src === "sel" ? "لم تحدد أحداً بعد — حدّد الأشخاص من شاشة «البحث والملفات»" : "لا يوجد أحد لديه رقم هاتف صحيح"}</td></tr>`)
     + (bad ? `<tr><td colspan="4" class="muted" style="font-size:13px">${bad} شخص بدون رقم هاتف صالح لم يظهروا في القائمة</td></tr>` : "");

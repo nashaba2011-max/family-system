@@ -381,7 +381,7 @@ function renderSerialGate(mode){
     if(!(n > 0)){ $("#gErr").textContent = "أدخل رقم تسلسل صحيح"; return; }
     const ex = S.bySerial.get(n);
     if(mode === "add"){
-      if(ex){ $("#gErr").innerHTML = `هذا الرقم مسجل مسبقاً لـ «${esc(fullName(ex))}». <a href="#/rec/${ex.id}">فتح السجل</a>`; return; }
+      if(ex){ $("#gErr").innerHTML = `هذا الرقم مسجل مسبقاً لـ «${nm(ex, fullName(ex))}». <a href="#/rec/${ex.id}">فتح السجل</a>`; return; }
       location.hash = "#/new/" + n; return;
     }
     if(!ex){ $("#gErr").textContent = `لا يوجد سجل برقم ${n}`; return; }
@@ -392,7 +392,7 @@ function renderSerialGate(mode){
 function showDeleteCard(p){
   const kids = childrenOf(p), sp = spousesOf(p);
   $("#gOut").innerHTML = `<div class="notice" style="margin-top:14px">
-    <div style="display:flex;gap:10px;align-items:center">${avatar(p)}<div><b>${esc(longName(p))}</b><br><small>#${p.serial}${p.cpr ? " · " + esc(p.cpr) : ""}</small></div></div>
+    <div style="display:flex;gap:10px;align-items:center">${avatar(p)}<div><b>${nm(p, longName(p))}</b><br><small>#${p.serial}${p.cpr ? " · " + esc(p.cpr) : ""}</small></div></div>
     <p style="margin:10px 0 4px">سيُحذف هذا السجل نهائياً. ${kids.length ? `<b>${kids.length}</b> من الأبناء سيبقون في البرنامج لكن بدون ربط بهذا الوالد.` : ""} ${sp.length ? `وسيُلغى ربط ${sp.length} زواج.` : ""}</p>
     <button class="btn danger-fill" type="button" id="gDel">حذف السجل</button></div>`;
   $("#gDel").onclick = () => deletePerson(p, () => { $("#gOut").innerHTML = ""; $("#gSerial").value = ""; });
@@ -480,7 +480,7 @@ function drawList(){
   $("#lBody").innerHTML = slice.length ? slice.map(p => `<tr class="click" data-id="${p.id}">
       <td><input type="checkbox" data-id="${p.id}" ${S.sel.has(p.id) ? "checked" : ""} aria-label="تحديد ${esc(p.name1)}"></td>
       <td class="num">${p.serial}</td>
-      <td><div style="display:flex;gap:8px;align-items:center">${avatar(p, "sm")}<b>${esc(fullName(p, 4))}</b></div></td>
+      <td><div style="display:flex;gap:8px;align-items:center">${avatar(p, "sm")}<b>${nm(p, fullName(p, 4))}</b></div></td>
       <td class="hm">${esc(parentsText(p))}</td>
       <td>${isDead(p) ? '<span class="chip dead">متوفى</span>' : '<span class="chip">حي</span>'}</td>
       <td class="num hm">${ageOf(p)}</td><td class="hm">${esc(p.area || "")}</td><td class="ltr hm" style="text-align:start">${esc(p.phone || "")}</td></tr>`).join("")
@@ -497,7 +497,7 @@ function renderFamily(id){
   const sib = siblingsOf(p), kids = childrenOf(p), gens = descendantsByGen(p), sp = spousesOf(p), anc = lineChain(p);
   const grp = (t, items) => `<div class="fam-grp"><h4>${t} (${items.length})</h4>${items.length ? `<div class="plist">${items.join("")}</div>` : '<p class="muted" style="margin:0">لا يوجد</p>'}</div>`;
   $("#view").innerHTML = `
-    <div class="page-h"><h2>أسرة ${esc(fullName(p, 3))}</h2><div class="acts">
+    <div class="page-h"><h2>أسرة ${nm(p, fullName(p, 3))}</h2><div class="acts">
       <a class="btn" href="#/rec/${p.id}">الملف الكامل</a><a class="btn" href="#/tree/${p.id}">الشجرة من هنا</a></div></div>
     <div class="card">
       ${grp("الوالدان", [f && personBtn(f, "الأب"), m && personBtn(m, "الأم")].filter(Boolean).concat(!m && p.mother_name ? [`<div class="pbtn" style="cursor:default"><span class="av sm f">${esc(p.mother_name.charAt(0))}</span><span><b>${esc(p.mother_name)}</b><small>الأم · غير مسجلة</small></span></div>`] : []))}
