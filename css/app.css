@@ -613,3 +613,30 @@ a.visits-pill:hover{border-color:var(--brand)}
 .logo-anim:hover .la-beam{animation-duration:3s}
 @media (prefers-reduced-motion:reduce){.la-beam,.la-glow,.la-shine,.la-in{animation:none}.la-beam,.la-shine{display:none}}
 .logo-anim.la-full .la-glow{mix-blend-mode:normal;background:radial-gradient(circle,rgba(255,236,170,.95) 0,rgba(217,184,116,.55) 35%,transparent 70%)}
+
+/* ===== عناصر الشريط العلوي: الترحيب و«من نحن» والزيارات ===== */
+.top-extra{display:flex;align-items:center;gap:8px;flex:none}
+.top-extra:empty{display:none}
+.topbar .greet-h{font-size:17px;font-weight:800;color:#fff;margin-inline-end:4px;display:flex;align-items:center;gap:8px}
+.topbar .greet{color:#fff}
+.topbar .greet:hover{color:#e3c27a}
+.topbar .greet-fly svg{stroke:#e3c27a}
+.topbar .greet-spark{background:#e3c27a}
+.topbar .greet-score{background:rgba(255,255,255,.14);color:#f3e3bd}
+.topbar .dd-btn{min-height:38px;padding:4px 12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:15px}
+.topbar .dd-btn:hover{background:rgba(255,255,255,.18);border-color:rgba(227,194,122,.6)}
+.topbar .dd-menu{inset-inline-start:auto;inset-inline-end:0;color:var(--ink)}
+.topbar .visits-pill{min-height:38px;padding:0 12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#dfe5f0}
+.topbar a.visits-pill:hover{border-color:rgba(227,194,122,.6)}
+.topbar .visits-pill svg{stroke:#e3c27a}
+.topbar .visits-pill b{color:#fff}
+.topbar .visits-pill small{color:#b9c3d6;border-inline-start-color:rgba(255,255,255,.22)}
+.home-acts{justify-content:flex-end}
+@media (max-width:900px){.topbar .greet-h{display:none}}
+@media (max-width:640px){
+  .brand>span{display:none}
+  .topbar .visits-pill span,.topbar .visits-pill small{display:none}
+  .topbar .visits-pill{padding:0 9px}
+  .topbar .dd-btn{padding:4px 9px;font-size:14px}
+  .top-extra{gap:6px}
+}
