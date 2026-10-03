@@ -649,3 +649,7 @@ a.visits-pill:hover{border-color:var(--brand)}
 .topbar .greet-h{font-size:19px}
 .topbar .dd-btn,.topbar .visits-pill{min-height:42px}
 @media (max-width:640px){:root{--top-h:64px}.topbar{padding-inline:12px;gap:8px}.brand-mark{height:44px}}
+/* نفس نقش البنر في الشريط العلوي */
+.topbar{isolation:isolate}
+.topbar::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.12;
+  background-image:repeating-linear-gradient(135deg,#d9b874 0 1px,transparent 1px 22px),repeating-linear-gradient(45deg,#d9b874 0 1px,transparent 1px 22px)}
