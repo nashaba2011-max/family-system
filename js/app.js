@@ -235,7 +235,6 @@ function renderHome(){
       <a class="stat" href="#/report/inlaws" style="text-decoration:none"><b>${P.filter(p => p.affiliation === "منتسب بالزواج").length}</b><span>منتسبون بالزواج</span></a>
     </div>
     <div class="tiles">
-      ${tile("#/about","about","من نحن","تعريف بالعائلة والبرنامج")}
       ${tile("#/add","add","إضافة سجل","ملف جديد برقم تسلسل", 'data-perm="add"')}
       ${tile("#/edit","edit","تعديل سجل","بالرقم أو بالاسم", 'data-perm="edit"')}
       ${tile("#/delete","del","حذف سجل","مع تأكيد قبل الحذف", 'data-perm="delete"')}
