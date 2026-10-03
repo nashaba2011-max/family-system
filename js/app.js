@@ -15,7 +15,7 @@ const ROUTES = {
   settings: {title:"الإعدادات والقوائم", render:renderSettings, admin:true},
   users:    {title:"المستخدمون", render:renderUsers, admin:true},
   data:     {title:"استيراد وتصدير", render:renderData},
-  about:    {title:"من نحن", render:renderAbout},
+  about:    {title:"من نحن", render:n => renderAbout(n)},
   events:   {title:"مناسبات العائلة", render:renderEvents},
   event:    {title:"مناسبة", render:id => renderEvent(+id)},
 };
@@ -169,7 +169,7 @@ function renderHome(){
   const bdays = P.filter(p => p.birth_date && !isDead(p) && +p.birth_date.slice(5, 7) === mon).length;
   const recent = P.slice().sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || "")).slice(0, 6);
   $("#view").innerHTML = `
-    <div class="page-h"><div class="hello"><h2>أهلاً ${esc(S.me.display_name || "")}</h2><a class="btn" href="#/about">من نحن</a></div><div class="acts"><a class="btn primary" href="#/add" data-perm="add">+ إضافة سجل</a><a class="btn" href="#/list">بحث</a></div></div>
+    <div class="page-h"><div class="hello"><h2>أهلاً ${esc(S.me.display_name || "")}</h2>${aboutMenuHtml()}</div><div class="acts"><a class="btn primary" href="#/add" data-perm="add">+ إضافة سجل</a><a class="btn" href="#/list">بحث</a></div></div>
     <div class="stats">
       <div class="stat gold"><b>${P.length}</b><span>إجمالي الأفراد</span></div>
       <div class="stat"><b>${alive}</b><span>على قيد الحياة</span></div>
@@ -195,45 +195,92 @@ function renderHome(){
       ${tile("#/data","data","استيراد وتصدير","Excel")}
     </div>
     ${recent.length ? `<div class="sec-h">آخر السجلات المحدّثة</div><div class="plist">${recent.map(p => personBtn(p, p.updated_at ? "حُدّث " + fmtDate(p.updated_at.slice(0, 10)) : "")).join("")}</div>` : ""}`;
-  applyPerms();
+  applyPerms(); bindAboutMenu();
 }
 
 /* ===== من نحن ===== */
 let ABOUT = null;
-function aboutHtml(txt){
-  return txt.trim().split(/\n\s*\n/).map((blk, i) => {
-    const L = blk.split("\n").map(x => x.trim()).filter(Boolean);
-    const head = L.length > 1 && L[0].length <= 40 && !/[.،؟!:]$/.test(L[0]) ? L.shift() : "";
-    const body = L.map(x => `<p>${esc(x)}</p>`).join("");
-    return i === 0 && head ? `<header class="ab-hero"><h3>${esc(head)}</h3>${body}</header>`
-      : `<section class="ab-sec">${head ? `<h4>${esc(head)}</h4>` : ""}${body}</section>`;
-  }).join("");
+const ABOUT_DEFAULT = ["عائلة النشابة", "رؤيتنا", "أهدافنا", "كلمة أخيرة"];
+/* يقسم النص إلى أقسام: السطر القصير في أول الفقرة (مع : أو بدونها) عنوان القسم */
+function aboutSections(txt){
+  const out = [];
+  String(txt || "").replace(/\r/g, "").split(/\n\s*\n/).forEach(blk => {
+    const raw = blk.split("\n").filter(x => x.trim());
+    if(!raw.length) return;
+    const first = raw[0].trim().replace(/[:：]\s*$/, "").trim();
+    const isHead = first.length <= 40 && !/[.،؟!]$/.test(first) && (raw.length > 1 || /[:：]\s*$/.test(raw[0]));
+    const lines = (isHead ? raw.slice(1) : raw).map(x => ({t:x.trim(), sign:/^\s{8,}/.test(x)}));
+    if(isHead || !out.length) out.push({title:isHead ? first : "", lines});
+    else out[out.length - 1].lines.push(...lines);
+  });
+  return out;
 }
-async function renderAbout(){
+async function loadAbout(){
+  if(ABOUT !== null) return ABOUT;
+  const {data, error} = await db.from("fa_settings").select("value").eq("key", "about").maybeSingle();
+  if(error) throw error;
+  return (ABOUT = data ? data.value : "");
+}
+const aboutTitles = () => { const t = aboutSections(ABOUT || "").map(x => x.title).filter(Boolean); return t.length ? t : ABOUT_DEFAULT; };
+
+/* القائمة المنسدلة لزر «من نحن» */
+function aboutMenuHtml(){
+  return `<div class="dd" id="abDD"><button type="button" class="btn dd-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="abMenu">من نحن<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="dd-menu" id="abMenu" role="menu" hidden></div></div>`;
+}
+function bindAboutMenu(){
+  const dd = $("#abDD"); if(!dd) return;
+  const btn = dd.querySelector(".dd-btn"), menu = $("#abMenu");
+  const fill = () => { menu.innerHTML = aboutTitles().map((t, i) => `<a role="menuitem" href="#/about/${i}"><span class="dd-n">${i + 1}</span>${esc(t)}</a>`).join(""); };
+  const close = () => { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); document.removeEventListener("click", outside, true); document.removeEventListener("keydown", onKey); };
+  const outside = e => { if(!dd.contains(e.target)) close(); };
+  const onKey = e => {
+    const items = [...menu.querySelectorAll("a")], k = items.indexOf(document.activeElement);
+    if(e.key === "Escape"){ close(); btn.focus(); }
+    else if(e.key === "ArrowDown"){ e.preventDefault(); items[(k + 1) % items.length]?.focus(); }
+    else if(e.key === "ArrowUp"){ e.preventDefault(); items[(k - 1 + items.length) % items.length]?.focus(); }
+  };
+  btn.onclick = async () => {
+    if(!menu.hidden) return close();
+    fill(); menu.hidden = false; btn.setAttribute("aria-expanded", "true");
+    document.addEventListener("click", outside, true); document.addEventListener("keydown", onKey);
+    if(ABOUT === null){ try{ await loadAbout(); fill(); }catch(e){} }
+  };
+  menu.onclick = e => { if(e.target.closest("a")) close(); };
+  if(ABOUT === null) loadAbout().catch(() => {});
+}
+
+async function renderAbout(n){
   const v = $("#view");
-  v.innerHTML = `<div class="page-h"><h2>من نحن</h2><div class="acts"><button class="btn" id="abEdit" data-admin hidden>تعديل النص</button></div></div><div class="card about" id="abBody"><p class="muted">جارٍ التحميل…</p></div>`;
+  v.innerHTML = `<div class="page-h"><h2>من نحن</h2><div class="acts"><button class="btn" id="abEdit" data-admin hidden>تعديل النص</button></div></div><div id="abBody"><p class="muted">جارٍ التحميل…</p></div>`;
   applyPerms();
-  if(ABOUT === null){
-    const {data, error} = await db.from("fa_settings").select("value").eq("key", "about").maybeSingle();
-    if(error){ $("#abBody").innerHTML = `<p class="muted">${esc(errMsg(error))}</p>`; return; }
-    ABOUT = data ? data.value : "";
-  }
+  try{ await loadAbout(); }catch(e){ $("#abBody").innerHTML = `<p class="muted">${esc(errMsg(e))}</p>`; return; }
   if(!$("#abBody")) return;
   const P = S.people, alive = P.filter(p => !isDead(p)).length;
   const show = () => {
-    $("#abBody").innerHTML = (ABOUT.trim() ? aboutHtml(ABOUT) : '<p class="muted">لم يُكتب نص بعد.</p>') + `
-      <div class="ab-nums"><div><b>${P.length}</b><span>فرداً مسجلاً</span></div><div><b>${alive}</b><span>على قيد الحياة</span></div><div><b>${P.length ? Math.max(...P.map(p => lineChain(p).length)) + 1 : 0}</b><span>جيلاً في السجل</span></div></div>
-      <a class="btn wa ab-wa" data-contact href="${esc(contactLink())}" target="_blank" rel="noopener">تواصل مع إدارة البرنامج</a>`;
+    const secs = aboutSections(ABOUT);
+    if(!secs.length){ $("#abBody").innerHTML = '<div class="card"><p class="muted">لم يُكتب نص بعد.</p></div>'; return; }
+    const i = Math.min(Math.max(0, parseInt(n, 10) || 0), secs.length - 1), sec = secs[i];
+    const prev = secs[i - 1], next = secs[i + 1];
+    $("#abBody").innerHTML = `
+      ${secs.length > 1 ? `<nav class="ab-tabs" aria-label="أقسام من نحن">${secs.map((x, k) => `<a href="#/about/${k}" class="${k === i ? "on" : ""}" ${k === i ? 'aria-current="page"' : ""}>${esc(x.title || "مقدمة")}</a>`).join("")}</nav>` : ""}
+      <article class="card about">
+        <header class="ab-hero"><span class="ab-kick">من نحن · ${i + 1} من ${secs.length}</span><h3>${esc(sec.title || "من نحن")}</h3></header>
+        <div class="ab-body">${sec.lines.map(l => `<p class="${l.sign ? "ab-sign" : ""}">${esc(l.t)}</p>`).join("")}</div>
+        ${secs.length > 1 ? `<div class="ab-pn">${prev ? `<a href="#/about/${i - 1}" class="ab-prev"><small>السابق</small>${esc(prev.title)}</a>` : "<span></span>"}${next ? `<a href="#/about/${i + 1}" class="ab-next"><small>التالي</small>${esc(next.title)}</a>` : ""}</div>` : ""}
+        <div class="ab-nums"><div><b>${P.length}</b><span>فرداً مسجلاً</span></div><div><b>${alive}</b><span>على قيد الحياة</span></div><div><b>${P.length ? Math.max(...P.map(p => lineChain(p).length)) + 1 : 0}</b><span>جيلاً في السجل</span></div></div>
+        <a class="btn wa ab-wa" data-contact href="${esc(contactLink())}" target="_blank" rel="noopener">تواصل مع إدارة البرنامج</a>
+      </article>`;
     fillContact();
   };
   show();
   const ed = $("#abEdit");
   if(isAdmin()) ed.hidden = false;
   ed.onclick = () => {
-    $("#abBody").innerHTML = `
-      <div class="field"><label for="abTxt">نص صفحة «من نحن»</label><textarea class="inp" id="abTxt" rows="16" maxlength="8000">${esc(ABOUT)}</textarea></div>
-      <p class="muted" style="font-size:13px">اترك سطراً فارغاً بين الفقرات. السطر القصير في أول الفقرة يظهر عنواناً لها.</p>
-      <div class="toolbar" style="margin:0"><button class="btn primary" id="abSave">حفظ</button><button class="btn" id="abCancel">إلغاء</button></div>`;
+    $("#abBody").innerHTML = `<div class="card about-edit">
+      <div class="field"><label for="abTxt">نص صفحة «من نحن»</label><textarea class="inp" id="abTxt" rows="18" maxlength="12000">${esc(ABOUT)}</textarea></div>
+      <p class="muted" style="font-size:13px">اترك سطراً فارغاً بين الأقسام. السطر القصير في أول القسم (مثل «رؤيتنا:») يصبح عنواناً له ويظهر في قائمة «من نحن».</p>
+      <div class="toolbar" style="margin:0"><button class="btn primary" id="abSave">حفظ</button><button class="btn" id="abCancel">إلغاء</button></div></div>`;
     ed.hidden = true;
     $("#abCancel").onclick = () => { ed.hidden = false; show(); };
     $("#abSave").onclick = async () => {
