@@ -93,15 +93,18 @@ async function renderUsers(){
       <button class="btn primary" type="submit">إضافة المستخدم</button>
       <p class="muted" style="font-size:13px;margin-bottom:0">بعد الإضافة: يفتح المستخدم رابط البرنامج، يكتب بريده وكلمة سر جديدة، ويضغط «أول مرة؟ أنشئ كلمة سر». المستخدم بدون أي صلاحية يستطيع المشاهدة والتقارير فقط.</p>
     </form>
-    <div class="card"><div class="tbl-wrap" style="border:0"><table class="tbl"><thead><tr><th>البريد</th><th>الاسم</th><th>النوع</th><th>إضافة</th><th>تعديل</th><th>حذف</th><th></th></tr></thead><tbody id="uBody"><tr><td colspan="7"><div class="spin"></div></td></tr></tbody></table></div></div>`;
+    <div class="card"><div class="tbl-wrap" style="border:0"><table class="tbl"><thead><tr><th>البريد</th><th>الاسم</th><th>النوع</th><th>إضافة</th><th>تعديل</th><th>حذف</th><th>الزيارات</th><th>آخر زيارة</th><th></th></tr></thead><tbody id="uBody"><tr><td colspan="9"><div class="spin"></div></td></tr></tbody></table></div></div>`;
   const load = async () => {
-    const {data, error} = await db.from("fa_users").select("*").order("created_at");
-    if(error){ $("#uBody").innerHTML = `<tr><td colspan="7" class="err">${esc(errMsg(error))}</td></tr>`; return; }
+    const [{data, error}, vis] = await Promise.all([db.from("fa_users").select("*").order("created_at"), db.rpc("fa_visit_by_user")]);
+    if(error){ $("#uBody").innerHTML = `<tr><td colspan="9" class="err">${esc(errMsg(error))}</td></tr>`; return; }
+    const V = new Map((vis.data || []).map(r => [r.email, r]));
+    const ago = t => { if(!t) return "—"; const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 1 ? "الآن" : m < 60 ? `قبل ${m} د` : m < 1440 ? `قبل ${Math.round(m / 60)} س` : fmtDate(new Date(t).toLocaleDateString("en-CA", {timeZone:"Asia/Bahrain"})); };
     $("#uBody").innerHTML = data.map(u => { const me = u.email === S.email, adm = u.role === "admin";
       const cb = f => `<input type="checkbox" data-u="${esc(u.email)}" data-f="${f}" ${u[f] || adm ? "checked" : ""} ${adm || me ? "disabled" : ""} aria-label="${f}">`;
       return `<tr><td class="ltr" style="text-align:start">${esc(u.email)}</td><td>${esc(u.display_name || "")}</td>
         <td><select class="inp" data-u="${esc(u.email)}" data-f="role" ${me ? "disabled" : ""} style="min-width:110px"><option value="user" ${adm ? "" : "selected"}>مستخدم</option><option value="admin" ${adm ? "selected" : ""}>مدير</option></select></td>
         <td>${cb("can_add")}</td><td>${cb("can_edit")}</td><td>${cb("can_delete")}</td>
+        <td><b>${V.get(u.email)?.visits ?? 0}</b></td><td class="muted" style="font-size:13px;white-space:nowrap">${ago(V.get(u.email)?.last_visit)}</td>
         <td style="text-align:end">${me ? '<span class="muted" style="font-size:13px">أنت</span>' : `<button class="btn small danger" type="button" data-rm="${esc(u.email)}">إزالة</button>`}</td></tr>`; }).join("");
   };
   $("#uRole").onchange = e => { const a = e.target.value === "admin"; ["#uAdd","#uEdit","#uDel"].forEach(s => { $(s).checked = a || $(s).checked; $(s).disabled = a; }); };

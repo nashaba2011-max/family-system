@@ -134,12 +134,28 @@ async function boot(session){
     }
     S.me = data;
     applyPerms();
+    logVisit();
     await loadAll();
     currentHash = location.hash;
     route();
   }catch(err){
     $("#view").innerHTML = `<div class="card narrow"><p class="err">${esc(errMsg(err))}</p><button class="btn" type="button" onclick="location.reload()">إعادة المحاولة</button></div>`;
   }
+}
+/* تسجيل زيارة واحدة لكل جلسة متصفح */
+function logVisit(){
+  const k = "fa-visit-" + S.email;
+  try{ if(sessionStorage.getItem(k)) return; sessionStorage.setItem(k, "1"); }catch(e){}
+  const device = matchMedia("(max-width: 760px), (pointer: coarse)").matches ? "mobile" : "desktop";
+  db.from("fa_visits").insert({email:S.email, device}).then(({error}) => { if(error) try{ sessionStorage.removeItem(k); }catch(e){} });
+}
+async function fillVisitStat(){
+  const el = $("#statVisits"); if(!el) return;
+  const {data, error} = await db.rpc("fa_visit_stats");
+  if(!$("#statVisits")) return;
+  if(error || !data){ el.hidden = true; return; }
+  el.querySelector("b").textContent = Number(data.total).toLocaleString("en-US");
+  el.querySelector("small").textContent = `اليوم ${data.today} · الشهر ${data.month} · ${data.visitors} زائراً`;
 }
 function applyPerms(){
   $$("[data-perm]").forEach(el => el.hidden = !can(el.dataset.perm));
@@ -178,6 +194,7 @@ function renderHome(){
       <div class="stat"><b>${f}</b><span>إناث</span></div>
       <div class="stat"><b>${fams}</b><span>آباء لهم أبناء</span></div>
       <a class="stat" href="#/report/inlaws" style="text-decoration:none"><b>${P.filter(p => p.affiliation === "منتسب بالزواج").length}</b><span>منتسبون بالزواج</span></a>
+      <${isAdmin() ? 'a href="#/users"' : "div"} class="stat visits" id="statVisits" style="text-decoration:none"><b>…</b><span>عدد الزيارات</span><small></small></${isAdmin() ? "a" : "div"}>
     </div>
     <div class="tiles">
       ${tile("#/about","about","من نحن","تعريف بالعائلة والبرنامج")}
@@ -195,7 +212,7 @@ function renderHome(){
       ${tile("#/data","data","استيراد وتصدير","Excel")}
     </div>
     ${recent.length ? `<div class="sec-h">آخر السجلات المحدّثة</div><div class="plist">${recent.map(p => personBtn(p, p.updated_at ? "حُدّث " + fmtDate(p.updated_at.slice(0, 10)) : "")).join("")}</div>` : ""}`;
-  applyPerms(); bindAboutMenu();
+  applyPerms(); bindAboutMenu(); fillVisitStat();
 }
 
 /* ===== من نحن ===== */
