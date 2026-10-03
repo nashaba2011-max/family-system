@@ -15,6 +15,7 @@ const ROUTES = {
   settings: {title:"الإعدادات والقوائم", render:renderSettings, admin:true},
   users:    {title:"المستخدمون", render:renderUsers, admin:true},
   data:     {title:"استيراد وتصدير", render:renderData},
+  about:    {title:"من نحن", render:renderAbout},
 };
 let currentHash = "", skipGuard = false, restoring = false;
 
@@ -153,6 +154,7 @@ const ICON = {
   rep:'<path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7M9 8h3"/>', wa:'<path d="M4 20l1.4-4A8 8 0 1 1 8 18.7z"/>',
   set:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>',
   users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.6 6.5-5.6s5.9 2 6.5 5.6"/>', data:'<path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v3h16v-3"/>',
+  about:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
   cake:'<path d="M4 21h16v-8H4zM4 16c2 1.5 4 1.5 6 0s4-1.5 6 0 4 1.5 4 0M12 13V9M12 6.5a1.2 1.2 0 0 1 0-2.5"/>',
 };
 const tile = (href, ic, t, s, attr = "") => `<a class="tile" href="${href}" ${attr}><span class="ic"><svg viewBox="0 0 24 24">${ICON[ic]}</svg></span><b>${t}</b><small>${s}</small></a>`;
@@ -183,12 +185,60 @@ function renderHome(){
       ${tile("#/reports","rep","التقارير",`${REPORTS.length} تقريراً جاهزاً للطباعة`)}
       ${tile("#/report/birthdays","cake","أعياد الميلاد",`${bdays} هذا الشهر`)}
       ${tile("#/whatsapp","wa","مراسلة واتساب","رسالة جماعية للأفراد")}
+      ${tile("#/about","about","من نحن","تعريف بالعائلة والبرنامج")}
       ${tile("#/settings","set","الإعدادات والقوائم","المناطق والمؤهلات والوظائف…", "data-admin")}
       ${tile("#/users","users","المستخدمون","صلاحيات الإضافة والتعديل والحذف", "data-admin")}
       ${tile("#/data","data","استيراد وتصدير","Excel")}
     </div>
     ${recent.length ? `<div class="sec-h">آخر السجلات المحدّثة</div><div class="plist">${recent.map(p => personBtn(p, p.updated_at ? "حُدّث " + fmtDate(p.updated_at.slice(0, 10)) : "")).join("")}</div>` : ""}`;
   applyPerms();
+}
+
+/* ===== من نحن ===== */
+let ABOUT = null;
+function aboutHtml(txt){
+  return txt.trim().split(/\n\s*\n/).map((blk, i) => {
+    const L = blk.split("\n").map(x => x.trim()).filter(Boolean);
+    const head = L.length > 1 && L[0].length <= 40 && !/[.،؟!:]$/.test(L[0]) ? L.shift() : "";
+    const body = L.map(x => `<p>${esc(x)}</p>`).join("");
+    return i === 0 && head ? `<header class="ab-hero"><h3>${esc(head)}</h3>${body}</header>`
+      : `<section class="ab-sec">${head ? `<h4>${esc(head)}</h4>` : ""}${body}</section>`;
+  }).join("");
+}
+async function renderAbout(){
+  const v = $("#view");
+  v.innerHTML = `<div class="page-h"><h2>من نحن</h2><div class="acts"><button class="btn" id="abEdit" data-admin hidden>تعديل النص</button></div></div><div class="card about" id="abBody"><p class="muted">جارٍ التحميل…</p></div>`;
+  applyPerms();
+  if(ABOUT === null){
+    const {data, error} = await db.from("fa_settings").select("value").eq("key", "about").maybeSingle();
+    if(error){ $("#abBody").innerHTML = `<p class="muted">${esc(errMsg(error))}</p>`; return; }
+    ABOUT = data ? data.value : "";
+  }
+  if(!$("#abBody")) return;
+  const P = S.people, alive = P.filter(p => !isDead(p)).length;
+  const show = () => {
+    $("#abBody").innerHTML = (ABOUT.trim() ? aboutHtml(ABOUT) : '<p class="muted">لم يُكتب نص بعد.</p>') + `
+      <div class="ab-nums"><div><b>${P.length}</b><span>فرداً مسجلاً</span></div><div><b>${alive}</b><span>على قيد الحياة</span></div><div><b>${P.length ? Math.max(...P.map(p => lineChain(p).length)) + 1 : 0}</b><span>جيلاً في السجل</span></div></div>
+      <a class="btn wa ab-wa" data-contact href="${esc(contactLink())}" target="_blank" rel="noopener">تواصل مع إدارة البرنامج</a>`;
+    fillContact();
+  };
+  show();
+  const ed = $("#abEdit");
+  if(isAdmin()) ed.hidden = false;
+  ed.onclick = () => {
+    $("#abBody").innerHTML = `
+      <div class="field"><label for="abTxt">نص صفحة «من نحن»</label><textarea class="inp" id="abTxt" rows="16" maxlength="8000">${esc(ABOUT)}</textarea></div>
+      <p class="muted" style="font-size:13px">اترك سطراً فارغاً بين الفقرات. السطر القصير في أول الفقرة يظهر عنواناً لها.</p>
+      <div class="toolbar" style="margin:0"><button class="btn primary" id="abSave">حفظ</button><button class="btn" id="abCancel">إلغاء</button></div>`;
+    ed.hidden = true;
+    $("#abCancel").onclick = () => { ed.hidden = false; show(); };
+    $("#abSave").onclick = async () => {
+      const val = $("#abTxt").value;
+      const {error} = await db.from("fa_settings").upsert([{key:"about", value:val, updated_at:new Date().toISOString(), updated_by:S.me.email}], {onConflict:"key"});
+      if(error) return toast(errMsg(error), "warn");
+      ABOUT = val; ed.hidden = false; show(); toast("تم حفظ النص", "ok");
+    };
+  };
 }
 
 /* ===== بوابة رقم التسلسل (إضافة / تعديل / حذف) ===== */

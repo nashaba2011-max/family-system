@@ -379,3 +379,20 @@ a.stat:hover{border-color:var(--gold)}
   .report .bar{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .report tr{break-inside:avoid}
 }
+
+/* من نحن */
+.about{padding:0;overflow:hidden}
+.about .ab-hero{padding:34px 28px 26px;background:radial-gradient(circle at 15% 0%,#1d5a69,#0a3641 70%);color:#f6f3ec}
+.about .ab-hero h3{color:#f6f3ec;margin:0 0 10px;font-size:30px;font-weight:800;letter-spacing:0}
+.about .ab-hero p{margin:0;font-size:17px;line-height:1.9;opacity:.92;max-width:62ch}
+.about .ab-sec{padding:20px 28px;border-bottom:1px solid var(--line)}
+.about .ab-sec h4{margin:0 0 6px;font-size:19px;color:var(--brand-d);display:flex;align-items:center;gap:10px}
+.about .ab-sec h4::before{content:"";width:6px;height:20px;border-radius:3px;background:var(--gold)}
+.about .ab-sec p{margin:0 0 6px;line-height:1.95;max-width:68ch}
+.about .ab-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:20px 28px}
+.about .ab-nums div{text-align:center;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 8px}
+.about .ab-nums b{display:block;font-size:28px;font-weight:800;color:var(--brand-d)}
+.about .ab-nums span{font-size:13px;color:var(--ink-3)}
+.about .ab-wa{margin:0 28px 24px}
+.about>.field,.about>p.muted,.about>.toolbar{margin:18px 22px}
+@media (max-width:560px){.about .ab-hero,.about .ab-sec,.about .ab-nums{padding-inline:16px}.about .ab-wa{margin-inline:16px}.about .ab-hero h3{font-size:24px}}
