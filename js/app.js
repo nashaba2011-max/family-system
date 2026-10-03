@@ -236,10 +236,10 @@ function renderHome(){
 
     <div class="stats">
       <div class="stat gold"><b>${P.length}</b><span>إجمالي الأفراد</span></div>
-      <div class="stat"><b>${alive}</b><span>على قيد الحياة</span></div>
-      <div class="stat"><b>${P.length - alive}</b><span>متوفون</span></div>
-      <div class="stat"><b>${m}</b><span>ذكور</span></div>
-      <div class="stat"><b>${f}</b><span>إناث</span></div>
+      <div class="stat st-alive"><b>${alive}</b><span>على قيد الحياة</span></div>
+      <div class="stat st-dead"><b>${P.length - alive}</b><span>متوفون</span></div>
+      <div class="stat st-m"><b>${m}</b><span>ذكور</span></div>
+      <div class="stat st-f"><b>${f}</b><span>إناث</span></div>
       <div class="stat"><b>${fams}</b><span>آباء لهم أبناء</span></div>
       <a class="stat" href="#/report/inlaws" style="text-decoration:none"><b>${P.filter(p => p.affiliation === "منتسب بالزواج").length}</b><span>منتسبون بالزواج</span></a>
     </div>
