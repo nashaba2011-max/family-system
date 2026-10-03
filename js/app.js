@@ -215,7 +215,7 @@ function renderHome(){
   $("#view").innerHTML = `
     <section class="hero-banner" aria-label="عائلة النشابة">
       <img class="hb-water" src="img/logo-mark-light.png" alt="" aria-hidden="true">
-      <img class="hb-mark" src="img/logo-mark-light.png" alt="شعار عائلة النشابة" width="96" height="128">
+      <span class="logo-anim hb-mark" style="--mask:url(img/logo-mark-light.png)"><i class="la-beam"></i><span class="la-in"><img src="img/logo-mark-light.png" alt="شعار عائلة النشابة" width="96" height="128"><i class="la-glow"></i><i class="la-shine"></i></span></span>
       <div class="hb-text">
         <span class="hb-kick">أهلاً بكم في</span>
         <h1>عائلة النشابة</h1>

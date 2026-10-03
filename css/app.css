@@ -569,7 +569,8 @@ a.visits-pill:hover{border-color:var(--brand)}
   background-image:repeating-linear-gradient(135deg,#d9b874 0 1px,transparent 1px 22px),repeating-linear-gradient(45deg,#d9b874 0 1px,transparent 1px 22px)}
 .hero-banner::after{content:"";position:absolute;top:0;bottom:0;width:120px;left:-160px;z-index:-1;background:linear-gradient(100deg,transparent,rgba(255,236,190,.16),transparent);transform:skewX(-18deg);animation:hbSweep 7s ease-in-out 1.2s infinite}
 @keyframes hbSweep{0%{left:-160px}40%,100%{left:110%}}
-.hb-mark{width:96px;height:auto;flex:none;filter:drop-shadow(0 8px 18px rgba(0,0,0,.35));animation:hbRise .8s cubic-bezier(.2,.8,.2,1) both}
+.hb-mark{width:96px;flex:none;animation:hbRise .8s cubic-bezier(.2,.8,.2,1) both}
+.hb-mark img{width:100%;height:auto;filter:drop-shadow(0 8px 18px rgba(0,0,0,.35))}
 .hb-water{position:absolute;left:4%;bottom:-30px;height:240px;width:auto;opacity:.07;z-index:-1;transform:rotate(-8deg)}
 .hb-text{display:flex;flex-direction:column;gap:2px;min-width:0;animation:hbRise .8s cubic-bezier(.2,.8,.2,1) .12s both}
 .hb-kick{font-size:14px;font-weight:700;color:#d9b874;letter-spacing:.02em}
@@ -583,9 +584,32 @@ a.visits-pill:hover{border-color:var(--brand)}
 @keyframes hbRise{from{opacity:0;transform:translateY(12px)}}
 @media (max-width:640px){
   .hero-banner{padding:20px 18px 34px;gap:14px}
-  .hb-mark{width:64px}
+  .hb-mark{width:66px}
   .hero-banner h1{font-size:30px}
   .hero-banner p{font-size:15px}
   .hb-water{height:180px}
 }
 @media (prefers-reduced-motion:reduce){.hero-banner::after,.hb-mark,.hb-text{animation:none}}
+
+/* ===== حركة الشعار: ضوء المنارة يدور، توهج، ولمعة ذهبية ===== */
+.logo-anim{position:relative;display:inline-block;isolation:isolate;--lx:50%;--ly:18%;--beam:rgba(255,226,150,.30);--glowc:rgba(255,222,140,.85)}
+.logo-anim.la-full{--ly:13%;--beam:rgba(181,149,89,.20);--glowc:rgba(217,184,116,.75)}
+.la-in{position:relative;z-index:1;display:block;animation:laFloat 6s ease-in-out infinite}
+.hb-mark .la-in>img{display:block}
+.logo-anim .la-beam,.logo-anim .la-glow,.logo-anim .la-shine{position:absolute;pointer-events:none;display:block}
+.la-beam{z-index:0;left:var(--lx);top:var(--ly);width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;
+  background:conic-gradient(from 0deg,transparent 0deg,var(--beam) 10deg,transparent 22deg,transparent 180deg,var(--beam) 190deg,transparent 202deg,transparent 360deg);
+  -webkit-mask-image:radial-gradient(circle,#000 0,#000 10%,rgba(0,0,0,.5) 32%,transparent 62%);mask-image:radial-gradient(circle,#000 0,#000 10%,rgba(0,0,0,.5) 32%,transparent 62%);
+  animation:laSpin 9s linear infinite}
+.la-glow{z-index:2;left:var(--lx);top:var(--ly);width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:radial-gradient(circle,#fff6d8 0,var(--glowc) 30%,transparent 70%);mix-blend-mode:screen;animation:laPulse 3s ease-in-out infinite}
+.la-shine{z-index:3;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,240,200,.85) 48%,transparent 60%);background-size:260% 100%;background-position:130% 0;
+  -webkit-mask-image:var(--mask);mask-image:var(--mask);-webkit-mask-size:100% 100%;mask-size:100% 100%;animation:laShine 6s ease-in-out 1s infinite}
+.login-art.logo-anim{display:block}
+.login-art.logo-anim .la-glow{width:28px;height:28px;margin:-14px 0 0 -14px}
+@keyframes laSpin{to{transform:rotate(360deg)}}
+@keyframes laPulse{0%,100%{opacity:.55;transform:scale(.85)}50%{opacity:1;transform:scale(1.25)}}
+@keyframes laShine{0%{background-position:130% 0}35%,100%{background-position:-30% 0}}
+@keyframes laFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.logo-anim:hover .la-beam{animation-duration:3s}
+@media (prefers-reduced-motion:reduce){.la-beam,.la-glow,.la-shine,.la-in{animation:none}.la-beam,.la-shine{display:none}}
+.logo-anim.la-full .la-glow{mix-blend-mode:normal;background:radial-gradient(circle,rgba(255,236,170,.95) 0,rgba(217,184,116,.55) 35%,transparent 70%)}
