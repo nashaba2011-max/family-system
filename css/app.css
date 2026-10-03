@@ -6,7 +6,7 @@
   --radius:12px; --shadow:0 1px 2px rgba(20,28,45,.06),0 8px 24px rgba(20,28,45,.08);
   --font:"Tajawal","Segoe UI",Tahoma,sans-serif; --display:"Tajawal","Segoe UI",Tahoma,sans-serif;
   --nav-w:250px;
-  --bar:#1c2c47; --bar-2:#2a3f63; --logo-l:block; --logo-d:none;
+  --top-h:76px; --bar:#1c2c47; --bar-2:#2a3f63; --logo-l:block; --logo-d:none;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -93,7 +93,7 @@ select.inp{cursor:pointer}
 .brand span{min-width:0}
 .brand small{display:block;font-family:var(--font);font-size:12px;opacity:.8}
 .topbar .iconbtn:hover{background:rgba(255,255,255,.14)}
-.shell{display:flex;min-height:calc(100vh - 60px)}
+.shell{display:flex;min-height:calc(100vh - var(--top-h))}
 /* ===== القائمة الجانبية الزجاجية ===== */
 :root{--glass:rgba(255,255,255,.52);--glass-2:rgba(255,255,255,.7);--glass-line:rgba(255,255,255,.75);--glass-edge:rgba(28,44,71,.12);--glass-hi:rgba(255,255,255,.65);
   --blob1:rgba(79,111,166,.32);--blob2:rgba(181,149,89,.30);--blob3:rgba(28,44,71,.14)}
@@ -104,7 +104,7 @@ select.inp{cursor:pointer}
 /* بقع لونية ثابتة خلف الصفحة ليظهر الزجاج */
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:radial-gradient(520px 420px at 100% 12%,var(--blob1),transparent 70%),radial-gradient(460px 400px at 92% 78%,var(--blob2),transparent 70%),radial-gradient(420px 360px at 70% 45%,var(--blob3),transparent 70%)}
-.sidenav{width:var(--nav-w);flex:none;padding:14px 12px 24px;position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;
+.sidenav{width:var(--nav-w);flex:none;padding:14px 12px 24px;position:sticky;top:var(--top-h);height:calc(100vh - var(--top-h));overflow:auto;
   background:linear-gradient(180deg,var(--glass-2),var(--glass));border-inline-end:1px solid var(--glass-line);
   box-shadow:inset -1px 0 0 var(--glass-hi),-8px 0 30px -12px var(--glass-edge);
   -webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);scrollbar-width:thin}
@@ -640,3 +640,12 @@ a.visits-pill:hover{border-color:var(--brand)}
   .topbar .dd-btn{padding:4px 9px;font-size:14px}
   .top-extra{gap:6px}
 }
+
+/* شريط علوي أعرض */
+.topbar{min-height:var(--top-h);padding-inline:20px;gap:12px}
+.brand{font-size:23px;font-weight:700;gap:12px}
+.brand small{font-size:13px}
+.brand-mark{height:54px}
+.topbar .greet-h{font-size:19px}
+.topbar .dd-btn,.topbar .visits-pill{min-height:42px}
+@media (max-width:640px){:root{--top-h:64px}.topbar{padding-inline:12px;gap:8px}.brand-mark{height:44px}}
