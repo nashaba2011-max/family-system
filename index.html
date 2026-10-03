@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=24">
+<link rel="stylesheet" href="css/app.css?v=25">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -54,8 +54,10 @@
 
   <div class="shell">
     <nav class="sidenav" id="sidenav" aria-label="القائمة الرئيسية">
-      <div class="who" id="whoAmI"></div>
-      <a href="#/about" data-nav="about"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>من نحن</a>
+      <div class="who-row">
+        <div class="who" id="whoAmI"></div>
+        <a href="#/about" data-nav="about" class="who-tile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><span>من نحن</span></a>
+      </div>
       <a href="#/home" data-nav="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>الرئيسية</a>
       <div class="nav-h">السجلات</div>
       <a href="#/add" data-nav="add" data-perm="add"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>إضافة سجل</a>
@@ -106,13 +108,13 @@
 
 <div id="printArea" class="report"></div>
 
-<script src="js/config.js?v=24"></script>
-<script src="js/core.js?v=24"></script>
-<script src="js/sound.js?v=24"></script>
-<script src="js/record.js?v=24"></script>
-<script src="js/reports.js?v=24"></script>
-<script src="js/tools.js?v=24"></script>
-<script src="js/events.js?v=24"></script>
-<script src="js/app.js?v=24"></script>
+<script src="js/config.js?v=25"></script>
+<script src="js/core.js?v=25"></script>
+<script src="js/sound.js?v=25"></script>
+<script src="js/record.js?v=25"></script>
+<script src="js/reports.js?v=25"></script>
+<script src="js/tools.js?v=25"></script>
+<script src="js/events.js?v=25"></script>
+<script src="js/app.js?v=25"></script>
 </body>
 </html>
