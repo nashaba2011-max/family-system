@@ -503,3 +503,6 @@ dialog.lb::backdrop{background:rgba(0,0,0,.6)}
   .lb-cap{display:none}
 }
 @media (prefers-reduced-motion:reduce){.ev-card{animation:none}.ev-card,.ev-cover img,.ev-ph-btn img{transition:none}}
+.bk-card{border-inline-start:4px solid var(--gold)}
+.bk-last{margin:0 0 12px;font-size:14px;color:var(--ink-2)}
+.bk-warn{color:var(--danger);font-weight:700}

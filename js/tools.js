@@ -158,11 +158,90 @@ function renderData(){
       <p class="muted" style="margin-top:0">استخدم نفس عناوين أعمدة القالب. السطر الذي رقم تسلسله موجود <b>يُحدَّث</b>، والجديد <b>يُضاف</b>. عمودا «رقم الأب» و«رقم الأم» يربطان الأبناء تلقائياً.</p>
       <input type="file" id="impFile" accept=".xlsx,.xls,.csv" class="inp">
       <div id="impOut" style="margin-top:12px"></div>
-      <button class="btn primary" type="button" id="impGo" disabled style="margin-top:10px">تنفيذ الاستيراد</button></div>`;
+      <button class="btn primary" type="button" id="impGo" disabled style="margin-top:10px">تنفيذ الاستيراد</button></div>
+    <div class="card bk-card" ${isAdmin() ? "" : "hidden"}><h3>نسخة احتياطية كاملة</h3>
+      <p class="muted" style="margin-top:0">تحفظ كل شيء في ملف على جهازك: الأفراد والأزواج والقوائم والمستخدمين والمناسبات وصفحة «من نحن». احفظ الملف في مكان آمن (بريدك أو Google Drive) ويمكن استعادة البرنامج منه عند الحاجة.</p>
+      <p class="bk-last" id="bkLast"></p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" type="button" id="bkData">تنزيل نسخة البيانات</button>
+      <button class="btn" type="button" id="bkFull">نسخة كاملة مع الصور والفيديو (ZIP)</button></div>
+      <p class="muted" id="bkOut" style="margin:10px 0 0"></p></div>`;
   $("#xAll").onclick = () => exportPeople(S.people, "سجل-العائلة-كامل");
   $("#xTpl").onclick = async () => { try{ await loadScript(XLSX_URL); const ws = XLSX.utils.aoa_to_sheet([Object.values(FIELDS).map(f => f.xl).concat([XL_EXTRA.father, XL_EXTRA.mother])]); const wb = XLSX.utils.book_new(); wb.Workbook = {Views:[{RTL:true}]}; XLSX.utils.book_append_sheet(wb, ws, "الأفراد"); XLSX.writeFile(wb, "قالب-استيراد-العائلة.xlsx"); }catch(err){ toast(errMsg(err), true); } };
   $("#impFile").onchange = readImport;
   $("#impGo").onclick = runImport;
+  if(isAdmin()){ showLastBackup(); $("#bkData").onclick = () => runBackup(false); $("#bkFull").onclick = () => runBackup(true); }
+}
+
+/* ===== النسخ الاحتياطي ===== */
+const BK_TABLES = [["fa_people","serial"], ["fa_spouses","id"], ["fa_lookups","id"], ["fa_users","email"], ["fa_settings","key"], ["fa_occasions","id"], ["fa_media","id"]];
+/* صانع ZIP بسيط (بدون ضغط — الصور والفيديو مضغوطة أصلاً) */
+const CRC_T = (() => { const t = new Uint32Array(256); for(let n = 0; n < 256; n++){ let c = n; for(let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8){ let c = 0xFFFFFFFF; for(let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function makeZip(entries){
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  const d = new Date(), dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF, dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+  for(const [name, data] of entries){
+    const nm = enc.encode(name), u8 = typeof data === "string" ? enc.encode(data) : new Uint8Array(await data.arrayBuffer()), crc = crc32(u8);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint16(10, dt, true); h.setUint16(12, dd, true); h.setUint32(14, crc, true); h.setUint32(18, u8.length, true); h.setUint32(22, u8.length, true);
+    h.setUint16(26, nm.length, true); h.setUint16(28, 0, true);
+    parts.push(h, nm, u8);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+    c.setUint16(12, dt, true); c.setUint16(14, dd, true); c.setUint32(16, crc, true); c.setUint32(20, u8.length, true); c.setUint32(24, u8.length, true);
+    c.setUint16(28, nm.length, true); c.setUint32(42, off, true);
+    central.push(c, nm);
+    off += 30 + nm.length + u8.length;
+  }
+  const csize = central.reduce((a, x) => a + x.byteLength, 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, entries.length, true); e.setUint16(10, entries.length, true); e.setUint32(12, csize, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...central, e], {type:"application/zip"});
+}
+async function showLastBackup(){
+  const {data} = await db.from("fa_settings").select("value").eq("key", "last_backup").maybeSingle();
+  const el = $("#bkLast"); if(!el) return;
+  if(!data?.value){ el.innerHTML = '<span class="bk-warn">لم تُؤخذ نسخة احتياطية من البرنامج بعد</span>'; return; }
+  const days = Math.floor((Date.now() - new Date(data.value)) / 864e5);
+  el.innerHTML = `آخر نسخة: <b>${fmtDate(data.value.slice(0, 10))}</b> ${days > 30 ? `<span class="bk-warn">— مرّ ${days} يوماً، يُنصح بأخذ نسخة جديدة</span>` : ""}`;
+}
+async function runBackup(withFiles){
+  const out = $("#bkOut"), btns = [$("#bkData"), $("#bkFull")];
+  btns.forEach(b => b.disabled = true);
+  try{
+    out.textContent = "جارٍ جمع البيانات…";
+    const data = {_meta:{app:"family-system", created:new Date().toISOString(), by:S.email, version:1}};
+    for(const [t, o] of BK_TABLES) data[t] = await fetchAll(t, o);
+    const stamp = todayISO();
+    const json = JSON.stringify(data, null, 1);
+    const counts = `${data.fa_people.length} فرداً، ${data.fa_occasions.length} مناسبة`;
+    if(!withFiles){
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([json], {type:"application/json"}));
+      a.download = `نسخة-احتياطية-النشابة-${stamp}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      out.textContent = `تم تنزيل النسخة (${counts}).`;
+    }else{
+      const entries = [["data.json", json]];
+      const files = [
+        ...data.fa_people.filter(p => p.photo_path).map(p => [PHOTO_BUCKET, p.photo_path]),
+        ...data.fa_media.filter(m => m.path).flatMap(m => m.kind === "photo" ? [[MEDIA_BUCKET, m.path], [MEDIA_BUCKET, thumbOf(m.path)]] : [[MEDIA_BUCKET, m.path]]),
+      ];
+      let done = 0, miss = 0;
+      for(const [bucket, path] of files){
+        out.textContent = `جارٍ تنزيل الملفات ${++done} من ${files.length}…`;
+        const {data:blob, error} = await db.storage.from(bucket).download(path);
+        if(error || !blob){ miss++; continue; }
+        entries.push([`${bucket}/${path}`, blob]);
+      }
+      out.textContent = "جارٍ تجهيز ملف ZIP…";
+      const z = await makeZip(entries);
+      const a = document.createElement("a"); a.href = URL.createObjectURL(z);
+      a.download = `نسخة-كاملة-النشابة-${stamp}.zip`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+      out.textContent = `تم تنزيل النسخة الكاملة (${counts}، الملفات: ${files.length - miss}، الحجم ${(z.size / 1048576).toFixed(1)} ميجابايت)${miss ? ` — تعذر تنزيل ${miss} من الملفات` : ""}.`;
+    }
+    await db.from("fa_settings").upsert([{key:"last_backup", value:new Date().toISOString(), updated_by:S.email}], {onConflict:"key"});
+    showLastBackup(); toast("تم أخذ النسخة الاحتياطية");
+  }catch(e){ out.textContent = ""; toast("تعذر أخذ النسخة: " + errMsg(e), true); }
+  btns.forEach(b => b.disabled = false);
 }
 function xlDate(v){
   if(v === "" || v == null) return null;
