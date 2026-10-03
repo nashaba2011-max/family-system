@@ -210,7 +210,7 @@ async function personReport(p, long){
   const url = await photoUrl(p.photo_path);
   const f = S.byId.get(p.father_id), m = S.byId.get(p.mother_id);
   let h = `<div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:6px">${url ? `<img class="ph" src="${esc(url)}" alt="">` : ""}<div style="flex:1">
-    <div style="font-size:20px;font-weight:700;color:#0f4c5c">${esc(longName(p))}</div>
+    <div style="font-size:20px;font-weight:700;color:#1c2c47">${esc(longName(p))}</div>
     ${kv([["رقم التسلسل", p.serial], ["الرقم الشخصي", p.cpr], ["الفرع", p.branch], ["الكنية", p.nickname]])}</div></div>`;
   h += `<h2>البيانات الأساسية</h2>` + kv([["الجنس", p.gender], ["تاريخ الميلاد", fmtDate(p.birth_date)], ["العمر", ageOf(p) !== "" ? ageOf(p) + " سنة" : ""], ["مكان الميلاد", p.birth_place], ["الحالة", p.status], ...(isDead(p) ? [["تاريخ الوفاة", fmtDate(p.death_date)], ["مكان الدفن", p.burial_place]] : []), ["الحالة الاجتماعية", p.marital], ["فصيلة الدم", p.blood]]);
   h += `<h2>السكن والاتصال</h2>` + kv([["المحافظة", p.governorate], ["المنطقة", p.area], ["العنوان", COLS.address[1](p)], ["الهاتف", p.phone], ["هاتف آخر", p.phone2], ["البريد", p.email]]);

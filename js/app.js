@@ -212,6 +212,17 @@ function renderHome(){
   const bdays = P.filter(p => p.birth_date && !isDead(p) && +p.birth_date.slice(5, 7) === mon).length;
   const recent = P.slice().sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || "")).slice(0, 6);
   $("#view").innerHTML = `
+    <section class="hero-banner" aria-label="عائلة النشابة">
+      <img class="hb-water" src="img/logo-mark-light.png" alt="" aria-hidden="true">
+      <img class="hb-mark" src="img/logo-mark-light.png" alt="شعار عائلة النشابة" width="96" height="128">
+      <div class="hb-text">
+        <span class="hb-kick">أهلاً بكم في</span>
+        <h1>عائلة النشابة</h1>
+        <p>جذور ممتدة وأجيال متصلة</p>
+        <div class="hb-facts"><span><b>${P.length}</b> فرداً</span><span><b>${P.length ? Math.max(...P.map(p => lineChain(p).length)) + 1 : 0}</b> أجيال</span><span><b>${fams}</b> أسرة</span></div>
+      </div>
+      <svg class="hb-arc" viewBox="0 0 1000 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60 Q500 -10 1000 60 Z"></path></svg>
+    </section>
     <div class="page-h"><div class="hello"><h2 class="greet-h"><button type="button" class="greet" id="greet" title="اضغط لتطلق سهماً">أهلاً ${esc(S.me.display_name || "")}</button><span class="greet-score" id="greetScore" hidden></span></h2>${aboutMenuHtml()}<${isAdmin() ? 'a href="#/users"' : "span"} class="visits-pill" id="statVisits" title="عدد الزيارات"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg><b>…</b><span>زيارة</span><small></small></${isAdmin() ? "a" : "span"}></div><div class="acts"><a class="btn primary" href="#/add" data-perm="add">+ إضافة سجل</a><a class="btn" href="#/list">بحث</a></div></div>
     <div class="stats">
       <div class="stat gold"><b>${P.length}</b><span>إجمالي الأفراد</span></div>
