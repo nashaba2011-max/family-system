@@ -6,7 +6,7 @@
   --radius:12px; --shadow:0 1px 2px rgba(20,28,45,.06),0 8px 24px rgba(20,28,45,.08);
   --font:"Tajawal","Segoe UI",Tahoma,sans-serif; --display:"Tajawal","Segoe UI",Tahoma,sans-serif;
   --nav-w:250px;
-  --top-h:76px; --bar:#1c2c47; --bar-2:#2a3f63; --logo-l:block; --logo-d:none;
+  --grid:rgba(181,149,89,.16); --top-h:76px; --bar:#1c2c47; --bar-2:#2a3f63; --logo-l:block; --logo-d:none;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -15,7 +15,7 @@
     --line:#2a3347; --danger:#f08a80; --danger-l:#3a2220; --ok:#81c784; --ok-l:#1e3321;
     --female:#e48bb3; --female-l:#3a2230;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
-    --bar:#121a29; --bar-2:#1f2d48; --logo-l:none; --logo-d:block; color-scheme:dark;
+    --bar:#121a29; --bar-2:#1f2d48; --logo-l:none; --logo-d:block; --grid:rgba(217,184,116,.09); color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
@@ -24,7 +24,7 @@
   --line:#2a3347; --danger:#f08a80; --danger-l:#3a2220; --ok:#81c784; --ok-l:#1e3321;
   --female:#e48bb3; --female-l:#3a2230;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
-  --bar:#121a29; --bar-2:#1f2d48; --logo-l:none; --logo-d:block; color-scheme:dark;
+  --bar:#121a29; --bar-2:#1f2d48; --logo-l:none; --logo-d:block; --grid:rgba(217,184,116,.09); color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -74,7 +74,7 @@ select.inp{cursor:pointer}
 .fgrid .wide{grid-column:1/-1}
 
 /* ===== الدخول ===== */
-.login{min-height:100vh;display:grid;place-items:center;padding:16px;background:radial-gradient(1200px 600px at 80% -10%,var(--brand-l),transparent 60%),var(--bg)}
+.login{min-height:100vh;display:grid;place-items:center;padding:16px;background:repeating-linear-gradient(135deg,var(--grid) 0 1px,transparent 1px 26px),repeating-linear-gradient(45deg,var(--grid) 0 1px,transparent 1px 26px),radial-gradient(1200px 600px at 80% -10%,var(--brand-l),transparent 60%),var(--bg)}
 .login-card{width:100%;max-width:400px;background:var(--paper);border-radius:18px;box-shadow:var(--shadow);padding:28px 22px;text-align:center;border-top:5px solid var(--gold)}
 .login-art{margin:0 auto 6px;width:220px;max-width:70%}
 .login-art img{width:100%;height:auto}
@@ -103,7 +103,7 @@ select.inp{cursor:pointer}
   --blob1:rgba(79,111,166,.22);--blob2:rgba(181,149,89,.16);--blob3:rgba(169,189,227,.08)}}
 /* بقع لونية ثابتة خلف الصفحة ليظهر الزجاج */
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:radial-gradient(520px 420px at 100% 12%,var(--blob1),transparent 70%),radial-gradient(460px 400px at 92% 78%,var(--blob2),transparent 70%),radial-gradient(420px 360px at 70% 45%,var(--blob3),transparent 70%)}
+  background:repeating-linear-gradient(135deg,var(--grid) 0 1px,transparent 1px 26px),repeating-linear-gradient(45deg,var(--grid) 0 1px,transparent 1px 26px),radial-gradient(520px 420px at 100% 12%,var(--blob1),transparent 70%),radial-gradient(460px 400px at 92% 78%,var(--blob2),transparent 70%),radial-gradient(420px 360px at 70% 45%,var(--blob3),transparent 70%)}
 .sidenav{width:var(--nav-w);flex:none;padding:14px 12px 24px;position:sticky;top:var(--top-h);height:calc(100vh - var(--top-h));overflow:auto;
   background:linear-gradient(180deg,var(--glass-2),var(--glass));border-inline-end:1px solid var(--glass-line);
   box-shadow:inset -1px 0 0 var(--glass-hi),-8px 0 30px -12px var(--glass-edge);
