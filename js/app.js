@@ -155,7 +155,8 @@ async function fillVisitStat(){
   if(!$("#statVisits")) return;
   if(error || !data){ el.hidden = true; return; }
   el.querySelector("b").textContent = Number(data.total).toLocaleString("en-US");
-  el.querySelector("small").textContent = `اليوم ${data.today} · الشهر ${data.month} · ${data.visitors} زائراً`;
+  el.querySelector("small").textContent = `اليوم ${data.today}`;
+  el.title = `عدد الزيارات: ${data.total} — اليوم ${data.today} · هذا الشهر ${data.month} · ${data.visitors} زائراً`;
 }
 function applyPerms(){
   $$("[data-perm]").forEach(el => el.hidden = !can(el.dataset.perm));
@@ -185,7 +186,7 @@ function renderHome(){
   const bdays = P.filter(p => p.birth_date && !isDead(p) && +p.birth_date.slice(5, 7) === mon).length;
   const recent = P.slice().sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || "")).slice(0, 6);
   $("#view").innerHTML = `
-    <div class="page-h"><div class="hello"><h2>أهلاً ${esc(S.me.display_name || "")}</h2>${aboutMenuHtml()}</div><div class="acts"><a class="btn primary" href="#/add" data-perm="add">+ إضافة سجل</a><a class="btn" href="#/list">بحث</a></div></div>
+    <div class="page-h"><div class="hello"><h2>أهلاً ${esc(S.me.display_name || "")}</h2>${aboutMenuHtml()}<${isAdmin() ? 'a href="#/users"' : "span"} class="visits-pill" id="statVisits" title="عدد الزيارات"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg><b>…</b><span>زيارة</span><small></small></${isAdmin() ? "a" : "span"}></div><div class="acts"><a class="btn primary" href="#/add" data-perm="add">+ إضافة سجل</a><a class="btn" href="#/list">بحث</a></div></div>
     <div class="stats">
       <div class="stat gold"><b>${P.length}</b><span>إجمالي الأفراد</span></div>
       <div class="stat"><b>${alive}</b><span>على قيد الحياة</span></div>
@@ -194,7 +195,6 @@ function renderHome(){
       <div class="stat"><b>${f}</b><span>إناث</span></div>
       <div class="stat"><b>${fams}</b><span>آباء لهم أبناء</span></div>
       <a class="stat" href="#/report/inlaws" style="text-decoration:none"><b>${P.filter(p => p.affiliation === "منتسب بالزواج").length}</b><span>منتسبون بالزواج</span></a>
-      <${isAdmin() ? 'a href="#/users"' : "div"} class="stat visits" id="statVisits" style="text-decoration:none"><b>…</b><span>عدد الزيارات</span><small></small></${isAdmin() ? "a" : "div"}>
     </div>
     <div class="tiles">
       ${tile("#/about","about","من نحن","تعريف بالعائلة والبرنامج")}
