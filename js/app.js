@@ -16,6 +16,8 @@ const ROUTES = {
   users:    {title:"المستخدمون", render:renderUsers, admin:true},
   data:     {title:"استيراد وتصدير", render:renderData},
   about:    {title:"من نحن", render:renderAbout},
+  events:   {title:"مناسبات العائلة", render:renderEvents},
+  event:    {title:"مناسبة", render:id => renderEvent(+id)},
 };
 let currentHash = "", skipGuard = false, restoring = false;
 
@@ -35,7 +37,7 @@ async function route(){
   skipGuard = false; S.dirty = false; currentHash = location.hash;
   const {name, args} = parseHash(), r = ROUTES[name];
   closeNav();
-  $$("[data-nav]").forEach(a => a.classList.toggle("on", a.dataset.nav === name));
+  $$("[data-nav]").forEach(a => a.classList.toggle("on", a.dataset.nav === (name === "event" ? "events" : name)));
   $("#crumb").textContent = r.title;
   const v = $("#view");
   if((r.perm && !can(r.perm)) || (r.admin && !isAdmin())){
@@ -154,6 +156,7 @@ const ICON = {
   rep:'<path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7M9 8h3"/>', wa:'<path d="M4 20l1.4-4A8 8 0 1 1 8 18.7z"/>',
   set:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>',
   users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.6 6.5-5.6s5.9 2 6.5 5.6"/>', data:'<path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v3h16v-3"/>',
+  cam:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
   about:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
   cake:'<path d="M4 21h16v-8H4zM4 16c2 1.5 4 1.5 6 0s4-1.5 6 0 4 1.5 4 0M12 13V9M12 6.5a1.2 1.2 0 0 1 0-2.5"/>',
 };
@@ -183,6 +186,7 @@ function renderHome(){
       ${tile("#/delete","del","حذف سجل","مع تأكيد قبل الحذف", 'data-perm="delete"')}
       ${tile("#/list","search","البحث والملفات","فرز حسب المنطقة والفرع والحالة")}
       ${tile("#/tree","tree","شجرة العائلة","الأبناء والأحفاد تلقائياً")}
+      ${tile("#/events","cam","مناسبات العائلة","صور وفيديوهات المناسبات")}
       ${tile("#/reports","rep","التقارير",`${REPORTS.length} تقريراً جاهزاً للطباعة`)}
       ${tile("#/report/birthdays","cake","أعياد الميلاد",`${bdays} هذا الشهر`)}
       ${tile("#/whatsapp","wa","مراسلة واتساب","رسالة جماعية للأفراد")}
@@ -235,8 +239,8 @@ async function renderAbout(){
     $("#abSave").onclick = async () => {
       const val = $("#abTxt").value;
       const {error} = await db.from("fa_settings").upsert([{key:"about", value:val, updated_at:new Date().toISOString(), updated_by:S.me.email}], {onConflict:"key"});
-      if(error) return toast(errMsg(error), "warn");
-      ABOUT = val; ed.hidden = false; show(); toast("تم حفظ النص", "ok");
+      if(error) return toast(errMsg(error), true);
+      ABOUT = val; ed.hidden = false; show(); toast("تم حفظ النص");
     };
   };
 }
