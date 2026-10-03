@@ -142,6 +142,32 @@ async function boot(session){
     $("#view").innerHTML = `<div class="card narrow"><p class="err">${esc(errMsg(err))}</p><button class="btn" type="button" onclick="location.reload()">إعادة المحاولة</button></div>`;
   }
 }
+/* الترحيب التفاعلي: كل ضغطة تطلق سهماً يصيب الكلمة */
+let GREET_HITS = 0;
+const GREET_ARROW = '<svg viewBox="0 0 64 14" aria-hidden="true"><path d="M60 7H6"/><path d="M14 2 6 7l8 5"/><path d="M60 7l-6-5M60 7l-6 5M54 7l-6-5M54 7l-6 5"/></svg>';
+function bindGreet(){
+  const g = $("#greet"); if(!g) return;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const shoot = (count = true) => {
+    const a = document.createElement("span"); a.className = "greet-fly"; a.innerHTML = GREET_ARROW; g.appendChild(a);
+    setTimeout(() => {
+      a.remove();
+      g.classList.remove("hit"); void g.offsetWidth; g.classList.add("hit");
+      for(let i = 0; i < 10; i++){
+        const sp = document.createElement("i"), ang = Math.random() * Math.PI * 2, d = 26 + Math.random() * 46;
+        sp.className = "greet-spark"; sp.style.setProperty("--x", Math.cos(ang) * d + "px"); sp.style.setProperty("--y", Math.sin(ang) * d + "px");
+        g.appendChild(sp); setTimeout(() => sp.remove(), 750);
+      }
+      if(count){ GREET_HITS++; const sc = $("#greetScore"); if(sc){ sc.hidden = false; sc.textContent = GREET_HITS + " إصابة"; } }
+    }, reduce ? 0 : 340);
+  };
+  g.onclick = () => shoot(true);
+  if(GREET_HITS){ const sc = $("#greetScore"); sc.hidden = false; sc.textContent = GREET_HITS + " إصابة"; }
+  /* سهم ترحيبي واحد عند أول فتح للرئيسية في الجلسة */
+  let first = false; try{ first = !sessionStorage.getItem("fa-greet"); sessionStorage.setItem("fa-greet", "1"); }catch(e){}
+  if(first && !reduce) setTimeout(() => { if(document.body.contains(g)) shoot(false); }, 700);
+}
+
 /* تسجيل زيارة واحدة لكل جلسة متصفح */
 function logVisit(){
   const k = "fa-visit-" + S.email;
@@ -186,7 +212,7 @@ function renderHome(){
   const bdays = P.filter(p => p.birth_date && !isDead(p) && +p.birth_date.slice(5, 7) === mon).length;
   const recent = P.slice().sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || "")).slice(0, 6);
   $("#view").innerHTML = `
-    <div class="page-h"><div class="hello"><h2>أهلاً ${esc(S.me.display_name || "")}</h2>${aboutMenuHtml()}<${isAdmin() ? 'a href="#/users"' : "span"} class="visits-pill" id="statVisits" title="عدد الزيارات"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg><b>…</b><span>زيارة</span><small></small></${isAdmin() ? "a" : "span"}></div><div class="acts"><a class="btn primary" href="#/add" data-perm="add">+ إضافة سجل</a><a class="btn" href="#/list">بحث</a></div></div>
+    <div class="page-h"><div class="hello"><h2 class="greet-h"><button type="button" class="greet" id="greet" title="اضغط لتطلق سهماً">أهلاً ${esc(S.me.display_name || "")}</button><span class="greet-score" id="greetScore" hidden></span></h2>${aboutMenuHtml()}<${isAdmin() ? 'a href="#/users"' : "span"} class="visits-pill" id="statVisits" title="عدد الزيارات"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg><b>…</b><span>زيارة</span><small></small></${isAdmin() ? "a" : "span"}></div><div class="acts"><a class="btn primary" href="#/add" data-perm="add">+ إضافة سجل</a><a class="btn" href="#/list">بحث</a></div></div>
     <div class="stats">
       <div class="stat gold"><b>${P.length}</b><span>إجمالي الأفراد</span></div>
       <div class="stat"><b>${alive}</b><span>على قيد الحياة</span></div>
@@ -212,7 +238,7 @@ function renderHome(){
       ${tile("#/data","data","استيراد وتصدير","Excel")}
     </div>
     ${recent.length ? `<div class="sec-h">آخر السجلات المحدّثة</div><div class="plist">${recent.map(p => personBtn(p, p.updated_at ? "حُدّث " + fmtDate(p.updated_at.slice(0, 10)) : "")).join("")}</div>` : ""}`;
-  applyPerms(); bindAboutMenu(); fillVisitStat();
+  applyPerms(); bindAboutMenu(); fillVisitStat(); bindGreet();
 }
 
 /* ===== من نحن ===== */
