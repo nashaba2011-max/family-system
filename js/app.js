@@ -145,7 +145,7 @@ function applyPerms(){
   $$("[data-perm]").forEach(el => el.hidden = !can(el.dataset.perm));
   $$("[data-admin]").forEach(el => el.hidden = !isAdmin());
   const rights = isAdmin() ? "مدير" : ["add","edit","delete"].filter(can).map(p => ({add:"إضافة", edit:"تعديل", delete:"حذف"}[p])).join("، ") || "مشاهدة فقط";
-  $("#whoAmI").innerHTML = `<b>${esc(S.me.display_name || "مرحباً")}</b><span class="ltr" style="display:block;text-align:start">${esc(S.email)}</span>${esc(rights)}`;
+  $("#whoAmI").innerHTML = `<div class="who-top"><b>${esc(S.me.display_name || "مرحباً")}</b><a href="#/about" data-nav="about" class="who-about${location.hash.startsWith("#/about") ? " on" : ""}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>من نحن</a></div><span class="ltr" style="display:block;text-align:start">${esc(S.email)}</span>${esc(rights)}`;
 }
 
 /* ===== الرئيسية ===== */
