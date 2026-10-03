@@ -116,8 +116,11 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sidenav a.on{color:#0e131c}}
 .sidenav svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;flex:none}
 .nav-h{font-size:12px;color:var(--ink-3);font-weight:700;margin:16px 12px 4px}
-.who{font-size:13px;color:var(--ink-2);padding:10px 12px;margin-bottom:8px;word-break:break-all;border-radius:14px;background:var(--glass-hi);border:1px solid var(--glass-line);box-shadow:inset 0 1px 0 var(--glass-hi)}
-.who b{display:block;color:var(--ink);font-size:14px}
+.who{font-size:12px;line-height:1.35;color:var(--ink-2);padding:6px 10px;margin-bottom:6px;border-radius:12px;background:var(--glass-hi);border:1px solid var(--glass-line);box-shadow:inset 0 1px 0 var(--glass-hi)}
+.who-l1{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.who b{color:var(--ink);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who-role{flex:none;font-size:11px;font-weight:700;color:var(--gold);background:var(--gold-l);border-radius:999px;padding:1px 8px}
+.who-mail{display:block;text-align:start;font-size:11.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .navout{color:var(--danger)!important;margin-top:4px}
 .sidenav .navout.navpw{color:var(--ink)!important;margin-top:8px}
 .sidenav a.navwa{display:flex;align-items:center;gap:10px;margin-top:14px;padding:10px 12px;border-radius:14px;text-decoration:none;color:#14743f;font-weight:700;font-size:15px;min-height:48px;
