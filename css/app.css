@@ -669,10 +669,14 @@ a.visits-pill:hover{border-color:var(--brand)}
   .hb-btn{flex:1;min-width:0}
 }
 /* ألوان أرقام الصفحة الرئيسية */
-:root{--st-alive:#1f8a4c;--st-dead:#111111;--st-m:#1f5fbf;--st-f:#d0477f}
-:root[data-theme="dark"]{--st-alive:#5fd38d;--st-dead:#f2f2f2;--st-m:#7fb0ff;--st-f:#f58cb7}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--st-alive:#5fd38d;--st-dead:#f2f2f2;--st-m:#7fb0ff;--st-f:#f58cb7}}
+:root{--st-alive:#1f8a4c;--st-dead:#000000;--st-m:#1f5fbf;--st-f:#d0477f}
+:root[data-theme="dark"]{--st-alive:#5fd38d;--st-dead:#000000;--st-m:#7fb0ff;--st-f:#f58cb7}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--st-alive:#5fd38d;--st-dead:#000000;--st-m:#7fb0ff;--st-f:#f58cb7}}
 .stat.st-alive b{color:var(--st-alive)}
 .stat.st-dead b{color:var(--st-dead)}
 .stat.st-m b{color:var(--st-m)}
 .stat.st-f b{color:var(--st-f)}
+/* بطاقة المتوفين في الوضع الليلي: خلفية فاتحة ليظهر الرقم الأسود */
+:root[data-theme="dark"] .stat.st-dead{background:linear-gradient(160deg,#e9ecf2,#c9cfda);border-color:#c9cfda}
+:root[data-theme="dark"] .stat.st-dead span{color:#2a3346}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .stat.st-dead{background:linear-gradient(160deg,#e9ecf2,#c9cfda);border-color:#c9cfda}:root:not([data-theme="light"]) .stat.st-dead span{color:#2a3346}}
