@@ -653,3 +653,18 @@ a.visits-pill:hover{border-color:var(--brand)}
 .topbar{isolation:isolate}
 .topbar::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.12;
   background-image:repeating-linear-gradient(135deg,#d9b874 0 1px,transparent 1px 22px),repeating-linear-gradient(45deg,#d9b874 0 1px,transparent 1px 22px)}
+/* أزرار داخل البنر */
+.hb-acts{margin-inline-start:auto;display:flex;flex-direction:column;gap:10px;align-self:center;animation:hbRise .8s cubic-bezier(.2,.8,.2,1) .24s both}
+.hb-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;min-width:160px;padding:0 20px;border-radius:12px;font-weight:800;font-size:16px;text-decoration:none;color:#fff;
+  background:rgba(255,255,255,.1);border:1px solid rgba(227,194,122,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:transform .15s,background .15s,box-shadow .15s}
+.hb-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.hb-btn:hover{background:rgba(255,255,255,.18);transform:translateY(-2px)}
+.hb-btn.gold{background:linear-gradient(135deg,#e3c27a,#b59559);border-color:transparent;color:#131f35;box-shadow:0 10px 24px -10px rgba(181,149,89,.8)}
+.hb-btn.gold:hover{background:linear-gradient(135deg,#ecd08f,#c2a265)}
+.hb-btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@media (max-width:640px){
+  .hero-banner{flex-wrap:wrap}
+  .hb-text{flex:1 1 0}
+  .hb-acts{flex-direction:row;width:100%;margin:6px 0 0}
+  .hb-btn{flex:1;min-width:0}
+}

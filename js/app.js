@@ -230,9 +230,10 @@ function renderHome(){
         <p>جذور ممتدة وأجيال متصلة</p>
         <div class="hb-facts"><span><b>${P.length}</b> فرداً</span><span><b>${P.length ? Math.max(...P.map(p => lineChain(p).length)) + 1 : 0}</b> أجيال</span><span><b>${fams}</b> أسرة</span></div>
       </div>
+      <div class="hb-acts"><a class="hb-btn gold" href="#/add" data-perm="add"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>إضافة سجل</a><a class="hb-btn" href="#/list"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>بحث</a></div>
       <svg class="hb-arc" viewBox="0 0 1000 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60 Q500 -10 1000 60 Z"></path></svg>
     </section>
-    <div class="page-h home-acts"><div class="acts"><a class="btn primary" href="#/add" data-perm="add">+ إضافة سجل</a><a class="btn" href="#/list">بحث</a></div></div>
+
     <div class="stats">
       <div class="stat gold"><b>${P.length}</b><span>إجمالي الأفراد</span></div>
       <div class="stat"><b>${alive}</b><span>على قيد الحياة</span></div>
