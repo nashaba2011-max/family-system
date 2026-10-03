@@ -676,7 +676,6 @@ a.visits-pill:hover{border-color:var(--brand)}
 .stat.st-dead b{color:var(--st-dead)}
 .stat.st-m b{color:var(--st-m)}
 .stat.st-f b{color:var(--st-f)}
-/* بطاقة المتوفين في الوضع الليلي: خلفية فاتحة ليظهر الرقم الأسود */
-:root[data-theme="dark"] .stat.st-dead{background:linear-gradient(160deg,#e9ecf2,#c9cfda);border-color:#c9cfda}
-:root[data-theme="dark"] .stat.st-dead span{color:#2a3346}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .stat.st-dead{background:linear-gradient(160deg,#e9ecf2,#c9cfda);border-color:#c9cfda}:root:not([data-theme="light"]) .stat.st-dead span{color:#2a3346}}
+/* رقم المتوفين أسود في الوضعين، مع حد فاتح رفيع في الوضع الليلي ليبقى مقروءاً */
+:root[data-theme="dark"] .stat.st-dead b{-webkit-text-stroke:1px rgba(255,255,255,.75);text-shadow:0 0 10px rgba(255,255,255,.18)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .stat.st-dead b{-webkit-text-stroke:1px rgba(255,255,255,.75);text-shadow:0 0 10px rgba(255,255,255,.18)}}
