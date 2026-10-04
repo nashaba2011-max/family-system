@@ -72,9 +72,11 @@ function drawJoin(){
       <button class="btn primary block" type="button" id="jClose">الذهاب لتسجيل الدخول</button></div>` : `
       <div class="join-done"><span class="jd-ic">✓</span><b>تم إرسال طلبك إلى الإدارة</b>
       <p>ستراجع الإدارة طلبك وتحدد صلاحياتك. بعد الموافقة تستطيع الدخول ببريدك <b class="ltr">${esc(D.email)}</b> وكلمة السر التي اخترتها.</p>
-      <a class="btn wa block" href="${esc(wa)}" target="_blank" rel="noopener">أبلغ الإدارة عبر واتساب (اختياري)</a>
+      <div class="jd-wa"><b>خطوة أخيرة: أرسل طلبك للإدارة عبر واتساب</b><span>اضغط الزر، سيفتح واتساب والرسالة جاهزة، ثم اضغط «إرسال» في واتساب.</span>
+      <a class="btn wa block big" id="jWa" href="${esc(wa)}" target="_blank" rel="noopener">إرسال الطلب عبر واتساب</a></div>
       <button class="btn block" type="button" id="jClose">إغلاق</button></div>`;
     $("#jClose").onclick = () => { $("#dJoin").close(); $("#lEmail").value = D.email; $("#lPass").focus(); };
+    const jw = $("#jWa"); if(jw) jw.addEventListener("click", () => { jw.textContent = "تم فتح واتساب — اضغط «إرسال» هناك"; });
   }
 }
 async function sendJoin(){
