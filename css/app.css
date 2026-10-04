@@ -697,3 +697,54 @@ a.visits-pill:hover{border-color:var(--brand)}
 .pcard.locked::after,.node.locked::after{content:"";position:absolute;top:8px;inset-inline-start:8px;width:14px;height:14px;opacity:.55;
   background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") center/contain no-repeat}
 .node.locked{position:relative}
+/* ===== تسجيل عضو جديد ===== */
+.linkbtn.strong{font-weight:800;color:var(--gold);text-decoration:none;border:1.5px solid var(--gold);border-radius:999px;padding:5px 14px}
+.linkbtn.strong:hover{background:var(--gold-l)}
+.join-dlg{width:min(560px,calc(100vw - 24px))}
+.join-steps{display:flex;gap:6px;padding:10px 20px 0}
+.join-steps span{flex:1;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--ink-3);padding-bottom:8px;border-bottom:3px solid var(--line)}
+.join-steps b{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;background:var(--line);color:var(--ink-2)}
+.join-steps span.on{color:var(--brand-d);border-color:var(--gold)}
+.join-steps span.on b{background:var(--gold);color:#fff}
+.join-steps span.done{color:var(--ink-2);border-color:var(--brand)}
+.join-steps span.done b{background:var(--brand);color:#fff}
+.join-form{display:grid;gap:10px}
+.join-hello{display:flex;flex-direction:column;gap:2px;padding:14px 16px;margin-bottom:12px;border-radius:12px;color:#f6f2e8;
+  background:radial-gradient(400px 160px at 90% 0%,rgba(181,149,89,.35),transparent 70%),linear-gradient(135deg,#1c2c47,#131f35)}
+.join-hello b{font-size:20px;color:#fff}
+.join-hello span{color:#e3c27a;font-size:14px}
+.terms{max-height:min(46vh,380px);overflow:auto;border:1px solid var(--line);border-radius:12px;padding:12px 16px;background:var(--paper-2);line-height:1.9}
+.terms:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.terms h4{margin:10px 0 4px;color:var(--brand-d);font-size:16px}
+.terms h4:first-child{margin-top:0}
+.terms p{margin:0 0 6px}
+.terms ol{margin:4px 0 0;padding-inline-start:22px}
+.terms li{margin-bottom:6px}
+.terms li::marker{color:var(--gold);font-weight:800}
+.join-accept{margin:12px 0 4px;font-weight:700}
+.join-acts{display:flex;justify-content:space-between;gap:8px;margin-top:10px}
+.join-done{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:8px 4px}
+.join-done b{font-size:19px;color:var(--brand-d)}
+.join-done p{margin:0;color:var(--ink-2);line-height:1.8}
+.join-done .btn{width:100%}
+.jd-ic{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-size:30px;font-weight:800;color:#fff;background:linear-gradient(135deg,#e3c27a,#b59559);box-shadow:0 10px 24px -10px rgba(181,149,89,.8)}
+.jd-ic.ok{background:linear-gradient(135deg,#5fd38d,#1f8a4c)}
+/* شارة الطلبات في القائمة */
+.nav-badge{margin-inline-start:auto;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:#d0344c;color:#fff;font-size:12px;font-weight:800;display:inline-grid;place-items:center;box-shadow:0 0 0 2px var(--paper)}
+/* صفحة طلبات الانضمام */
+.rq-card{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
+.rq-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.rq-name{display:block;font-size:18px;color:var(--brand-d)}
+.rq-h small{color:var(--ink-3)}
+.rq-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:0}
+.rq-info div{background:var(--paper-2);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.rq-info dt{font-size:12px;color:var(--ink-3)}
+.rq-info dd{margin:0;font-weight:700;word-break:break-word}
+.rq-perms{border-top:1px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.rq-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.rq-lbl{min-width:110px;font-weight:700;color:var(--ink-2);font-size:14px}
+.rq-hint{font-size:12.5px;margin:0}
+.rq-acts{display:flex;flex-wrap:wrap;gap:8px}
+/* قص شعاع المنارة داخل بطاقة الدخول حتى لا تتحرك الصفحة جانبياً */
+.login{overflow-x:hidden}
+.login-card{position:relative;overflow:hidden;isolation:isolate}

@@ -14,6 +14,7 @@ const ROUTES = {
   whatsapp: {title:"مراسلة واتساب", render:renderWhatsapp},
   settings: {title:"الإعدادات والقوائم", render:renderSettings, admin:true},
   users:    {title:"المستخدمون", render:renderUsers, admin:true},
+  requests: {title:"طلبات الانضمام", render:renderRequests, admin:true},
   data:     {title:"استيراد وتصدير", render:renderData},
   about:    {title:"من نحن", render:n => renderAbout(n)},
   events:   {title:"مناسبات العائلة", render:renderEvents},
@@ -79,7 +80,7 @@ $("#loginForm").onsubmit = async e => {
   if(!email || !password){ $("#lErr").textContent = "أدخل البريد وكلمة السر"; return; }
   btn.disabled = true; btn.textContent = "جاري الدخول…";
   try{ const {error} = await db.auth.signInWithPassword({email, password}); if(error) throw error; }
-  catch(err){ $("#lErr").textContent = errMsg(err); }
+  catch(err){ $("#lErr").textContent = (/not confirmed|Invalid login/i.test(err.message || "") && await pendingLoginMessage(email)) || errMsg(err); }
   finally{ btn.disabled = false; btn.textContent = "دخول"; }
 };
 $("#lForgot").onclick = async () => {
@@ -88,13 +89,7 @@ $("#lForgot").onclick = async () => {
   const {error} = await db.auth.resetPasswordForEmail(email, {redirectTo: location.href.split("#")[0]});
   $("#lErr").textContent = error ? errMsg(error) : "أرسلنا رابط تعيين كلمة السر إلى بريدك";
 };
-$("#lSignup").onclick = async () => {
-  const email = $("#lEmail").value.trim().toLowerCase(), password = $("#lPass").value;
-  if(!email || password.length < 6){ $("#lErr").textContent = "اكتب بريدك (الذي أضافه المدير) وكلمة سر جديدة من 6 أحرف على الأقل، ثم اضغط «أنشئ كلمة سر»"; return; }
-  const {data, error} = await db.auth.signUp({email, password, options:{emailRedirectTo: location.href.split("#")[0]}});
-  if(error){ $("#lErr").textContent = errMsg(error); return; }
-  $("#lErr").textContent = data.session ? "" : "تم إنشاء الحساب — افتح رسالة التأكيد في بريدك ثم ادخل";
-};
+$("#lSignup").onclick = openJoin;
 $("#pwBtn").onclick = async () => {
   closeNav();
   const p1 = await ask("تغيير كلمة السر", "اكتب كلمة السر الجديدة (6 أحرف على الأقل)", {input:true, type:"password", okText:"متابعة"});
@@ -132,13 +127,17 @@ async function boot(session){
     const {data, error} = await db.from("fa_users").select("*").eq("email", S.email).maybeSingle();
     if(error) throw error;
     if(!data){
-      $("#view").innerHTML = `<div class="card narrow"><h3>الحساب غير مفعّل</h3><p>البريد <b class="ltr">${esc(S.email)}</b> غير مضاف إلى البرنامج بعد. اطلب من المدير إضافتك من شاشة «المستخدمون».</p><button class="btn" type="button" id="noRoleOut">تسجيل الخروج</button></div>`;
+      const st = (await db.rpc("fa_request_status", {p_email:S.email})).data;
+      $("#view").innerHTML = st === "pending" ? `<div class="card narrow"><h3>طلبك قيد المراجعة</h3><p>وصل طلب انضمامك إلى الإدارة، وستتمكن من استخدام البرنامج بعد الموافقة وتحديد صلاحياتك.</p><button class="btn" type="button" id="noRoleOut">تسجيل الخروج</button></div>`
+        : st === "rejected" ? `<div class="card narrow"><h3>لم تتم الموافقة على الطلب</h3><p>للاستفسار تواصل مع إدارة البرنامج عبر واتساب: <span class="ltr">${esc(CONTACT_WA)}</span></p><button class="btn" type="button" id="noRoleOut">تسجيل الخروج</button></div>`
+        : `<div class="card narrow"><h3>الحساب غير مفعّل</h3><p>البريد <b class="ltr">${esc(S.email)}</b> غير مضاف إلى البرنامج بعد. سجّل طلب انضمام من زر «تسجيل عضو جديد» في شاشة الدخول، أو اطلب من المدير إضافتك.</p><button class="btn" type="button" id="noRoleOut">تسجيل الخروج</button></div>`;
       $("#noRoleOut").onclick = () => db.auth.signOut(); return;
     }
     S.me = data;
     applyPerms();
     renderTopExtra();
     logVisit();
+    refreshReqBadge(true);
     await loadAll();
     currentHash = location.hash;
     route();
