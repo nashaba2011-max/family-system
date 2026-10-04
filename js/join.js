@@ -150,7 +150,7 @@ async function renderRequests(focusId){
           <label class="check"><input type="checkbox" data-k="del" ${s.del ? "checked" : ""} ${s.role === "admin" ? "disabled" : ""}> حذف</label>
           <label class="check" title="يرى أسرته وسلسلة آبائه فقط، والشجرة كاملة بالأسماء"><input type="checkbox" data-k="family" ${s.family && s.role !== "admin" ? "checked" : ""} ${s.role === "admin" ? "disabled" : ""}> أسرته فقط</label>
         </div>
-        <p class="muted rq-hint">بدون أي صلاحية يكون العضو «مشاهدة فقط». خيار «أسرته فقط» يحتاج ربطه بسجله.</p>
+        <p class="muted rq-hint">بدون أي صلاحية يكون العضو «مشاهدة فقط». إذا لم تربطه بسجل، سيُطلب منه تسجيل بياناته في سجل العائلة عند أول دخول قبل التصفح.</p>
       </div>
       <div class="rq-acts"><button class="btn primary" type="button" data-act="ok">موافقة وإضافة العضو</button><button class="btn danger" type="button" data-act="no">رفض</button>
         ${r.phone ? `<a class="btn wa" href="${esc(waLink(r.phone, `السلام عليكم ${r.full_name.split(/\s+/)[0]}، بخصوص طلب انضمامك لبرنامج عائلة النشابة`))}" target="_blank" rel="noopener">واتساب</a>` : ""}</div>` :
@@ -183,9 +183,8 @@ async function renderRequests(focusId){
       toast("تم رفض الطلب"); refreshReqBadge(); return renderRequests();
     }
     if(b.dataset.act === "ok"){
-      if(s.family && s.role !== "admin" && !s.person) return toast("اختر سجله في العائلة أولاً، أو ألغِ «أسرته فقط»", true);
       const rights = s.role === "admin" ? "مدير (كل الصلاحيات)" : [s.add && "إضافة", s.edit && "تعديل", s.del && "حذف"].filter(Boolean).join("، ") || "مشاهدة فقط";
-      if(!await ask("الموافقة على العضو", `إضافة ${r.full_name} بصلاحية: ${rights}${s.family && s.role !== "admin" ? " · أسرته فقط" : ""}؟`, {okText:"موافقة"})) return;
+      if(!await ask("الموافقة على العضو", `إضافة ${r.full_name} بصلاحية: ${rights}${s.family && s.role !== "admin" ? " · أسرته فقط" : ""}${!s.person && s.role !== "admin" ? " — وسيُطلب منه تسجيل بياناته عند أول دخول" : ""}؟`, {okText:"موافقة"})) return;
       const {data:res, error} = await db.rpc("fa_approve_request", {p_id:id, p_role:s.role, p_add:s.add, p_edit:s.edit, p_delete:s.del, p_person:s.person, p_family_only:s.family && s.role !== "admin"});
       if(error) return toast(errMsg(error), true);
       toast(res === "no_account" ? "تمت الموافقة — لكن هذا طلب قديم بدون كلمة سر، اطلب منه تسجيل طلب جديد بنفس البريد أو أنشئ له كلمة سر" : "تمت الموافقة وأُضيف العضو، ويستطيع الدخول الآن");
@@ -203,5 +202,97 @@ async function editTerms(){
     const {error} = await db.from("fa_settings").upsert([{key:"terms", value:val, updated_at:new Date().toISOString(), updated_by:S.email}], {onConflict:"key"});
     if(error) return toast(errMsg(error), true);
     TERMS_CACHE = val; $("#dModal").close(); toast("تم حفظ الشروط");
+  };
+}
+
+/* ===== إكمال التسجيل: العضو غير المربوط بسجل يسجّل بياناته قبل التصفح ===== */
+const needsSelfRegister = () => !!(S.me && S.me.role !== "admin" && !S.me.person_id);
+const SR = {father:null, unknown:false};
+function renderSelfRegister(){
+  const v = $("#view"), all = (S.treeAll ? S.treeAll.people : S.people);
+  const first = (S.me.display_name || "").trim().split(/\s+/)[0] || "";
+  const opt = (arr, ph) => `<option value="">${ph}</option>` + arr.map(x => `<option>${esc(x)}</option>`).join("");
+  v.innerHTML = `
+    <section class="card sr-card">
+      <div class="join-hello"><b>أهلاً بك يا ${esc(first || "عضو العائلة")}</b><span>خطوة واحدة قبل التصفح: سجّل بياناتك في سجل العائلة</span></div>
+      <p class="muted" style="margin:0">تمت الموافقة على حسابك. اكتب بياناتك واختر والدك من العائلة، وسيُضاف سجلك إلى الشجرة ويُربط بحسابك.</p>
+      <form id="srForm" class="join-form" novalidate>
+        <div class="grid2">
+          <div class="field req"><label for="srName">اسمك الأول</label><input class="inp" id="srName" maxlength="40" value="${esc(first)}"></div>
+          <div class="field req"><label for="srGender">الجنس</label><select class="inp" id="srGender"><option value="">اختر</option><option>ذكر</option><option>أنثى</option></select></div>
+        </div>
+        <div class="field req"><label for="srFq">والدك في العائلة</label>
+          <div class="sr-pick"><input class="inp" id="srFq" placeholder="اكتب اسم والدك للبحث" autocomplete="off"><div class="sr-list" id="srList" hidden></div></div>
+          <div class="sr-chosen" id="srChosen" hidden></div>
+          <label class="check" style="margin-top:6px"><input type="checkbox" id="srUnknown"> والدي غير مسجل في العائلة</label>
+        </div>
+        <div class="grid2 sr-manual" id="srManual" hidden>
+          <div class="field"><label for="srN2">اسم الأب</label><input class="inp" id="srN2" maxlength="40"></div>
+          <div class="field"><label for="srN3">اسم الجد</label><input class="inp" id="srN3" maxlength="40"></div>
+          <div class="field"><label for="srN4">اسم جد الأب</label><input class="inp" id="srN4" maxlength="40"></div>
+          <div class="field"><label for="srFam">العائلة</label><input class="inp" id="srFam" maxlength="40" value="النشابة"></div>
+        </div>
+        <div class="sr-preview" id="srPreview"></div>
+        <div class="grid2">
+          <div class="field"><label for="srMother">اسم الأم</label><input class="inp" id="srMother" maxlength="80"></div>
+          <div class="field"><label for="srBirth">تاريخ الميلاد</label><input class="inp" id="srBirth" type="date"></div>
+          <div class="field req"><label for="srPhone">الهاتف</label><input class="inp ltr" id="srPhone" type="tel" maxlength="30"></div>
+          <div class="field"><label for="srMarital">الحالة الاجتماعية</label><select class="inp" id="srMarital">${opt(lk("marital"), "اختر")}</select></div>
+          <div class="field"><label for="srGov">المحافظة</label><select class="inp" id="srGov">${opt(lk("governorate"), "اختر")}</select></div>
+          <div class="field"><label for="srArea">المنطقة</label><select class="inp" id="srArea">${opt([], "اختر المحافظة أولاً")}</select></div>
+          <div class="field"><label for="srJob">الوظيفة</label><input class="inp" id="srJob" maxlength="80"></div>
+        </div>
+        <div class="err" id="srErr" role="alert"></div>
+        <button class="btn primary block" type="submit" id="srSave">حفظ بياناتي ومتابعة</button>
+        <button class="linkbtn" type="button" id="srOut" style="justify-self:center">تسجيل الخروج</button>
+      </form>
+    </section>`;
+  const fathers = all.filter(p => p.gender === "ذكر");
+  const preview = () => {
+    const f = SR.father, n1 = $("#srName").value.trim();
+    const parts = SR.unknown || !f ? [n1, $("#srN2").value.trim(), $("#srN3").value.trim(), $("#srN4").value.trim(), $("#srFam").value.trim()] : [n1, f.name1, f.name2, f.name3, f.name4, f.family];
+    const name = parts.filter(Boolean).join(" ");
+    $("#srPreview").innerHTML = name ? `اسمك في السجل: <b>${esc(name)}</b>` : "";
+  };
+  const drawList = () => {
+    const q = norm($("#srFq").value), L = $("#srList");
+    if(!q){ L.hidden = true; return; }
+    const words = q.split(" ").filter(Boolean);
+    const res = fathers.filter(p => words.every(w => norm(longName(p)).split(" ").some(x => x.startsWith(w)))).slice(0, 12);
+    L.innerHTML = res.length ? res.map(p => `<button type="button" data-fid="${p.id}">${esc(fullName(p, 5))} <small>#${p.serial}</small></button>`).join("") : `<p class="muted">لا يوجد اسم مطابق — اختر «والدي غير مسجل في العائلة»</p>`;
+    L.hidden = false;
+  };
+  $("#srFq").oninput = drawList;
+  $("#srList").onclick = e => {
+    const b = e.target.closest("[data-fid]"); if(!b) return;
+    SR.father = all.find(p => p.id === +b.dataset.fid); SR.unknown = false; $("#srUnknown").checked = false; $("#srManual").hidden = true;
+    $("#srList").hidden = true; $("#srFq").value = "";
+    $("#srChosen").hidden = false; $("#srChosen").innerHTML = `<span>${esc(fullName(SR.father, 5))} <small>#${SR.father.serial}</small></span><button type="button" class="linkbtn" id="srClear">تغيير</button>`;
+    $("#srClear").onclick = () => { SR.father = null; $("#srChosen").hidden = true; preview(); $("#srFq").focus(); };
+    preview();
+  };
+  $("#srUnknown").onchange = e => { SR.unknown = e.target.checked; $("#srManual").hidden = !SR.unknown; if(SR.unknown){ SR.father = null; $("#srChosen").hidden = true; } preview(); };
+  ["#srName", "#srN2", "#srN3", "#srN4", "#srFam"].forEach(s => $(s).addEventListener("input", preview));
+  $("#srGov").onchange = e => { $("#srArea").innerHTML = opt(areasOf(e.target.value), "اختر"); };
+  $("#srOut").onclick = () => db.auth.signOut();
+  $("#srForm").onsubmit = async e => {
+    e.preventDefault();
+    const err = m => { $("#srErr").textContent = m; };
+    const d = {name1:$("#srName").value.trim(), gender:$("#srGender").value, father_id:SR.father ? SR.father.id : "", name2:$("#srN2").value.trim(), name3:$("#srN3").value.trim(), name4:$("#srN4").value.trim(), family:$("#srFam").value.trim(),
+      mother_name:$("#srMother").value.trim(), birth_date:$("#srBirth").value, phone:$("#srPhone").value.trim(), marital:$("#srMarital").value, governorate:$("#srGov").value, area:$("#srArea").value, job:$("#srJob").value.trim()};
+    if(!d.name1) return err("اكتب اسمك الأول");
+    if(!d.gender) return err("اختر الجنس");
+    if(!SR.father && !SR.unknown) return err("اختر والدك من العائلة، أو ضع علامة على «والدي غير مسجل في العائلة»");
+    if(SR.unknown && !d.name2) return err("اكتب اسم الأب");
+    if(!/^\+?[\d\s-]{7,}$/.test(d.phone)) return err("اكتب رقم هاتف صحيحاً");
+    const btn = $("#srSave"); btn.disabled = true; btn.textContent = "جارٍ الحفظ…";
+    const {data:pid, error} = await db.rpc("fa_self_register", {p:d});
+    if(error){ btn.disabled = false; btn.textContent = "حفظ بياناتي ومتابعة"; return err(errMsg(error)); }
+    const me = await db.from("fa_users").select("*").eq("email", S.email).maybeSingle();
+    if(me.data) S.me = me.data;
+    S.mustRegister = false; applyPerms();
+    await loadAll();
+    toast("تم حفظ بياناتك وإضافتك إلى سجل العائلة");
+    if(location.hash === "#/home") route(); else location.hash = "#/home";
   };
 }

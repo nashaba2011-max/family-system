@@ -38,6 +38,7 @@ async function route(){
   }
   skipGuard = false; S.dirty = false; currentHash = location.hash;
   const {name, args} = parseHash(), r = ROUTES[name];
+  if(S.mustRegister){ closeNav(); PAGE_NAME = "home"; $("#crumb").textContent = "إكمال التسجيل"; renderSelfRegister(); return; }
   useTreeData(name === "tree");
   NAV_DEPTH = NAV_FROM_BACK ? Math.max(0, NAV_DEPTH - 1) : NAV_DEPTH + (NAV_STARTED ? 1 : 0);
   NAV_FROM_BACK = false; NAV_STARTED = true; PAGE_NAME = name;
@@ -130,7 +131,7 @@ db.auth.onAuthStateChange((event, session) => {
       if(p){ const {error} = await db.auth.updateUser({password:p}); toast(error ? errMsg(error) : "تم تغيير كلمة السر", !!error); }
     }, 0);
   }
-  if(!session){ booted = false; S.me = null; $("#app").hidden = true; $("#vLogin").hidden = false; return; }
+  if(!session){ booted = false; S.me = null; S.mustRegister = false; $("#app").hidden = true; $("#vLogin").hidden = false; return; }
   if(booted) return; booted = true;
   setTimeout(() => boot(session), 0); // خارج نداء المصادقة لتجنب التعليق
 });
@@ -156,6 +157,7 @@ async function boot(session){
     refreshReqBadge(true);
     await loadAll();
     currentHash = location.hash;
+    S.mustRegister = needsSelfRegister();
     route();
   }catch(err){
     $("#view").innerHTML = `<div class="card narrow"><p class="err">${esc(errMsg(err))}</p><button class="btn" type="button" onclick="location.reload()">إعادة المحاولة</button></div>`;
