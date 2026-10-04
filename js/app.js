@@ -14,7 +14,7 @@ const ROUTES = {
   whatsapp: {title:"مراسلة واتساب", render:renderWhatsapp},
   settings: {title:"الإعدادات والقوائم", render:renderSettings, admin:true},
   users:    {title:"المستخدمون", render:renderUsers, admin:true},
-  requests: {title:"طلبات الانضمام", render:renderRequests, admin:true},
+  requests: {title:"طلبات الانضمام", render:id => { RQ.focusDone = false; return renderRequests(id); }, admin:true},
   data:     {title:"استيراد وتصدير", render:renderData},
   about:    {title:"من نحن", render:n => renderAbout(n)},
   events:   {title:"مناسبات العائلة", render:renderEvents},

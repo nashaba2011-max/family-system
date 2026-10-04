@@ -66,7 +66,8 @@ function drawJoin(){
     $("#jSend").onclick = sendJoin;
   }else{
     const st = D.result;
-    const wa = waLink(CONTACT_WA, `السلام عليكم، سجلت طلب انضمام لبرنامج عائلة النشابة.\nالاسم: ${D.name}\nالبريد: ${D.email}\nالهاتف: ${D.phone}${D.relation ? "\nصلتي بالعائلة: " + D.relation : ""}`);
+    const reqLink = location.href.split("#")[0] + "#/requests/" + (D.reqId || "");
+    const wa = waLink(CONTACT_WA, `السلام عليكم، سجلت طلب انضمام لبرنامج عائلة النشابة.\nالاسم: ${D.name}\nالبريد: ${D.email}\nالهاتف: ${D.phone}${D.relation ? "\nصلتي بالعائلة: " + D.relation : ""}\n\nرابط الطلب:\n${reqLink}`);
     b.innerHTML = st === "member" ? `
       <div class="join-done"><span class="jd-ic ok">✓</span><b>بريدك مضاف في البرنامج مسبقاً</b><p>ادخل ببريدك وكلمة السر الخاصة بحسابك، وإن نسيتها اطلب كلمة سر جديدة من الإدارة.</p>
       <button class="btn primary block" type="button" id="jClose">الذهاب لتسجيل الدخول</button></div>` : `
@@ -87,7 +88,9 @@ async function sendJoin(){
     const {data, error} = await db.rpc("fa_request_join", {p_name:D.name, p_email:D.email, p_phone:D.phone, p_relation:D.relation || "", p_note:"", p_password:D.password});
     if(error) throw error;
     if(data === "busy") throw new Error("طلبات كثيرة الآن، حاول بعد قليل");
-    D.result = data; D.password = ""; JOIN.step = 3; drawJoin();
+    const m = /^created:(\d+)$/.exec(String(data || ""));
+    D.reqId = m ? +m[1] : null;
+    D.result = m ? "created" : data; D.password = ""; JOIN.step = 3; drawJoin();
   }catch(e){ err(errMsg(e)); btn.disabled = false; btn.textContent = "أوافق وأرسل الطلب"; }
 }
 /* رسالة واضحة عند محاولة الدخول قبل موافقة الإدارة */
@@ -109,12 +112,17 @@ async function refreshReqBadge(toastIt = false){
     if(!shown) toast(count === 1 ? "لديك طلب انضمام جديد بانتظار موافقتك" : `لديك ${count} طلبات انضمام بانتظار موافقتك`);
   }
 }
-async function renderRequests(){
+async function renderRequests(focusId){
   const v = $("#view");
+  focusId = +focusId || 0;
+  if(focusId && !RQ.focusDone){
+    const {data:one} = await db.from("fa_requests").select("status").eq("id", focusId).maybeSingle();
+    if(one) RQ.tab = one.status;
+  }
   v.innerHTML = `<div class="page-h"><h2>طلبات الانضمام</h2><div class="acts"><button class="btn" id="rqTerms">تعديل الشروط والقوانين</button></div></div>
     <div class="ev-tabs" role="tablist">${[["pending","بانتظار الموافقة"],["approved","المقبولة"],["rejected","المرفوضة"]].map(([k, t]) => `<button role="tab" class="ev-tab ${RQ.tab === k ? "on" : ""}" data-t="${k}" aria-selected="${RQ.tab === k}">${t}</button>`).join("")}</div>
     <div id="rqBody"><div class="spin"></div></div>`;
-  $$(".ev-tab").forEach(b => b.onclick = () => { RQ.tab = b.dataset.t; renderRequests(); });
+  $$(".ev-tab").forEach(b => b.onclick = () => { RQ.tab = b.dataset.t; RQ.focusDone = true; renderRequests(); });
   $("#rqTerms").onclick = editTerms;
   const {data, error} = await db.from("fa_requests").select("*").eq("status", RQ.tab).order("created_at", {ascending:false});
   if(!$("#rqBody")) return;
@@ -149,6 +157,12 @@ async function renderRequests(){
       r.status === "approved" && r.phone ? `<div class="rq-acts"><a class="btn wa" href="${esc(waLink(r.phone, `السلام عليكم ${r.full_name.split(/\s+/)[0]}، تمت الموافقة على طلب انضمامك لبرنامج عائلة النشابة. تستطيع الدخول الآن ببريدك وكلمة السر التي اخترتها:\n${location.href.split("#")[0]}`))}" target="_blank" rel="noopener">إبلاغه بالموافقة عبر واتساب</a></div>` : ""}
     </article>`;
   }).join("");
+  if(focusId && !RQ.focusDone){
+    RQ.focusDone = true;
+    const card = $(`.rq-card[data-id="${focusId}"]`);
+    if(card){ card.classList.add("rq-focus"); setTimeout(() => card.scrollIntoView({behavior:"smooth", block:"center"}), 60); }
+    else toast("هذا الطلب غير موجود — ربما حُذف", true);
+  }
   $("#rqBody").onchange = e => {
     const c = e.target.closest("[data-k]"); if(!c) return;
     const id = +c.closest(".rq-card").dataset.id, s = RQ.sel[id], k = c.dataset.k;

@@ -762,3 +762,5 @@ a.visits-pill:hover{border-color:var(--brand)}
 .btn.wa.big:hover{background:#1ebe5b}
 :root[data-theme="dark"] .jd-wa{background:#13291c}:root[data-theme="dark"] .jd-wa b{color:#6ee7a0}:root[data-theme="dark"] .jd-wa span{color:#a7d7b8}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .jd-wa{background:#13291c}:root:not([data-theme="light"]) .jd-wa b{color:#6ee7a0}:root:not([data-theme="light"]) .jd-wa span{color:#a7d7b8}}
+.rq-card.rq-focus{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 35%,transparent),var(--shadow);animation:rqPulse 1.2s ease-out 2}
+@keyframes rqPulse{50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--gold) 20%,transparent),var(--shadow)}}
