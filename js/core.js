@@ -244,7 +244,19 @@ function pickPerson(title, {filter = null, allowNone = false} = {}){
 /* طباعة */
 function printHtml(html){
   const a = $("#printArea"); a.innerHTML = html;
-  setTimeout(() => window.print(), 300);
+  /* ننتظر تحميل الصور (حتى 4 ثوانٍ) قبل فتح نافذة الطباعة */
+  const imgs = [...a.querySelectorAll("img")].filter(i => !i.complete);
+  const ready = Promise.all(imgs.map(i => new Promise(r => { i.onload = i.onerror = r; })));
+  Promise.race([ready, new Promise(r => setTimeout(r, 4000))]).then(() => setTimeout(() => window.print(), 200));
+}
+/* روابط صور شخصية موقّعة لعدة أشخاص دفعة واحدة */
+async function photoUrls(people){
+  const paths = [...new Set(people.map(p => p.photo_path).filter(Boolean))], map = new Map();
+  for(let i = 0; i < paths.length; i += 100){
+    const {data} = await db.storage.from(PHOTO_BUCKET).createSignedUrls(paths.slice(i, i + 100), 3600);
+    (data || []).forEach(r => { if(r.signedUrl) map.set(r.path, r.signedUrl); });
+  }
+  return map;
 }
 async function exportXlsx(rows, sheetName, fileName){
   await loadScript(XLSX_URL);

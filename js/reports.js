@@ -148,7 +148,14 @@ const REPORTS = [
     build(){ const l = F().filter(isDead).sort((a, b) => (b.death_date || "").localeCompare(a.death_date || "") || bySerial(a, b)); const c = ["serial","longname","death","age","burial"];
       return {html:`<p>${l.length} متوفى (العمر = العمر عند الوفاة)</p>` + peopleTable(l, c), rows:peopleRows(l, c)}; }},
   {key:"notes", grp:"حسب البيانات", t:"الملاحظات", d:"كل السجلات التي فيها ملاحظات", params:["filters"],
-    build(){ const l = F().filter(p => p.notes); return {html:l.map(p => `<h2>${nm(p, fullName(p, 4))} #${p.serial}</h2><p style="white-space:pre-wrap;margin:0">${esc(p.notes)}</p>`).join("") || '<p class="muted">لا توجد ملاحظات</p>', rows:l.map(p => ({"#":p.serial, "الاسم":fullName(p, 4), "الملاحظات":p.notes}))}; }},
+    async build(){
+      const l = F().filter(p => p.notes);
+      if(!l.length) return {html:'<p class="muted">لا توجد ملاحظات</p>', rows:[]};
+      const urls = await photoUrls(l);
+      return {html:l.map(p => { const u = urls.get(p.photo_path);
+        return `<div class="note-card"><div class="note-h">${u ? `<img class="note-ph" src="${esc(u)}" alt="">` : `<span class="note-ph none ${gcls(p)}">${esc((p.name1 || "?").slice(0, 1))}</span>`}<div><b class="note-name">${nm(p, longName(p))}</b><small>#${p.serial}${p.birth_date ? " · مواليد " + esc(fmtDate(p.birth_date)) : ""}${isDead(p) ? " · متوفى" : ""}</small></div></div><p class="note-txt">${esc(p.notes)}</p></div>`; }).join(""),
+        rows:l.map(p => ({"#":p.serial, "الاسم":longName(p), "الملاحظات":p.notes}))};
+    }},
   {key:"phones", grp:"حسب البيانات", t:"دليل الهواتف", d:"أرقام التواصل للأحياء", params:["filters"],
     build(){ const l = F().filter(p => !isDead(p) && (p.phone || p.phone2 || p.email)).sort((a, b) => a.name1.localeCompare(b.name1, "ar")); const c = ["name","phone","email","area"];
       return {html:peopleTable(l, c), rows:peopleRows(l, c), sub:filterNote(REP_ARGS)}; }},
