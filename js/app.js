@@ -21,7 +21,6 @@ const ROUTES = {
   event:    {title:"مناسبة", render:id => renderEvent(+id)},
 };
 let currentHash = "", skipGuard = false, restoring = false;
-let NAV_DEPTH = 0, NAV_FROM_BACK = false, NAV_STARTED = false;
 
 function parseHash(){
   const [name = "home", ...args] = location.hash.replace(/^#\/?/, "").split("/");
@@ -39,10 +38,6 @@ async function route(){
   skipGuard = false; S.dirty = false; currentHash = location.hash;
   const {name, args} = parseHash(), r = ROUTES[name];
   useTreeData(name === "tree");
-  /* زر الرجوع: يظهر في كل الصفحات عدا الرئيسية */
-  NAV_DEPTH = NAV_FROM_BACK ? Math.max(0, NAV_DEPTH - 1) : (name === "home" && !location.hash.slice(2) ? 0 : NAV_DEPTH + (NAV_STARTED ? 1 : 0));
-  NAV_FROM_BACK = false; NAV_STARTED = true;
-  $("#backBtn").hidden = name === "home";
   closeNav();
   $$("[data-nav]").forEach(a => a.classList.toggle("on", a.dataset.nav === (name === "event" ? "events" : name)));
   $("#crumb").textContent = r.title;
@@ -57,10 +52,6 @@ async function route(){
   v.focus({preventScroll:true});
 }
 window.addEventListener("hashchange", route);
-$("#backBtn").onclick = () => {
-  if(NAV_DEPTH > 0){ NAV_FROM_BACK = true; history.back(); }
-  else location.hash = "#/home";
-};
 window.addEventListener("beforeunload", e => { if(S.dirty){ e.preventDefault(); e.returnValue = ""; } });
 document.addEventListener("click", e => {
   const o = e.target.closest("[data-open]");
