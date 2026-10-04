@@ -748,3 +748,21 @@ a.visits-pill:hover{border-color:var(--brand)}
 /* قص شعاع المنارة داخل بطاقة الدخول حتى لا تتحرك الصفحة جانبياً */
 .login{overflow-x:hidden}
 .login-card{position:relative;overflow:hidden;isolation:isolate}
+/* زر الرجوع في الشريط العلوي */
+.topbar .backbtn{display:inline-flex;align-items:center;gap:4px;width:auto;padding:0 12px 0 10px;border-radius:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);font-weight:700;font-size:15px;color:#fff;min-height:40px}
+.topbar .backbtn:hover{background:rgba(255,255,255,.18);border-color:rgba(227,194,122,.6)}
+.topbar .backbtn[hidden]{display:none}
+@media (max-width:640px){.topbar .backbtn span{display:none}.topbar .backbtn{padding:0 8px}}
+@media (max-width:640px){.topbar:has(.backbtn:not([hidden])) .brand{display:none}.topbar:has(.backbtn:not([hidden])) .top-extra{margin-inline-start:auto}}
+@media (max-width:640px){
+  .topbar{gap:6px;padding-inline:10px}
+  .topbar .iconbtn{width:36px}
+  .topbar .backbtn{width:auto;padding:0 6px}
+  .top-extra{gap:5px}
+  .topbar .dd-btn{padding:4px 8px;gap:3px}
+  .topbar .visits-pill{padding:0 8px;gap:4px}
+  .brand{flex:0 1 auto}
+  .brand-mark{height:40px}
+  .top-extra{margin-inline-start:auto}
+}
+@media (max-width:380px){#soundBtn{display:none}}
