@@ -68,10 +68,10 @@ function drawJoin(){
     const st = D.result;
     const wa = waLink(CONTACT_WA, `السلام عليكم، سجلت طلب انضمام لبرنامج عائلة النشابة.\nالاسم: ${D.name}\nالبريد: ${D.email}\nالهاتف: ${D.phone}${D.relation ? "\nصلتي بالعائلة: " + D.relation : ""}`);
     b.innerHTML = st === "member" ? `
-      <div class="join-done"><span class="jd-ic ok">✓</span><b>بريدك مضاف في البرنامج مسبقاً</b><p>ادخل ببريدك وكلمة السر التي كتبتها الآن.</p>
+      <div class="join-done"><span class="jd-ic ok">✓</span><b>بريدك مضاف في البرنامج مسبقاً</b><p>ادخل ببريدك وكلمة السر الخاصة بحسابك، وإن نسيتها اطلب كلمة سر جديدة من الإدارة.</p>
       <button class="btn primary block" type="button" id="jClose">الذهاب لتسجيل الدخول</button></div>` : `
       <div class="join-done"><span class="jd-ic">✓</span><b>تم إرسال طلبك إلى الإدارة</b>
-      ${D.noAccount ? `<p>وصل طلبك للإدارة، لكن تفعيل الحساب يحتاج خطوة من الإدارة بسبب ضغط مؤقت على النظام. سيتواصل معك المدير بعد الموافقة لإكمال الدخول.</p>` : `<p>ستراجع الإدارة طلبك وتحدد صلاحياتك. بعد الموافقة تستطيع الدخول ببريدك <b class="ltr">${esc(D.email)}</b> وكلمة السر التي اخترتها.</p>`}
+      <p>ستراجع الإدارة طلبك وتحدد صلاحياتك. بعد الموافقة تستطيع الدخول ببريدك <b class="ltr">${esc(D.email)}</b> وكلمة السر التي اخترتها.</p>
       <div class="jd-wa"><b>خطوة أخيرة: أرسل طلبك للإدارة عبر واتساب</b><span>اضغط الزر، سيفتح واتساب والرسالة جاهزة، ثم اضغط «إرسال» في واتساب.</span>
       <a class="btn wa block big" id="jWa" href="${esc(wa)}" target="_blank" rel="noopener">إرسال الطلب عبر واتساب</a></div>
       <button class="btn block" type="button" id="jClose">إغلاق</button></div>`;
@@ -83,15 +83,10 @@ async function sendJoin(){
   const D = JOIN.data, btn = $("#jSend"), err = m => { $("#jErr").textContent = m; };
   btn.disabled = true; btn.textContent = "جارٍ الإرسال…";
   try{
-    const su = await db.auth.signUp({email:D.email, password:D.password, options:{data:{full_name:D.name}, emailRedirectTo:location.href.split("#")[0]}});
-    /* حد رسائل البريد أو بريد مسجل مسبقاً: نكمل إرسال الطلب للإدارة على أي حال */
-    const softErr = su.error && /already registered|already exists|rate limit|error sending/i.test(su.error.message);
-    if(su.error && !softErr) throw su.error;
-    D.noAccount = !!(su.error && /rate limit|sending/i.test(su.error.message));
-    const {data, error} = await db.rpc("fa_request_join", {p_name:D.name, p_email:D.email, p_phone:D.phone, p_relation:D.relation || "", p_note:""});
+    /* بدون رسائل بريد: كلمة السر تُحفظ مشفّرة، ويُنشأ الحساب عند موافقة الإدارة */
+    const {data, error} = await db.rpc("fa_request_join", {p_name:D.name, p_email:D.email, p_phone:D.phone, p_relation:D.relation || "", p_note:"", p_password:D.password});
     if(error) throw error;
     if(data === "busy") throw new Error("طلبات كثيرة الآن، حاول بعد قليل");
-    if(su.data?.session && data !== "member") await db.auth.signOut();
     D.result = data; D.password = ""; JOIN.step = 3; drawJoin();
   }catch(e){ err(errMsg(e)); btn.disabled = false; btn.textContent = "أوافق وأرسل الطلب"; }
 }
@@ -179,7 +174,7 @@ async function renderRequests(){
       if(!await ask("الموافقة على العضو", `إضافة ${r.full_name} بصلاحية: ${rights}${s.family && s.role !== "admin" ? " · أسرته فقط" : ""}؟`, {okText:"موافقة"})) return;
       const {data:res, error} = await db.rpc("fa_approve_request", {p_id:id, p_role:s.role, p_add:s.add, p_edit:s.edit, p_delete:s.del, p_person:s.person, p_family_only:s.family && s.role !== "admin"});
       if(error) return toast(errMsg(error), true);
-      toast(res === "no_account" ? "تمت الموافقة — لكن لم يُنشأ حسابه بعد، اطلب منه التسجيل مرة ثانية بنفس البريد" : "تمت الموافقة وأُضيف العضو");
+      toast(res === "no_account" ? "تمت الموافقة — لكن هذا طلب قديم بدون كلمة سر، اطلب منه تسجيل طلب جديد بنفس البريد أو أنشئ له كلمة سر" : "تمت الموافقة وأُضيف العضو، ويستطيع الدخول الآن");
       refreshReqBadge(); RQ.tab = "approved"; renderRequests();
     }
   };
