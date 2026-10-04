@@ -28,32 +28,39 @@ function familyLinks(){
 }
 const strength = s => s >= 10 ? ["قوية جداً", "s4"] : s >= 5 ? ["قوية", "s3"] : s >= 3 ? ["متوسطة", "s2"] : ["بسيطة", "s1"];
 
-/* رسم شبكة العوائل: العائلة الأكبر في المركز */
+/* خريطة المدارات: العائلة الأكبر شمس في المركز، والعوائل الأخرى كواكب تدور حولها.
+   المدار الأقرب = رابط أقوى مع عائلة المركز. حجم الكوكب = عدد الأفراد، والرقم داخله = قوة الرابط. */
 function kinMapSvg(fams, pairs){
   const between = pairs.filter(p => p.a !== p.b);
   const linked = new Set(between.flatMap(p => [p.a, p.b]));
-  const nodes = fams.filter(([f]) => linked.has(f));
+  const nodes = fams.filter(([f]) => linked.has(f) && f !== "بدون عائلة");
   if(!nodes.length) return `<p class="muted">لا توجد روابط مسجلة بين عوائل مختلفة بعد.</p>`;
-  const W = 760, H = 460, cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 70;
-  const max = Math.max(...nodes.map(n => n[1]));
-  const pos = new Map(); pos.set(nodes[0][0], [cx, cy]);
-  const rest = nodes.slice(1);
-  rest.forEach(([f], i) => { const ang = -Math.PI / 2 + i * 2 * Math.PI / rest.length; pos.set(f, [cx + R * Math.cos(ang), cy + R * Math.sin(ang)]); });
-  const rad = c => 16 + 34 * Math.sqrt(c / max);
-  const maxS = Math.max(...between.map(p => p.score));
-  const edges = between.map(p => {
-    const [x1, y1] = pos.get(p.a), [x2, y2] = pos.get(p.b), w = 2 + 10 * p.score / maxS;
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="km-edge" stroke-width="${w.toFixed(1)}"><title>${esc(p.a)} ↔ ${esc(p.b)}: ${p.marriages} زواج، ${p.kids} من الأبناء</title></line>
-      <text x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 - 6}" class="km-elabel">${p.score}</text>`;
-  }).join("");
-  const circles = nodes.map(([f, c], i) => {
-    const [x, y] = pos.get(f), r = rad(c);
-    return `<g class="km-node ${i === 0 ? "main" : ""}" data-fam="${esc(f)}" tabindex="0" role="button" aria-label="${esc(f)}، ${c} فرداً">
-      <circle cx="${x}" cy="${y}" r="${r.toFixed(1)}"></circle>
-      <text x="${x}" y="${y + 4}" class="km-count">${c}</text>
-      <text x="${x}" y="${y + r + 18}" class="km-name">${esc(f)}</text></g>`;
-  }).join("");
-  return `<div class="km-wrap"><svg viewBox="0 0 ${W} ${H}" class="km-svg" role="img" aria-label="خريطة الروابط بين العوائل">${edges}${circles}</svg></div>`;
+  const [hub, hubN] = nodes[0];
+  const rest = nodes.slice(1).map(([f, c]) => {
+    const direct = between.find(p => (p.a === hub && p.b === f) || (p.b === hub && p.a === f));
+    return {f, c, s:direct ? direct.score : 0, m:direct ? direct.marriages : 0, k:direct ? direct.kids : 0};
+  });
+  const maxS = Math.max(1, ...rest.map(x => x.s)), maxC = Math.max(1, ...rest.map(x => x.c));
+  const ORB = [92, 148, 204], DUR = [50, 80, 115];
+  const tier = x => !x.s ? 2 : x.s / maxS >= .66 ? 0 : x.s / maxS >= .33 ? 1 : 2;
+  const rad = c => 15 + 13 * Math.sqrt(c / maxC);
+  let g = `<defs><radialGradient id="kmSun"><stop offset="0" stop-color="#ffe7ad"/><stop offset=".7" stop-color="#d4b06a"/><stop offset="1" stop-color="#b59559"/></radialGradient></defs>`;
+  g += ORB.map(r => `<circle r="${r}" class="km-orbit"/>`).join("");
+  g += `<circle r="62" class="km-glow"/><g class="km-node main" data-fam="${esc(hub)}" tabindex="0" role="button" aria-label="${esc(hub)}، ${hubN} فرداً">
+    <circle r="50" class="km-sun"/><text y="-3" class="km-hub-name">${esc(hub)}</text><text y="17" class="km-hub-count">${hubN}</text></g>`;
+  [0, 1, 2].forEach(t => {
+    const fs = rest.filter(x => tier(x) === t); if(!fs.length) return;
+    g += `<g class="km-ring r${t}" style="--d:${DUR[t]}s">`;
+    fs.forEach((x, i) => {
+      const ang = i * 2 * Math.PI / fs.length + t * 1.1, px = ORB[t] * Math.cos(ang), py = ORB[t] * Math.sin(ang), r = rad(x.c);
+      const tip = x.s ? `${x.f}: ${x.c} فرداً · مع ${hub}: ${x.m} زواج، ${x.k} من الأبناء` : `${x.f}: ${x.c} فرداً · مرتبطة بعوائل أخرى`;
+      g += `<g transform="translate(${px.toFixed(1)} ${py.toFixed(1)})"><g class="km-node km-planet" data-fam="${esc(x.f)}" tabindex="0" role="button" aria-label="${esc(tip)}">
+        <title>${esc(tip)}</title><circle r="${r.toFixed(1)}"></circle><text y="5" class="km-count">${x.s || "·"}</text>
+        <text y="${(r + 16).toFixed(1)}" class="km-name">${esc(x.f)}</text></g></g>`;
+    });
+    g += `</g>`;
+  });
+  return `<div class="km-wrap"><svg viewBox="-240 -240 480 480" class="km-svg" role="img" aria-label="خريطة مدارات العوائل حول ${esc(hub)}">${g}</svg></div>`;
 }
 
 function renderKinship(){
@@ -71,7 +78,7 @@ function renderKinship(){
       <div><b>${cross.reduce((n, p) => n + p.kids, 0)}</b><span>من الأبناء يجمعون عائلتين</span></div>
     </div>
     <section class="card"><h3 class="kin-h">خريطة الروابط</h3>${kinMapSvg(fams, pairs)}
-      <p class="muted kin-note">حجم الدائرة = عدد أفراد العائلة · سُمك الخط والرقم عليه = قوة الرابط. اضغط على عائلة لعرض روابطها.</p></section>
+      <p class="muted kin-note">الكوكب الأقرب للمركز = قرابة أقوى · الرقم داخل الكوكب = قوة الرابط · حجمه = عدد الأفراد. اضغط على عائلة لعرض روابطها.</p></section>
     <section class="card"><h3 class="kin-h">ترتيب الروابط بين العوائل</h3>
       <div class="kin-filter" id="kinFilter"></div>
       <div class="kin-list" id="kinList">${cross.length ? cross.map((p, i) => { const [lbl, cls] = strength(p.score); return `

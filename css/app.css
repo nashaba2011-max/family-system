@@ -783,19 +783,30 @@ a.visits-pill:hover{border-color:var(--brand)}
 .kin-sum span{font-size:13px;color:var(--ink-2)}
 .kin-h{margin:0 0 10px;font-size:18px;color:var(--brand-d)}
 .kin-note{font-size:13px;margin:8px 0 0}
-.km-wrap{overflow-x:auto}
-.km-svg{display:block;width:100%;min-width:560px;height:auto}
-.km-edge{stroke:var(--gold);stroke-linecap:round;opacity:.65}
-.km-elabel{font-size:12px;font-weight:800;fill:var(--gold);text-anchor:middle;paint-order:stroke;stroke:var(--paper);stroke-width:4px}
+.km-wrap{display:flex;justify-content:center}
+.km-svg{display:block;width:100%;max-width:520px;height:auto;overflow:visible}
+.km-orbit{fill:none;stroke:var(--gold);stroke-opacity:.35;stroke-dasharray:3 6}
+.km-glow{fill:#d4b06a;opacity:.18;animation:kmGlow 3s ease-in-out infinite}
+@keyframes kmGlow{50%{opacity:.05;transform:scale(1.12)}}
+.km-sun{fill:url(#kmSun);stroke:#fff3d6;stroke-width:2}
+.km-hub-name{font-size:16px;font-weight:800;fill:#1c2c47;text-anchor:middle}
+.km-hub-count{font-size:15px;font-weight:800;fill:#1c2c47;text-anchor:middle}
+.km-ring{animation:kmSpin var(--d) linear infinite}
+.km-ring.r1{animation-direction:reverse}
+.km-ring .km-planet{transform-box:fill-box;transform-origin:center;animation:kmSpin var(--d) linear infinite reverse}
+.km-ring.r1 .km-planet{animation-direction:normal}
+.km-ring:hover,.km-ring:hover .km-planet,.km-svg:focus-within .km-ring,.km-svg:focus-within .km-planet{animation-play-state:paused}
+@keyframes kmSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.km-ring,.km-ring .km-planet,.km-glow{animation:none}}
 .km-node{cursor:pointer;transition:opacity .2s}
-.km-node circle{fill:var(--brand-l);stroke:var(--brand);stroke-width:2}
-.km-node.main circle{fill:var(--brand);stroke:var(--gold);stroke-width:3}
-.km-node .km-count{font-size:14px;font-weight:800;fill:var(--brand-d);text-anchor:middle}
-.km-node.main .km-count{fill:#fff}
+.km-planet circle{fill:#1c2c47;stroke:#a9bde3;stroke-width:2.5;transition:stroke .2s}
+.km-planet .km-count{font-size:15px;font-weight:800;fill:#fff;text-anchor:middle}
 .km-node .km-name{font-size:14px;font-weight:700;fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--paper);stroke-width:4px}
-.km-node:hover circle,.km-node:focus-visible circle{stroke:var(--gold);stroke-width:3}
+.km-planet:hover circle,.km-planet:focus-visible circle{stroke:var(--gold);stroke-width:3.5}
+.km-node.main:hover .km-sun,.km-node.main:focus-visible .km-sun{stroke:var(--gold);stroke-width:4}
 .km-node:focus{outline:none}
-.km-node.dim{opacity:.25}
+.km-node.dim{opacity:.2}
+@media (max-width:600px){.km-node .km-name{font-size:19px}.km-planet .km-count{font-size:18px}.km-hub-name{font-size:19px}.km-hub-count{font-size:17px}}
 .kin-filter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .kin-list{display:flex;flex-direction:column;gap:8px}
 .kin-row{border:1px solid var(--line);border-radius:12px;background:var(--paper-2);overflow:hidden}
