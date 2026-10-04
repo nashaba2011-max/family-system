@@ -71,7 +71,7 @@ function drawJoin(){
       <div class="join-done"><span class="jd-ic ok">✓</span><b>بريدك مضاف في البرنامج مسبقاً</b><p>ادخل ببريدك وكلمة السر التي كتبتها الآن.</p>
       <button class="btn primary block" type="button" id="jClose">الذهاب لتسجيل الدخول</button></div>` : `
       <div class="join-done"><span class="jd-ic">✓</span><b>تم إرسال طلبك إلى الإدارة</b>
-      <p>ستراجع الإدارة طلبك وتحدد صلاحياتك. بعد الموافقة تستطيع الدخول ببريدك <b class="ltr">${esc(D.email)}</b> وكلمة السر التي اخترتها.</p>
+      ${D.noAccount ? `<p>وصل طلبك للإدارة، لكن تفعيل الحساب يحتاج خطوة من الإدارة بسبب ضغط مؤقت على النظام. سيتواصل معك المدير بعد الموافقة لإكمال الدخول.</p>` : `<p>ستراجع الإدارة طلبك وتحدد صلاحياتك. بعد الموافقة تستطيع الدخول ببريدك <b class="ltr">${esc(D.email)}</b> وكلمة السر التي اخترتها.</p>`}
       <div class="jd-wa"><b>خطوة أخيرة: أرسل طلبك للإدارة عبر واتساب</b><span>اضغط الزر، سيفتح واتساب والرسالة جاهزة، ثم اضغط «إرسال» في واتساب.</span>
       <a class="btn wa block big" id="jWa" href="${esc(wa)}" target="_blank" rel="noopener">إرسال الطلب عبر واتساب</a></div>
       <button class="btn block" type="button" id="jClose">إغلاق</button></div>`;
@@ -84,7 +84,10 @@ async function sendJoin(){
   btn.disabled = true; btn.textContent = "جارٍ الإرسال…";
   try{
     const su = await db.auth.signUp({email:D.email, password:D.password, options:{data:{full_name:D.name}, emailRedirectTo:location.href.split("#")[0]}});
-    if(su.error && !/already registered|already exists/i.test(su.error.message)) throw su.error;
+    /* حد رسائل البريد أو بريد مسجل مسبقاً: نكمل إرسال الطلب للإدارة على أي حال */
+    const softErr = su.error && /already registered|already exists|rate limit|error sending/i.test(su.error.message);
+    if(su.error && !softErr) throw su.error;
+    D.noAccount = !!(su.error && /rate limit|sending/i.test(su.error.message));
     const {data, error} = await db.rpc("fa_request_join", {p_name:D.name, p_email:D.email, p_phone:D.phone, p_relation:D.relation || "", p_note:""});
     if(error) throw error;
     if(data === "busy") throw new Error("طلبات كثيرة الآن، حاول بعد قليل");
