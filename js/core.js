@@ -132,6 +132,13 @@ async function fetchAll(table, order){
   }
   return out;
 }
+const isRestricted = () => !!(S.me && S.me.family_only && S.me.role !== "admin");
+/* تبديل البيانات: صفحة الشجرة تستخدم كل العائلة، وباقي الصفحات المسموح فقط */
+function useTreeData(on){
+  if(!S.treeAll) return;
+  if(on && !S.full){ S.full = {people:S.people, spouses:S.spouses}; S.people = S.treeAll.people; S.spouses = S.treeAll.spouses; indexPeople(); }
+  else if(!on && S.full){ S.people = S.full.people; S.spouses = S.full.spouses; S.full = null; indexPeople(); }
+}
 function indexPeople(){
   S.byId = new Map(S.people.map(p => [p.id, p]));
   S.bySerial = new Map(S.people.map(p => [p.serial, p]));
@@ -139,6 +146,19 @@ function indexPeople(){
 async function loadAll(){
   const [people, spouses, lookups] = await Promise.all([fetchAll("fa_people", "serial"), fetchAll("fa_spouses", "id"), fetchAll("fa_lookups", "sort")]);
   S.people = people; S.spouses = spouses; indexPeople();
+  S.full = null; S.treeAll = null;
+  /* المستخدم المقيّد بأسرته: الشجرة تعرض كل العائلة (أسماء وروابط فقط) */
+  if(isRestricted()){
+    const [tp, ts] = await Promise.all([db.rpc("fa_tree_people"), db.rpc("fa_tree_spouses")]);
+    if(!tp.error && !ts.error){
+      const own = new Map(people.map(p => [p.id, p]));
+      S.allowed = new Set(own.keys());
+      S.treeAll = {
+        people:(tp.data || []).map(t => own.get(t.id) || {...t, _stub:true, birth_date:t.birth_year ? `${t.birth_year}-01-01` : null, photo_path:null}).sort((a, b) => a.serial - b.serial),
+        spouses:ts.data || []
+      };
+    }
+  }
   S.lookups = {}; lookups.forEach(l => (S.lookups[l.kind] ||= []).push(l));
   Object.values(S.lookups).forEach(a => a.sort((x, y) => x.sort - y.sort || x.name.localeCompare(y.name, "ar")));
 }

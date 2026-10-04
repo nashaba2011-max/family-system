@@ -36,6 +36,7 @@ async function route(){
   }
   skipGuard = false; S.dirty = false; currentHash = location.hash;
   const {name, args} = parseHash(), r = ROUTES[name];
+  useTreeData(name === "tree");
   closeNav();
   $$("[data-nav]").forEach(a => a.classList.toggle("on", a.dataset.nav === (name === "event" ? "events" : name)));
   $("#crumb").textContent = r.title;
@@ -53,7 +54,9 @@ window.addEventListener("hashchange", route);
 window.addEventListener("beforeunload", e => { if(S.dirty){ e.preventDefault(); e.returnValue = ""; } });
 document.addEventListener("click", e => {
   const o = e.target.closest("[data-open]");
-  if(o){ e.preventDefault(); const d = o.closest("dialog"); if(d) d.close(); location.hash = "#/rec/" + o.dataset.open; }
+  if(o){ e.preventDefault();
+    if(S.allowed && isRestricted() && !S.allowed.has(+o.dataset.open)) return toast("لا تملك صلاحية الاطلاع على بيانات هذا الفرد", true);
+    const d = o.closest("dialog"); if(d) d.close(); location.hash = "#/rec/" + o.dataset.open; }
 });
 
 /* القائمة الجانبية على الجوال */
@@ -491,7 +494,7 @@ function drawList(){
 
 /* ===== الأسرة (الوالدان، الإخوة، الأبناء، الأحفاد، الأجداد) ===== */
 function renderFamily(id){
-  const p = S.byId.get(id); if(!p){ $("#view").innerHTML = `<div class="card narrow empty">السجل غير موجود</div>`; return; }
+  const p = S.byId.get(id); if(!p){ $("#view").innerHTML = isRestricted() ? `<div class="card narrow empty">لا تملك صلاحية الاطلاع على بيانات هذا الفرد. <a href="#/tree">العودة للشجرة</a></div>` : `<div class="card narrow empty">السجل غير موجود</div>`; return; }
   const f = S.byId.get(p.father_id), m = S.byId.get(p.mother_id);
   const gp = [[f && S.byId.get(f.father_id), "الجد لأب"], [f && S.byId.get(f.mother_id), "الجدة لأب"], [m && S.byId.get(m.father_id), "الجد لأم"], [m && S.byId.get(m.mother_id), "الجدة لأم"]].filter(x => x[0]);
   const sib = siblingsOf(p), kids = childrenOf(p), gens = descendantsByGen(p), sp = spousesOf(p), anc = lineChain(p);
@@ -592,7 +595,7 @@ function cardHtml(p, depth, seen, F, viaMother, openDepth){
   const fa = viaMother && S.byId.get(p.father_id);
   const yrs = [p.birth_date?.slice(0, 4), isDead(p) ? (p.death_date?.slice(0, 4) || "متوفى") : ""].filter(Boolean).join(" – ");
   const open = depth < openDepth - 1;
-  return `<li><button type="button" class="pcard ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""} ${depth === 0 ? "root" : ""}" data-open="${p.id}" style="animation-delay:${Math.min(depth, 6) * 60}ms" aria-label="${esc(fullName(p, 3))}، ${isM(p) ? "ذكر" : "أنثى"}">
+  return `<li><button type="button" class="pcard ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""} ${depth === 0 ? "root" : ""} ${p._stub ? "locked" : ""}" data-open="${p.id}" style="animation-delay:${Math.min(depth, 6) * 60}ms" aria-label="${esc(fullName(p, 3))}، ${isM(p) ? "ذكر" : "أنثى"}">
       <span class="gx">${isM(p) ? GI_M : GI_F}</span>${avatar(p)}<b class="nm">${esc(p.name1)}</b>
       <span class="sub">${esc(fa ? `ابن${isM(p) ? "" : "ة"} ${fa.name1}` : p.name2 ? (isM(p) ? "بن " : "بنت ") + p.name2 : (p.family || ""))}</span>
       <span class="sub ${isDead(p) ? "yr" : ""}">#${p.serial}${yrs ? " · " + esc(yrs) : ""}</span>
@@ -603,7 +606,7 @@ function cardHtml(p, depth, seen, F, viaMother, openDepth){
 }
 function refCard(c){
   const f = S.byId.get(c.father_id);
-  return `<li><button type="button" class="pcard ref ${isM(c) ? "" : "f"}" data-open="${c.id}"><span class="gx">${isM(c) ? GI_M : GI_F}</span>${avatar(c)}<b class="nm">${esc(c.name1)}</b><span class="sub">#${c.serial}</span><span class="sub">تحت أبيه ${esc(f ? f.name1 : "")}</span></button></li>`;
+  return `<li><button type="button" class="pcard ref ${isM(c) ? "" : "f"} ${c._stub ? "locked" : ""}" data-open="${c.id}"><span class="gx">${isM(c) ? GI_M : GI_F}</span>${avatar(c)}<b class="nm">${esc(c.name1)}</b><span class="sub">#${c.serial}</span><span class="sub">تحت أبيه ${esc(f ? f.name1 : "")}</span></button></li>`;
 }
 /* كل ذرية الشخص من جهة الأب والأم */
 function treeSet(root){
@@ -623,10 +626,10 @@ function nodeHtml(p, depth, seen, F, viaMother){
   const sp = spousesOf(p).filter(s => s.person || s.name).map(s => s.person ? s.person.name1 : s.name.split(" ")[0]);
   const fa = viaMother && S.byId.get(p.father_id);
   const sub = [`#${p.serial}`, kids.length && `${kids.length} أبناء`, sp.length && `${isM(p) ? "زوجته" : "زوجها"} ${sp.join("، ")}`, fa && `ابن${isM(p) ? "" : "ة"} ${fa.name1} ${fa.name2 || ""}`.trim()].filter(Boolean).join(" · ");
-  return `<li><button type="button" class="tog ${kids.length ? "" : "leaf"}" aria-label="فتح/طي">${depth < 2 ? "−" : "+"}</button><button type="button" class="node ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""}" data-open="${p.id}">${avatar(p, "sm")}<span><b>${esc(p.name1)}</b> <small>${esc(sub)}</small></span></button>
+  return `<li><button type="button" class="tog ${kids.length ? "" : "leaf"}" aria-label="فتح/طي">${depth < 2 ? "−" : "+"}</button><button type="button" class="node ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""} ${p._stub ? "locked" : ""}" data-open="${p.id}">${avatar(p, "sm")}<span><b>${esc(p.name1)}</b> <small>${esc(sub)}</small></span></button>
     ${kids.length ? `<ul ${depth < 2 ? "" : "hidden"}>${kids.map(k => k.ref ? refHtml(k.p) : nodeHtml(k.p, depth + 1, seen, F, !isM(p))).join("")}</ul>` : ""}</li>`;
 }
 function refHtml(c){
   const f = S.byId.get(c.father_id);
-  return `<li><button type="button" class="tog leaf" tabindex="-1" aria-hidden="true"></button><button type="button" class="node ref ${isM(c) ? "" : "f"}" data-open="${c.id}">${avatar(c, "sm")}<span><b>${esc(c.name1)}</b> <small>#${c.serial} · يظهر تحت أبيه ${esc(f ? f.name1 : "")}</small></span></button></li>`;
+  return `<li><button type="button" class="tog leaf" tabindex="-1" aria-hidden="true"></button><button type="button" class="node ref ${isM(c) ? "" : "f"} ${c._stub ? "locked" : ""}" data-open="${c.id}">${avatar(c, "sm")}<span><b>${esc(c.name1)}</b> <small>#${c.serial} · يظهر تحت أبيه ${esc(f ? f.name1 : "")}</small></span></button></li>`;
 }

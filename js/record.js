@@ -44,7 +44,7 @@ async function renderRecord(id, newSerial){
   R.photoBlob = null; R.photoRemoved = false;
   if(id){
     const p = S.byId.get(id);
-    if(!p){ $("#view").innerHTML = `<div class="card narrow empty">السجل غير موجود — ربما حُذف. <a href="#/list">العودة للبحث</a></div>`; return; }
+    if(!p){ $("#view").innerHTML = isRestricted() ? `<div class="card narrow empty">لا تملك صلاحية الاطلاع على بيانات هذا الفرد. <a href="#/tree">العودة للشجرة</a></div>` : `<div class="card narrow empty">السجل غير موجود — ربما حُذف. <a href="#/list">العودة للبحث</a></div>`; return; }
     R.p = {...p}; R.isNew = false; R.editable = can("edit");
     R.spouses = S.spouses.filter(s => s.person_id === p.id).map(s => ({ord:s.ord, spouse_id:s.spouse_id, spouse_name:s.spouse_name || ""}));
   }else{
