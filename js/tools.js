@@ -74,6 +74,7 @@ function drawLookups(){
 }
 
 /* ---------- المستخدمون ---------- */
+let USERS = [];
 async function renderUsers(){
   $("#view").innerHTML = `
     <div class="page-h"><h2>المستخدمون والصلاحيات</h2></div>
@@ -91,12 +92,13 @@ async function renderUsers(){
       </div>
       <div class="err" id="uErr"></div>
       <button class="btn primary" type="submit">إضافة المستخدم</button>
-      <p class="muted" style="font-size:13px;margin-bottom:0">بعد الإضافة: يفتح المستخدم رابط البرنامج، يكتب بريده وكلمة سر جديدة، ويضغط «أول مرة؟ أنشئ كلمة سر». المستخدم بدون أي صلاحية يستطيع المشاهدة والتقارير فقط.</p>
+      <p class="muted" style="font-size:13px;margin-bottom:0">بعد الإضافة: يفتح المستخدم رابط البرنامج، يكتب بريده وكلمة سر جديدة، ويضغط «أول مرة؟ أنشئ كلمة سر». المستخدم بدون أي صلاحية يستطيع المشاهدة والتقارير فقط. ولتقييده بأسرته: اربطه بسجله ثم فعّل «أسرته فقط».</p>
     </form>
-    <div class="card"><div class="tbl-wrap" style="border:0"><table class="tbl"><thead><tr><th>البريد</th><th>الاسم</th><th>النوع</th><th>إضافة</th><th>تعديل</th><th>حذف</th><th>الزيارات</th><th>آخر زيارة</th><th></th></tr></thead><tbody id="uBody"><tr><td colspan="9"><div class="spin"></div></td></tr></tbody></table></div></div>`;
+    <div class="card"><div class="tbl-wrap" style="border:0"><table class="tbl"><thead><tr><th>البريد</th><th>الاسم</th><th>النوع</th><th>إضافة</th><th>تعديل</th><th>حذف</th><th>سجله في العائلة</th><th>أسرته فقط</th><th>الزيارات</th><th>آخر زيارة</th><th></th></tr></thead><tbody id="uBody"><tr><td colspan="11"><div class="spin"></div></td></tr></tbody></table></div></div>`;
   const load = async () => {
     const [{data, error}, vis] = await Promise.all([db.from("fa_users").select("*").order("created_at"), db.rpc("fa_visit_by_user")]);
-    if(error){ $("#uBody").innerHTML = `<tr><td colspan="9" class="err">${esc(errMsg(error))}</td></tr>`; return; }
+    if(error){ $("#uBody").innerHTML = `<tr><td colspan="11" class="err">${esc(errMsg(error))}</td></tr>`; return; }
+    USERS = data;
     const V = new Map((vis.data || []).map(r => [r.email, r]));
     const ago = t => { if(!t) return "—"; const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 1 ? "الآن" : m < 60 ? `قبل ${m} د` : m < 1440 ? `قبل ${Math.round(m / 60)} س` : fmtDate(new Date(t).toLocaleDateString("en-CA", {timeZone:"Asia/Bahrain"})); };
     $("#uBody").innerHTML = data.map(u => { const me = u.email === S.email, adm = u.role === "admin";
@@ -104,6 +106,8 @@ async function renderUsers(){
       return `<tr><td class="ltr" style="text-align:start">${esc(u.email)}</td><td>${esc(u.display_name || "")}</td>
         <td><select class="inp" data-u="${esc(u.email)}" data-f="role" ${me ? "disabled" : ""} style="min-width:110px"><option value="user" ${adm ? "" : "selected"}>مستخدم</option><option value="admin" ${adm ? "selected" : ""}>مدير</option></select></td>
         <td>${cb("can_add")}</td><td>${cb("can_edit")}</td><td>${cb("can_delete")}</td>
+        <td><button type="button" class="btn small" data-link-u="${esc(u.email)}" style="white-space:nowrap">${u.person_id && S.byId.get(u.person_id) ? nm(S.byId.get(u.person_id), fullName(S.byId.get(u.person_id), 3)) : "ربط بسجل"}</button></td>
+        <td><input type="checkbox" data-u="${esc(u.email)}" data-f="family_only" ${u.family_only && !adm ? "checked" : ""} ${adm || me ? "disabled" : ""} aria-label="أسرته فقط" title="${adm ? "المدير يرى الجميع" : "يرى أفراد أسرته فقط: الوالدان، الإخوة، الزوج/الزوجة، الأبناء والأحفاد"}"></td>
         <td><b>${V.get(u.email)?.visits ?? 0}</b></td><td class="muted" style="font-size:13px;white-space:nowrap">${ago(V.get(u.email)?.last_visit)}</td>
         <td style="text-align:end">${me ? '<span class="muted" style="font-size:13px">أنت</span>' : `<button class="btn small danger" type="button" data-rm="${esc(u.email)}">إزالة</button>`}</td></tr>`; }).join("");
   };
@@ -121,11 +125,21 @@ async function renderUsers(){
   $("#uBody").onchange = async e => {
     const el = e.target.closest("[data-u]"); if(!el) return;
     const f = el.dataset.f, v = f === "role" ? el.value : el.checked;
+    if(f === "family_only" && v && !USERS.find(x => x.email === el.dataset.u)?.person_id){ el.checked = false; return toast("اربط المستخدم بسجله في العائلة أولاً", true); }
     const upd = {[f]:v}; if(f === "role" && v === "admin") Object.assign(upd, {can_add:true, can_edit:true, can_delete:true});
     const {error} = await db.from("fa_users").update(upd).eq("email", el.dataset.u);
     toast(error ? errMsg(error) : "تم الحفظ", !!error); load();
   };
   $("#uBody").onclick = async e => {
+    const lk = e.target.closest("[data-link-u]");
+    if(lk){
+      const u = USERS.find(x => x.email === lk.dataset.linkU);
+      const r = await pickPerson(`سجل ${u?.display_name || lk.dataset.linkU} في العائلة`, {allowNone:true});
+      if(r === null) return;
+      const upd = {person_id: r ? r.id : null}; if(!r) upd.family_only = false;
+      const {error} = await db.from("fa_users").update(upd).eq("email", lk.dataset.linkU);
+      toast(error ? errMsg(error) : "تم الحفظ", !!error); return load();
+    }
     const b = e.target.closest("[data-rm]"); if(!b) return;
     if(!(await ask("إزالة مستخدم", `إزالة ${b.dataset.rm} من البرنامج؟`, {okText:"إزالة", danger:true}))) return;
     const {error} = await db.from("fa_users").delete().eq("email", b.dataset.rm);
