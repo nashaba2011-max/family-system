@@ -748,3 +748,9 @@ a.visits-pill:hover{border-color:var(--brand)}
 /* قص شعاع المنارة داخل بطاقة الدخول حتى لا تتحرك الصفحة جانبياً */
 .login{overflow-x:hidden}
 .login-card{position:relative;overflow:hidden;isolation:isolate}
+/* زر الرجوع داخل الصفحة */
+.page-back{display:inline-flex;align-items:center;gap:4px;margin:0 0 10px;padding:6px 12px 6px 14px;min-height:38px;border-radius:999px;border:1.5px solid var(--line);background:var(--paper);color:var(--brand-d);font-weight:700;font-size:14px;cursor:pointer;transition:border-color .15s,transform .15s}
+.page-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.page-back:hover{border-color:var(--gold);transform:translateX(2px)}
+.page-back:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+@media print{.page-back{display:none}}

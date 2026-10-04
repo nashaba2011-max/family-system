@@ -21,6 +21,7 @@ const ROUTES = {
   event:    {title:"مناسبة", render:id => renderEvent(+id)},
 };
 let currentHash = "", skipGuard = false, restoring = false;
+let NAV_DEPTH = 0, NAV_FROM_BACK = false, NAV_STARTED = false, PAGE_NAME = "home";
 
 function parseHash(){
   const [name = "home", ...args] = location.hash.replace(/^#\/?/, "").split("/");
@@ -38,6 +39,8 @@ async function route(){
   skipGuard = false; S.dirty = false; currentHash = location.hash;
   const {name, args} = parseHash(), r = ROUTES[name];
   useTreeData(name === "tree");
+  NAV_DEPTH = NAV_FROM_BACK ? Math.max(0, NAV_DEPTH - 1) : NAV_DEPTH + (NAV_STARTED ? 1 : 0);
+  NAV_FROM_BACK = false; NAV_STARTED = true; PAGE_NAME = name;
   closeNav();
   $$("[data-nav]").forEach(a => a.classList.toggle("on", a.dataset.nav === (name === "event" ? "events" : name)));
   $("#crumb").textContent = r.title;
@@ -52,6 +55,19 @@ async function route(){
   v.focus({preventScroll:true});
 }
 window.addEventListener("hashchange", route);
+/* زر «رجوع» داخل الصفحة نفسها (أعلى المحتوى) في كل الصفحات عدا الرئيسية */
+const BACK_HTML = `<button type="button" class="page-back" data-back><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>رجوع</button>`;
+function ensureBack(){
+  const v = $("#view"); if(!v) return;
+  const has = v.firstElementChild && v.firstElementChild.matches(".page-back");
+  if(PAGE_NAME === "home" || PAGE_NAME === "event"){ if(has) v.firstElementChild.remove(); return; }
+  if(!has && v.firstElementChild) v.insertAdjacentHTML("afterbegin", BACK_HTML);
+}
+new MutationObserver(ensureBack).observe($("#view"), {childList:true});
+document.addEventListener("click", e => {
+  if(!e.target.closest("[data-back]")) return;
+  if(NAV_DEPTH > 0){ NAV_FROM_BACK = true; history.back(); } else location.hash = "#/home";
+});
 window.addEventListener("beforeunload", e => { if(S.dirty){ e.preventDefault(); e.returnValue = ""; } });
 document.addEventListener("click", e => {
   const o = e.target.closest("[data-open]");
