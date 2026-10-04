@@ -776,3 +776,57 @@ a.visits-pill:hover{border-color:var(--brand)}
 .sr-preview{padding:10px 14px;border-radius:10px;background:var(--gold-l);color:var(--ink-2);font-size:15px}
 .sr-preview:empty{display:none}
 .sr-preview b{color:var(--brand-d)}
+/* ===== قرابة العوائل ===== */
+.kin-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.kin-sum div{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+.kin-sum b{display:block;font-size:28px;color:var(--brand-d);line-height:1.2;font-variant-numeric:tabular-nums}
+.kin-sum span{font-size:13px;color:var(--ink-2)}
+.kin-h{margin:0 0 10px;font-size:18px;color:var(--brand-d)}
+.kin-note{font-size:13px;margin:8px 0 0}
+.km-wrap{overflow-x:auto}
+.km-svg{display:block;width:100%;min-width:560px;height:auto}
+.km-edge{stroke:var(--gold);stroke-linecap:round;opacity:.65}
+.km-elabel{font-size:12px;font-weight:800;fill:var(--gold);text-anchor:middle;paint-order:stroke;stroke:var(--paper);stroke-width:4px}
+.km-node{cursor:pointer;transition:opacity .2s}
+.km-node circle{fill:var(--brand-l);stroke:var(--brand);stroke-width:2}
+.km-node.main circle{fill:var(--brand);stroke:var(--gold);stroke-width:3}
+.km-node .km-count{font-size:14px;font-weight:800;fill:var(--brand-d);text-anchor:middle}
+.km-node.main .km-count{fill:#fff}
+.km-node .km-name{font-size:14px;font-weight:700;fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--paper);stroke-width:4px}
+.km-node:hover circle,.km-node:focus-visible circle{stroke:var(--gold);stroke-width:3}
+.km-node:focus{outline:none}
+.km-node.dim{opacity:.25}
+.kin-filter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.kin-list{display:flex;flex-direction:column;gap:8px}
+.kin-row{border:1px solid var(--line);border-radius:12px;background:var(--paper-2);overflow:hidden}
+.kin-head{width:100%;display:grid;grid-template-columns:minmax(150px,1.3fr) minmax(80px,1fr) auto auto;align-items:center;gap:12px;padding:10px 14px;border:0;background:none;font:inherit;color:inherit;text-align:start;cursor:pointer}
+.kin-head:hover{background:var(--brand-l)}
+.kin-fams{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.kin-x{color:var(--gold);font-weight:800}
+.kin-bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden}
+.kin-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gold),var(--brand))}
+.kin-meta{font-size:13px;color:var(--ink-2);white-space:nowrap}
+.kin-tag{font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px;white-space:nowrap}
+.kin-tag.s1{background:var(--line);color:var(--ink-2)}
+.kin-tag.s2{background:var(--brand-l);color:var(--brand-d)}
+.kin-tag.s3{background:var(--gold-l);color:var(--gold)}
+.kin-tag.s4{background:var(--brand);color:#fff}
+.kin-detail{padding:8px 14px 12px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:6px}
+.kin-couple{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:15px}
+.kin-amp{color:var(--ink-3)}
+.kin-couple small{color:var(--ink-3);margin-inline-start:auto}
+.kin-calc{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px}
+.kin-pick{flex:1 1 220px;min-height:46px;text-align:start}
+.kin-res{border:1.5px solid var(--gold);border-radius:14px;padding:14px 16px;background:var(--gold-l)}
+.kin-res.none{border-color:var(--line);background:var(--paper-2)}
+.kin-res.none p{margin:6px 0 0;color:var(--ink-2)}
+.kin-res-h{font-size:17px;line-height:1.9}
+.kin-res-h em{font-style:normal;font-weight:800;color:var(--brand-d);background:var(--paper);padding:2px 10px;border-radius:8px;border:1px solid var(--line)}
+.kin-kind{display:inline-block;font-size:12px;font-weight:800;color:#fff;background:var(--brand);border-radius:999px;padding:2px 10px;margin-inline-end:8px}
+.kin-lca{margin:8px 0;color:var(--ink-2)}
+.kin-paths{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.kin-paths ol{margin:0;padding:10px 26px 10px 12px;background:var(--paper);border:1px solid var(--line);border-radius:10px;font-size:14px}
+.kin-paths li{margin:3px 0}
+.kin-paths li.lca{font-weight:800}
+.kin-paths li small{color:var(--ink-3)}
+@media (max-width:640px){.kin-head{grid-template-columns:1fr auto;}.kin-bar{grid-column:1/-1;order:3}.kin-meta{order:4}.kin-paths{grid-template-columns:1fr}}
