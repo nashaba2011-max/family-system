@@ -754,3 +754,4 @@ a.visits-pill:hover{border-color:var(--brand)}
 .page-back:hover{border-color:var(--gold);transform:translateX(2px)}
 .page-back:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 @media print{.page-back{display:none}}
+#crumb{display:none}
