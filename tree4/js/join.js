@@ -30,7 +30,7 @@ function drawJoin(){
     b.innerHTML = `
       <p class="muted" style="margin-top:0">سجّل بياناتك، ثم اقرأ شروط البرنامج ووافق عليها ليصل طلبك إلى الإدارة.</p>
       <form id="joinForm" novalidate class="join-form">
-        <div class="field req"><label for="jName">الاسم الكامل</label><input class="inp" id="jName" maxlength="120" autocomplete="name" value="${esc(D.name || "")}" placeholder="مثال: ياسر عمار احمد النشابة"></div>
+        <div class="field req"><label for="jName">الاسم الكامل</label><input class="inp" id="jName" maxlength="120" autocomplete="name" value="${esc(D.name || "")}" placeholder="مثال: محمد أحمد علي"></div>
         <div class="field req"><label for="jEmail">البريد الإلكتروني</label><input class="inp ltr" id="jEmail" type="email" inputmode="email" autocomplete="username" maxlength="160" value="${esc(D.email || "")}"></div>
         <div class="field req"><label for="jPhone">رقم الهاتف</label><input class="inp ltr" id="jPhone" type="tel" inputmode="tel" maxlength="30" autocomplete="tel" value="${esc(D.phone || "")}" placeholder="3xxxxxxx"></div>
         <div class="field"><label for="jRel">صلتك بالعائلة</label><input class="inp" id="jRel" maxlength="200" value="${esc(D.relation || "")}" placeholder="مثال: ابن عمار احمد علي، أو زوجة فلان"></div>
