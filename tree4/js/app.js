@@ -24,8 +24,8 @@ const ROUTES = {
 let currentHash = "", skipGuard = false, restoring = false;
 let NAV_FROM_BACK = false, NAV_WAS_BACK = false, PAGE_NAME = "home";
 /* سجل التنقل الخاص بالبرنامج: يبقى بعد تحديث الصفحة، وزر «رجوع» يرجع خطوة واحدة فقط */
-let NAV_STACK = (() => { try{ return JSON.parse(sessionStorage.getItem("fa_nav") || "[]"); }catch(e){ return []; } })();
-const saveNav = () => { try{ sessionStorage.setItem("fa_nav", JSON.stringify(NAV_STACK.slice(-60))); }catch(e){} };
+let NAV_STACK = (() => { try{ return JSON.parse(sessionStorage.getItem("f4_nav") || "[]"); }catch(e){ return []; } })();
+const saveNav = () => { try{ sessionStorage.setItem("f4_nav", JSON.stringify(NAV_STACK.slice(-60))); }catch(e){} };
 /* خطوات داخل الصفحة نفسها (مثل اختيار عائلة أو تغيير طريقة العرض): «رجوع» يتراجع عنها أولاً */
 let PAGE_STEPS = [];
 function pageStep(undo){ PAGE_STEPS.push(undo); }
@@ -102,11 +102,11 @@ $("#navBtn").onclick = () => { const o = !$("#sidenav").classList.contains("open
 $("#scrim").onclick = closeNav;
 
 /* الوضع الليلي */
-(function(){ let t = null; try{ t = localStorage.getItem("fa-theme"); }catch(e){} if(t) document.documentElement.dataset.theme = t; })();
+(function(){ let t = null; try{ t = localStorage.getItem("f4-theme"); }catch(e){} if(t) document.documentElement.dataset.theme = t; })();
 $("#themeBtn").onclick = () => {
   const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   const nx = cur === "dark" ? "light" : "dark"; document.documentElement.dataset.theme = nx;
-  try{ localStorage.setItem("fa-theme", nx); }catch(e){}
+  try{ localStorage.setItem("f4-theme", nx); }catch(e){}
 };
 
 /* ===== الدخول ===== */
@@ -160,10 +160,10 @@ async function boot(session){
   $("#vLogin").hidden = true; $("#app").hidden = false;
   $("#view").innerHTML = `<div class="spin" aria-label="جاري التحميل"></div>`;
   try{
-    const {data, error} = await db.from("fa_users").select("*").eq("email", S.email).maybeSingle();
+    const {data, error} = await db.from("f4_users").select("*").eq("email", S.email).maybeSingle();
     if(error) throw error;
     if(!data){
-      const st = (await db.rpc("fa_request_status", {p_email:S.email})).data;
+      const st = (await db.rpc("f4_request_status", {p_email:S.email})).data;
       $("#view").innerHTML = st === "pending" ? `<div class="card narrow"><h3>طلبك قيد المراجعة</h3><p>وصل طلب انضمامك إلى الإدارة، وستتمكن من استخدام البرنامج بعد الموافقة وتحديد صلاحياتك.</p><button class="btn" type="button" id="noRoleOut">تسجيل الخروج</button></div>`
         : st === "rejected" ? `<div class="card narrow"><h3>لم تتم الموافقة على الطلب</h3><p>للاستفسار تواصل مع إدارة البرنامج عبر واتساب: <span class="ltr">${esc(CONTACT_WA)}</span></p><button class="btn" type="button" id="noRoleOut">تسجيل الخروج</button></div>`
         : `<div class="card narrow"><h3>الحساب غير مفعّل</h3><p>البريد <b class="ltr">${esc(S.email)}</b> غير مضاف إلى البرنامج بعد. سجّل طلب انضمام من زر «تسجيل عضو جديد» في شاشة الدخول، أو اطلب من المدير إضافتك.</p><button class="btn" type="button" id="noRoleOut">تسجيل الخروج</button></div>`;
@@ -211,20 +211,20 @@ function bindGreet(){
   g.onclick = () => shoot(true);
   if(GREET_HITS){ const sc = $("#greetScore"); sc.hidden = false; sc.textContent = GREET_HITS + " إصابة"; }
   /* سهم ترحيبي واحد عند أول فتح للرئيسية في الجلسة */
-  let first = false; try{ first = !sessionStorage.getItem("fa-greet"); sessionStorage.setItem("fa-greet", "1"); }catch(e){}
+  let first = false; try{ first = !sessionStorage.getItem("f4-greet"); sessionStorage.setItem("f4-greet", "1"); }catch(e){}
   if(first && !reduce) setTimeout(() => { if(document.body.contains(g)) shoot(false); }, 700);
 }
 
 /* تسجيل زيارة واحدة لكل جلسة متصفح */
 function logVisit(){
-  const k = "fa-visit-" + S.email;
+  const k = "f4-visit-" + S.email;
   try{ if(sessionStorage.getItem(k)) return; sessionStorage.setItem(k, "1"); }catch(e){}
   const device = matchMedia("(max-width: 760px), (pointer: coarse)").matches ? "mobile" : "desktop";
-  db.from("fa_visits").insert({email:S.email, device}).then(({error}) => { if(error) try{ sessionStorage.removeItem(k); }catch(e){} });
+  db.from("f4_visits").insert({email:S.email, device}).then(({error}) => { if(error) try{ sessionStorage.removeItem(k); }catch(e){} });
 }
 async function fillVisitStat(){
   const el = $("#statVisits"); if(!el) return;
-  const {data, error} = await db.rpc("fa_visit_stats");
+  const {data, error} = await db.rpc("f4_visit_stats");
   if(!$("#statVisits")) return;
   if(error || !data){ el.hidden = true; return; }
   el.querySelector("b").textContent = Number(data.total).toLocaleString("en-US");
@@ -261,12 +261,12 @@ function renderHome(){
   const bdays = P.filter(p => p.birth_date && !isDead(p) && +p.birth_date.slice(5, 7) === mon).length;
   const recent = P.slice().sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || "")).slice(0, 6);
   $("#view").innerHTML = `
-    <section class="hero-banner" aria-label="عائلة النشابة">
+    <section class="hero-banner" aria-label="شجرة العائلة 4">
       <img class="hb-water" src="img/logo-mark-light.png" alt="" aria-hidden="true">
-      <span class="logo-anim hb-mark"><i class="la-beam"></i><span class="la-in"><img src="img/logo-mark-light.png" alt="شعار عائلة النشابة" width="96" height="128"><i class="la-glow"></i><i class="la-shine"></i></span></span>
+      <span class="logo-anim hb-mark"><i class="la-beam"></i><span class="la-in"><img src="img/logo-mark-light.png" alt="شعار شجرة العائلة 4" width="96" height="128"><i class="la-glow"></i><i class="la-shine"></i></span></span>
       <div class="hb-text">
         <span class="hb-kick">أهلاً بكم في</span>
-        <h1>عائلة النشابة</h1>
+        <h1>شجرة العائلة 4</h1>
         <p>جذور ممتدة وأجيال متصلة</p>
         <div class="hb-facts"><span><b>${P.length}</b> فرداً</span><span><b>${P.length ? Math.max(...P.map(p => lineChain(p).length)) + 1 : 0}</b> أجيال</span><span><b>${fams}</b> أسرة</span></div>
       </div>
@@ -304,7 +304,7 @@ function renderHome(){
 
 /* ===== من نحن ===== */
 let ABOUT = null;
-const ABOUT_DEFAULT = ["عائلة النشابة", "رؤيتنا", "أهدافنا", "كلمة أخيرة"];
+const ABOUT_DEFAULT = ["عن العائلة", "رؤيتنا", "أهدافنا", "كلمة أخيرة"];
 /* يقسم النص إلى أقسام: السطر القصير في أول الفقرة (مع : أو بدونها) عنوان القسم */
 function aboutSections(txt){
   const out = [];
@@ -321,7 +321,7 @@ function aboutSections(txt){
 }
 async function loadAbout(){
   if(ABOUT !== null) return ABOUT;
-  const {data, error} = await db.from("fa_settings").select("value").eq("key", "about").maybeSingle();
+  const {data, error} = await db.from("f4_settings").select("value").eq("key", "about").maybeSingle();
   if(error) throw error;
   return (ABOUT = data ? data.value : "");
 }
@@ -389,7 +389,7 @@ async function renderAbout(n){
     $("#abCancel").onclick = () => { ed.hidden = false; show(); };
     $("#abSave").onclick = async () => {
       const val = $("#abTxt").value;
-      const {error} = await db.from("fa_settings").upsert([{key:"about", value:val, updated_at:new Date().toISOString(), updated_by:S.me.email}], {onConflict:"key"});
+      const {error} = await db.from("f4_settings").upsert([{key:"about", value:val, updated_at:new Date().toISOString(), updated_by:S.me.email}], {onConflict:"key"});
       if(error) return toast(errMsg(error), true);
       ABOUT = val; ed.hidden = false; show(); toast("تم حفظ النص");
     };
@@ -441,7 +441,7 @@ function showDeleteCard(p){
 async function deletePerson(p, after){
   if(!(await ask("تأكيد الحذف", `هل أنت متأكد من حذف سجل «${fullName(p)}» رقم ${p.serial}؟`, {okText:"نعم، احذف", danger:true}))) return;
   if(!(await ask("تأكيد أخير", "لا يمكن التراجع عن الحذف. متابعة؟", {okText:"حذف نهائي", danger:true}))) return;
-  const {error} = await db.from("fa_people").delete().eq("id", p.id);
+  const {error} = await db.from("f4_people").delete().eq("id", p.id);
   if(error){ toast(errMsg(error), true); return; }
   if(p.photo_path) db.storage.from(PHOTO_BUCKET).remove([p.photo_path]);
   S.people = S.people.filter(x => x.id !== p.id);
@@ -560,7 +560,7 @@ function treeKids(p){
 function treeRoots(){ return S.people.filter(p => !S.byId.get(p.father_id) && !S.byId.get(p.mother_id) && treeKids(p).length); }
 const GI_M = '<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5"/><path d="m21 3-6.75 6.75"/><circle cx="10" cy="14" r="6"/></svg>', GI_F = '<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15v7"/><path d="M9 19h6"/><circle cx="12" cy="9" r="6"/></svg>';
 let TREE_MODE = "cards"; // الشجرة تفتح دائماً بالبطاقات
-try{ localStorage.removeItem("fa-tree-mode"); }catch(e){}
+try{ localStorage.removeItem("f4-tree-mode"); }catch(e){}
 let TREE_Z = 1, TREE_STATE = null, TREE_SCROLL_KEY = "";
 window.addEventListener("scroll", () => { if(PAGE_NAME === "tree" && TREE_STATE && TREE_STATE.key === TREE_SCROLL_KEY) TREE_STATE.y = window.scrollY; }, {passive:true});
 function renderTree(rootId){
