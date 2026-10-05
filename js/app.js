@@ -9,7 +9,7 @@ const ROUTES = {
   list:     {title:"البحث والملفات", render:renderList},
   family:   {title:"الأسرة", render:id => renderFamily(+id)},
   kinship:  {title:"قرابة العوائل", render:renderKinship},
-  tree:     {title:"شجرة العائلة", render:id => { TREE_MODE = "cards"; renderTree(id ? +id : null); }},
+  tree:     {title:"شجرة العائلة", render:id => { if(!NAV_WAS_BACK) TREE_MODE = "cards"; renderTree(id ? +id : null); }},
   reports:  {title:"التقارير", render:renderReports},
   report:   {title:"تقرير", render:key => renderReport(key)},
   whatsapp: {title:"مراسلة واتساب", render:renderWhatsapp},
@@ -22,7 +22,7 @@ const ROUTES = {
   event:    {title:"مناسبة", render:id => renderEvent(+id)},
 };
 let currentHash = "", skipGuard = false, restoring = false;
-let NAV_FROM_BACK = false, PAGE_NAME = "home";
+let NAV_FROM_BACK = false, NAV_WAS_BACK = false, PAGE_NAME = "home";
 /* سجل التنقل الخاص بالبرنامج: يبقى بعد تحديث الصفحة، وزر «رجوع» يرجع خطوة واحدة فقط */
 let NAV_STACK = (() => { try{ return JSON.parse(sessionStorage.getItem("fa_nav") || "[]"); }catch(e){ return []; } })();
 const saveNav = () => { try{ sessionStorage.setItem("fa_nav", JSON.stringify(NAV_STACK.slice(-60))); }catch(e){} };
@@ -31,8 +31,9 @@ let PAGE_STEPS = [];
 function pageStep(undo){ PAGE_STEPS.push(undo); }
 function trackNav(hash){
   const h = hash || "#/home";
-  if(NAV_FROM_BACK){ NAV_FROM_BACK = false; }
-  else if(NAV_STACK.length > 1 && NAV_STACK[NAV_STACK.length - 2] === h) NAV_STACK.pop(); // زر الرجوع في المتصفح/الهاتف
+  NAV_WAS_BACK = false;
+  if(NAV_FROM_BACK){ NAV_FROM_BACK = false; NAV_WAS_BACK = true; }
+  else if(NAV_STACK.length > 1 && NAV_STACK[NAV_STACK.length - 2] === h){ NAV_STACK.pop(); NAV_WAS_BACK = true; } // زر الرجوع في المتصفح/الهاتف
   else if(NAV_STACK[NAV_STACK.length - 1] !== h) NAV_STACK.push(h);
   if(NAV_STACK[NAV_STACK.length - 1] !== h) NAV_STACK.push(h);
   saveNav();
@@ -560,7 +561,8 @@ function treeRoots(){ return S.people.filter(p => !S.byId.get(p.father_id) && !S
 const GI_M = '<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5"/><path d="m21 3-6.75 6.75"/><circle cx="10" cy="14" r="6"/></svg>', GI_F = '<svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15v7"/><path d="M9 19h6"/><circle cx="12" cy="9" r="6"/></svg>';
 let TREE_MODE = "cards"; // الشجرة تفتح دائماً بالبطاقات
 try{ localStorage.removeItem("fa-tree-mode"); }catch(e){}
-let TREE_Z = 1;
+let TREE_Z = 1, TREE_STATE = null, TREE_SCROLL_KEY = "";
+window.addEventListener("scroll", () => { if(PAGE_NAME === "tree" && TREE_STATE && TREE_STATE.key === TREE_SCROLL_KEY) TREE_STATE.y = window.scrollY; }, {passive:true});
 function renderTree(rootId){
   const roots = treeRoots().sort((a, b) => descCount(b) - descCount(a));
   const root = S.byId.get(rootId) || roots[0];
@@ -584,26 +586,41 @@ function renderTree(rootId){
   $("#tPick").onclick = async () => { const p = await pickPerson("بداية الشجرة"); if(p) location.hash = "#/tree/" + p.id; };
   $("#tPrint").onclick = () => { REP_ARGS.person = root?.id || null; location.hash = "#/report/tree"; };
   if(!root) return;
+  /* حفظ حالة الشجرة (الفروع المفتوحة، التكبير، موضع التمرير) حتى يرجعها زر «رجوع» كما كانت،
+     وكل فتح/طي خطوة يتراجع عنها زر «رجوع» */
+  const box = $("#treeBox"), key = root.id + "|" + TREE_MODE;
+  const setTog = (b, open) => { if(!b) return; if(cards){ b.setAttribute("aria-expanded", open); b.querySelector("i").textContent = open ? "−" : "+"; } else b.textContent = open ? "−" : "+"; };
+  const togOf = u => u.parentElement.querySelector(cards ? ":scope>.ktog" : ":scope>.tog");
+  const snap = () => [...box.querySelectorAll("li>ul")].map(u => u.hidden ? 0 : 1).join("");
+  const apply = st => [...box.querySelectorAll("li>ul")].forEach((u, i) => { if(st[i] === undefined) return; u.hidden = st[i] === "0"; setTog(togOf(u), !u.hidden); });
+  const save = () => { TREE_STATE = {key, s:snap(), sl:box.scrollLeft, st:box.scrollTop, y:window.scrollY, z:TREE_Z}; };
+  const step = fn => { const before = snap(); fn(); if(snap() !== before) pageStep(() => { apply(before); save(); }); save(); };
+  const restoring = NAV_WAS_BACK && TREE_STATE && TREE_STATE.key === key;
+  const R = restoring ? {...TREE_STATE} : null;
+  if(R) apply(R.s);
+  box.addEventListener("scroll", () => { if(TREE_STATE && TREE_STATE.key === key){ TREE_STATE.sl = box.scrollLeft; TREE_STATE.st = box.scrollTop; } }, {passive:true});
+  TREE_SCROLL_KEY = key;
   if(!cards){
-    $("#tOpen").onclick = () => $$("#treeBox li>ul").forEach(u => { u.hidden = false; u.parentElement.querySelector(".tog").textContent = "−"; });
-    $("#tClose").onclick = () => $$("#treeBox>ul>li>ul>li ul").forEach(u => { u.hidden = true; u.parentElement.querySelector(".tog").textContent = "+"; });
-    $("#treeBox").onclick = e => { const t = e.target.closest(".tog"); if(t && !t.classList.contains("leaf")){ const u = t.parentElement.querySelector(":scope>ul"); u.hidden = !u.hidden; t.textContent = u.hidden ? "+" : "−"; } };
+    $("#tOpen").onclick = () => step(() => $$("#treeBox li>ul").forEach(u => { u.hidden = false; setTog(togOf(u), true); }));
+    $("#tClose").onclick = () => step(() => $$("#treeBox>ul>li>ul>li ul").forEach(u => { u.hidden = true; setTog(togOf(u), false); }));
+    box.onclick = e => { const t = e.target.closest(".tog"); if(t && !t.classList.contains("leaf")) step(() => { const u = t.parentElement.querySelector(":scope>ul"); u.hidden = !u.hidden; setTog(t, !u.hidden); }); };
+    if(R){ TREE_STATE = R; requestAnimationFrame(() => window.scrollTo(0, R.y)); } else save();
     return;
   }
   // ===== عرض البطاقات =====
-  const wrap = $("#treeBox"), chart = $("#ochart");
-  const setTog = (b, open) => { b.setAttribute("aria-expanded", open); b.querySelector("i").textContent = open ? "−" : "+"; };
-  const setZ = z => { TREE_Z = Math.min(1.6, Math.max(.15, Math.round(z * 100) / 100)); chart.style.zoom = TREE_Z; $("#zPct").textContent = Math.round(TREE_Z * 100) + "%"; };
+  const wrap = box, chart = $("#ochart");
+  const setZ = z => { TREE_Z = Math.min(1.6, Math.max(.15, Math.round(z * 100) / 100)); chart.style.zoom = TREE_Z; $("#zPct").textContent = Math.round(TREE_Z * 100) + "%"; if(TREE_STATE && TREE_STATE.key === key) TREE_STATE.z = TREE_Z; };
   const center = () => { wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2; };
-  setZ(TREE_Z); requestAnimationFrame(center);
+  if(R){ TREE_STATE = R; setZ(R.z || TREE_Z); requestAnimationFrame(() => requestAnimationFrame(() => { wrap.scrollLeft = R.sl; wrap.scrollTop = R.st; window.scrollTo(0, R.y); TREE_STATE = {...R}; })); }
+  else { setZ(TREE_Z); requestAnimationFrame(() => { center(); save(); }); }
   $("#zIn").onclick = () => setZ(TREE_Z + .1);
   $("#zOut").onclick = () => setZ(TREE_Z - .1);
   $("#zFit").onclick = () => { setZ(1); setZ(Math.min(1, (wrap.clientWidth - 24) / chart.scrollWidth)); requestAnimationFrame(center); };
-  $("#tOpen").onclick = () => { $$("#ochart ul[hidden]").forEach(u => u.hidden = false); $$("#ochart .ktog").forEach(b => setTog(b, true)); requestAnimationFrame(center); };
-  $("#tClose").onclick = () => { $$("#ochart>ul>li>ul li>ul").forEach(u => { u.hidden = true; setTog(u.parentElement.querySelector(":scope>.ktog"), false); }); requestAnimationFrame(center); };
+  $("#tOpen").onclick = () => { step(() => { $$("#ochart ul[hidden]").forEach(u => u.hidden = false); $$("#ochart .ktog").forEach(b => setTog(b, true)); }); requestAnimationFrame(center); };
+  $("#tClose").onclick = () => { step(() => $$("#ochart>ul>li>ul li>ul").forEach(u => { u.hidden = true; setTog(togOf(u), false); })); requestAnimationFrame(center); };
   wrap.addEventListener("click", e => {
     const t = e.target.closest(".ktog"); if(!t) return;
-    const u = t.parentElement.querySelector(":scope>ul"); u.hidden = !u.hidden; setTog(t, !u.hidden);
+    step(() => { const u = t.parentElement.querySelector(":scope>ul"); u.hidden = !u.hidden; setTog(t, !u.hidden); });
   });
   // السحب بالفأرة للتنقل
   // إضاءة سلسلة الآباء عند المرور على بطاقة
