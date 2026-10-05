@@ -51,6 +51,7 @@ function kinMapSvg(fams, pairs){
 }
 
 function renderKinship(){
+  PAGE_STEPS = [];
   const {fams, pairs} = familyLinks();
   const cross = pairs.filter(p => p.a !== p.b).sort((x, y) => y.score - x.score);
   const internal = pairs.find(p => p.a === p.b && p.a === (fams[0] || [])[0]);
@@ -90,7 +91,11 @@ function renderKinship(){
     </section>`;
   const famsWithLinks = [...new Set(cross.flatMap(p => [p.a, p.b]))];
   $("#kinFilter").innerHTML = `<button type="button" class="chipbtn on" data-f="">الكل</button>` + famsWithLinks.map(f => `<button type="button" class="chipbtn" data-f="${esc(f)}">${esc(f)}</button>`).join("");
-  const filter = f => {
+  let curF = "";
+  const filter = (f, undoing) => {
+    if(f === curF) return;
+    if(!undoing){ const was = curF; pageStep(() => filter(was, true)); }
+    curF = f;
     $$("#kinFilter .chipbtn").forEach(b => b.classList.toggle("on", b.dataset.f === f));
     $$(".kin-row").forEach(r => { r.hidden = !!f && r.dataset.a !== f && r.dataset.b !== f; });
     $$(".km-node").forEach(n => n.classList.toggle("dim", !!f && n.dataset.fam !== f && !cross.some(p => (p.a === f && p.b === n.dataset.fam) || (p.b === f && p.a === n.dataset.fam))));

@@ -22,7 +22,21 @@ const ROUTES = {
   event:    {title:"مناسبة", render:id => renderEvent(+id)},
 };
 let currentHash = "", skipGuard = false, restoring = false;
-let NAV_DEPTH = 0, NAV_FROM_BACK = false, NAV_STARTED = false, PAGE_NAME = "home";
+let NAV_FROM_BACK = false, PAGE_NAME = "home";
+/* سجل التنقل الخاص بالبرنامج: يبقى بعد تحديث الصفحة، وزر «رجوع» يرجع خطوة واحدة فقط */
+let NAV_STACK = (() => { try{ return JSON.parse(sessionStorage.getItem("fa_nav") || "[]"); }catch(e){ return []; } })();
+const saveNav = () => { try{ sessionStorage.setItem("fa_nav", JSON.stringify(NAV_STACK.slice(-60))); }catch(e){} };
+/* خطوات داخل الصفحة نفسها (مثل اختيار عائلة أو تغيير طريقة العرض): «رجوع» يتراجع عنها أولاً */
+let PAGE_STEPS = [];
+function pageStep(undo){ PAGE_STEPS.push(undo); }
+function trackNav(hash){
+  const h = hash || "#/home";
+  if(NAV_FROM_BACK){ NAV_FROM_BACK = false; }
+  else if(NAV_STACK.length > 1 && NAV_STACK[NAV_STACK.length - 2] === h) NAV_STACK.pop(); // زر الرجوع في المتصفح/الهاتف
+  else if(NAV_STACK[NAV_STACK.length - 1] !== h) NAV_STACK.push(h);
+  if(NAV_STACK[NAV_STACK.length - 1] !== h) NAV_STACK.push(h);
+  saveNav();
+}
 
 function parseHash(){
   const [name = "home", ...args] = location.hash.replace(/^#\/?/, "").split("/");
@@ -33,7 +47,7 @@ async function route(){
   if(restoring){ restoring = false; return; } // رجوع بعد إلغاء الخروج — نبقي التعديلات كما هي
   if(S.dirty && !skipGuard && location.hash !== currentHash){
     if(!(await ask("تغييرات غير محفوظة", "لم تحفظ التعديلات. الخروج بدون حفظ؟", {okText:"خروج بدون حفظ", danger:true}))){
-      restoring = true; location.hash = currentHash; return;
+      restoring = true; if(NAV_FROM_BACK){ NAV_FROM_BACK = false; NAV_STACK.push(currentHash || "#/home"); saveNav(); } location.hash = currentHash; return;
     }
     S.dirty = false;
   }
@@ -41,8 +55,7 @@ async function route(){
   const {name, args} = parseHash(), r = ROUTES[name];
   if(S.mustRegister){ closeNav(); PAGE_NAME = "home"; $("#crumb").textContent = "إكمال التسجيل"; renderSelfRegister(); return; }
   useTreeData(name === "tree");
-  NAV_DEPTH = NAV_FROM_BACK ? Math.max(0, NAV_DEPTH - 1) : NAV_DEPTH + (NAV_STARTED ? 1 : 0);
-  NAV_FROM_BACK = false; NAV_STARTED = true; PAGE_NAME = name;
+  trackNav(location.hash); PAGE_STEPS = []; PAGE_NAME = name;
   closeNav();
   $$("[data-nav]").forEach(a => a.classList.toggle("on", a.dataset.nav === (name === "event" ? "events" : name)));
   $("#crumb").textContent = r.title;
@@ -68,7 +81,11 @@ function ensureBack(){
 new MutationObserver(ensureBack).observe($("#view"), {childList:true});
 document.addEventListener("click", e => {
   if(!e.target.closest("[data-back]")) return;
-  if(NAV_DEPTH > 0){ NAV_FROM_BACK = true; history.back(); } else location.hash = "#/home";
+  if(PAGE_STEPS.length){ PAGE_STEPS.pop()(); return; }
+  const cur = location.hash || "#/home";
+  while(NAV_STACK.length && NAV_STACK[NAV_STACK.length - 1] === cur) NAV_STACK.pop();
+  const prev = NAV_STACK[NAV_STACK.length - 1] || "#/home";
+  saveNav(); NAV_FROM_BACK = true; location.hash = prev;
 });
 window.addEventListener("beforeunload", e => { if(S.dirty){ e.preventDefault(); e.returnValue = ""; } });
 document.addEventListener("click", e => {
@@ -562,7 +579,7 @@ function renderTree(rootId){
       : cards ? `<div class="ochart-box"><div class="ochart-wrap" id="treeBox"><div class="ochart" id="ochart"><ul>${cardHtml(root, 0, new Set(), F, false, big ? 3 : 4)}</ul></div></div>
           <div class="zoomer" role="group" aria-label="التكبير"><button type="button" id="zIn" aria-label="تكبير">+</button><span id="zPct">100%</span><button type="button" id="zOut" aria-label="تصغير">−</button><button type="button" id="zFit" aria-label="ملاءمة الشاشة" title="ملاءمة الشاشة">⤢</button></div></div>`
       : `<div class="card tree" id="treeBox"><ul>${nodeHtml(root, 0, new Set(), F, false)}</ul></div>`}`;
-  $$("[data-mode]").forEach(b => b.onclick = () => { TREE_MODE = b.dataset.mode; renderTree(root?.id); });
+  $$("[data-mode]").forEach(b => b.onclick = () => { if(b.dataset.mode === TREE_MODE) return; const was = TREE_MODE; pageStep(() => { TREE_MODE = was; renderTree(root?.id); }); TREE_MODE = b.dataset.mode; renderTree(root?.id); });
   if($("#tRoot")) $("#tRoot").onchange = e => location.hash = "#/tree/" + e.target.value;
   $("#tPick").onclick = async () => { const p = await pickPerson("بداية الشجرة"); if(p) location.hash = "#/tree/" + p.id; };
   $("#tPrint").onclick = () => { REP_ARGS.person = root?.id || null; location.hash = "#/report/tree"; };
