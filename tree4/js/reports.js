@@ -18,7 +18,7 @@ function peopleTable(list, cols){
 }
 function peopleRows(list, cols, extra = {}){ return list.map(p => Object.assign({...extra}, Object.fromEntries(cols.map(c => [COLS[c][0], COLS[c][1](p) ?? ""])))); }
 function reportFrame(title, sub, body){
-  return `<div class="report"><div class="rh"><div><h1>${esc(title)}</h1>${sub ? `<small>${esc(sub)}</small>` : ""}</div><small>شجرة العائلة 4 · ${esc(fmtDate(todayISO()))}</small></div>${body}<p class="foot">طُبع من شجرة العائلة 4</p></div>`;
+  return `<div class="report"><div class="rh"><div><h1>${esc(title)}</h1>${sub ? `<small>${esc(sub)}</small>` : ""}</div><small>شجرة العائلة · ${esc(fmtDate(todayISO()))}</small></div>${body}<p class="foot">طُبع من شجرة العائلة</p></div>`;
 }
 function filterNote(F){
   const t = [F.gender, F.status, F.gov, F.area, F.branch && "فرع " + F.branch, F.family && "عائلة " + F.family, F.marital].filter(Boolean);

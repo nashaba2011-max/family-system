@@ -261,12 +261,12 @@ function renderHome(){
   const bdays = P.filter(p => p.birth_date && !isDead(p) && +p.birth_date.slice(5, 7) === mon).length;
   const recent = P.slice().sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || "")).slice(0, 6);
   $("#view").innerHTML = `
-    <section class="hero-banner" aria-label="شجرة العائلة 4">
+    <section class="hero-banner" aria-label="شجرة العائلة">
       <img class="hb-water" src="img/logo-mark-light.png" alt="" aria-hidden="true">
-      <span class="logo-anim hb-mark"><i class="la-beam"></i><span class="la-in"><img src="img/logo-mark-light.png" alt="شعار شجرة العائلة 4" width="96" height="128"><i class="la-glow"></i><i class="la-shine"></i></span></span>
+      <span class="logo-anim hb-mark"><i class="la-beam"></i><span class="la-in"><img src="img/logo-mark-light.png" alt="شعار شجرة العائلة" width="96" height="128"><i class="la-glow"></i><i class="la-shine"></i></span></span>
       <div class="hb-text">
         <span class="hb-kick">أهلاً بكم في</span>
-        <h1>شجرة العائلة 4</h1>
+        <h1>شجرة العائلة</h1>
         <p>جذور ممتدة وأجيال متصلة</p>
         <div class="hb-facts"><span><b>${P.length}</b> فرداً</span><span><b>${P.length ? Math.max(...P.map(p => lineChain(p).length)) + 1 : 0}</b> أجيال</span><span><b>${fams}</b> أسرة</span></div>
       </div>

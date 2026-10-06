@@ -1,6 +1,6 @@
 {
-  "name": "شجرة العائلة 4",
-  "short_name": "شجرة العائلة 4",
+  "name": "شجرة العائلة",
+  "short_name": "شجرة العائلة",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

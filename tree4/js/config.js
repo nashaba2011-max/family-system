@@ -1,5 +1,5 @@
 /* ===== الإعدادات — المكان الوحيد لعنوان قاعدة البيانات ===== */
-const APP_NAME = "شجرة العائلة 4";
+const APP_NAME = "شجرة العائلة";
 const SUPABASE_URL = "https://lzadmbjhcxqvafykntsp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_X4VEzOBLuT8d-b7Tsz9IJQ_1QHW9BIe"; // مفتاح عام — الحماية عبر سياسات RLS
 const PHOTO_BUCKET = "f4-photos";

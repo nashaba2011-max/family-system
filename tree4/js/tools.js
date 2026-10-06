@@ -234,7 +234,7 @@ async function runBackup(withFiles){
     const counts = `${data.f4_people.length} فرداً، ${data.f4_occasions.length} مناسبة`;
     if(!withFiles){
       const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([json], {type:"application/json"}));
-      a.download = `نسخة-احتياطية-شجرة-العائلة-4-${stamp}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      a.download = `نسخة-احتياطية-شجرة-العائلة-${stamp}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
       out.textContent = `تم تنزيل النسخة (${counts}).`;
     }else{
       const entries = [["data.json", json]];
@@ -252,7 +252,7 @@ async function runBackup(withFiles){
       out.textContent = "جارٍ تجهيز ملف ZIP…";
       const z = await makeZip(entries);
       const a = document.createElement("a"); a.href = URL.createObjectURL(z);
-      a.download = `نسخة-كاملة-شجرة-العائلة-4-${stamp}.zip`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+      a.download = `نسخة-كاملة-شجرة-العائلة-${stamp}.zip`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 8000);
       out.textContent = `تم تنزيل النسخة الكاملة (${counts}، الملفات: ${files.length - miss}، الحجم ${(z.size / 1048576).toFixed(1)} ميجابايت)${miss ? ` — تعذر تنزيل ${miss} من الملفات` : ""}.`;
     }
     await db.from("f4_settings").upsert([{key:"last_backup", value:new Date().toISOString(), updated_by:S.email}], {onConflict:"key"});

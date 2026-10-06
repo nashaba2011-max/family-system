@@ -55,7 +55,7 @@ function drawJoin(){
     };
   }else if(JOIN.step === 2){
     b.innerHTML = `
-      <div class="join-hello"><b>أهلاً بك يا ${esc(D.name.split(/\s+/)[0])}</b><span>يسعدنا انضمامك إلى شجرة العائلة 4</span></div>
+      <div class="join-hello"><b>أهلاً بك يا ${esc(D.name.split(/\s+/)[0])}</b><span>يسعدنا انضمامك إلى شجرة العائلة</span></div>
       <div class="terms" id="jTerms" tabindex="0"><div class="spin"></div></div>
       <label class="check join-accept"><input type="checkbox" id="jAgree"> قرأت الشروط والقوانين وأوافق عليها</label>
       <div class="err" id="jErr" role="alert"></div>
@@ -67,7 +67,7 @@ function drawJoin(){
   }else{
     const st = D.result;
     const reqLink = location.href.split("#")[0] + "#/requests/" + (D.reqId || "");
-    const wa = waLink(CONTACT_WA, `السلام عليكم، سجلت طلب انضمام لشجرة العائلة 4.\nالاسم: ${D.name}\nالبريد: ${D.email}\nالهاتف: ${D.phone}${D.relation ? "\nصلتي بالعائلة: " + D.relation : ""}\n\nرابط الطلب:\n${reqLink}`);
+    const wa = waLink(CONTACT_WA, `السلام عليكم، سجلت طلب انضمام لشجرة العائلة.\nالاسم: ${D.name}\nالبريد: ${D.email}\nالهاتف: ${D.phone}${D.relation ? "\nصلتي بالعائلة: " + D.relation : ""}\n\nرابط الطلب:\n${reqLink}`);
     b.innerHTML = st === "member" ? `
       <div class="join-done"><span class="jd-ic ok">✓</span><b>بريدك مضاف في البرنامج مسبقاً</b><p>ادخل ببريدك وكلمة السر الخاصة بحسابك، وإن نسيتها اطلب كلمة سر جديدة من الإدارة.</p>
       <button class="btn primary block" type="button" id="jClose">الذهاب لتسجيل الدخول</button></div>` : `
@@ -153,8 +153,8 @@ async function renderRequests(focusId){
         <p class="muted rq-hint">بدون أي صلاحية يكون العضو «مشاهدة فقط». إذا لم تربطه بسجل، سيُطلب منه تسجيل بياناته في سجل العائلة عند أول دخول قبل التصفح.</p>
       </div>
       <div class="rq-acts"><button class="btn primary" type="button" data-act="ok">موافقة وإضافة العضو</button><button class="btn danger" type="button" data-act="no">رفض</button>
-        ${r.phone ? `<a class="btn wa" href="${esc(waLink(r.phone, `السلام عليكم ${r.full_name.split(/\s+/)[0]}، بخصوص طلب انضمامك لشجرة العائلة 4`))}" target="_blank" rel="noopener">واتساب</a>` : ""}</div>` :
-      r.status === "approved" && r.phone ? `<div class="rq-acts"><a class="btn wa" href="${esc(waLink(r.phone, `السلام عليكم ${r.full_name.split(/\s+/)[0]}، تمت الموافقة على طلب انضمامك لشجرة العائلة 4. تستطيع الدخول الآن ببريدك وكلمة السر التي اخترتها:\n${location.href.split("#")[0]}`))}" target="_blank" rel="noopener">إبلاغه بالموافقة عبر واتساب</a></div>` : ""}
+        ${r.phone ? `<a class="btn wa" href="${esc(waLink(r.phone, `السلام عليكم ${r.full_name.split(/\s+/)[0]}، بخصوص طلب انضمامك لشجرة العائلة`))}" target="_blank" rel="noopener">واتساب</a>` : ""}</div>` :
+      r.status === "approved" && r.phone ? `<div class="rq-acts"><a class="btn wa" href="${esc(waLink(r.phone, `السلام عليكم ${r.full_name.split(/\s+/)[0]}، تمت الموافقة على طلب انضمامك لشجرة العائلة. تستطيع الدخول الآن ببريدك وكلمة السر التي اخترتها:\n${location.href.split("#")[0]}`))}" target="_blank" rel="noopener">إبلاغه بالموافقة عبر واتساب</a></div>` : ""}
     </article>`;
   }).join("");
   if(focusId && !RQ.focusDone){
