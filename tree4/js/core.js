@@ -167,7 +167,8 @@ function upsertLocal(row){
   if(i >= 0) S.people[i] = row; else S.people.push(row);
   S.people.sort((a, b) => a.serial - b.serial); indexPeople();
 }
-function nextSerial(){ return S.people.reduce((m, p) => Math.max(m, p.serial), 0) + 1; }
+/* أول رقم تسلسل فارغ (أصغر رقم غير مستخدم) */
+function nextSerial(){ const used = new Set(S.people.map(p => p.serial)); let n = 1; while(used.has(n)) n++; return n; }
 
 async function photoUrl(path){
   if(!path) return "";
