@@ -155,7 +155,7 @@ main{flex:1;min-width:0;padding:20px;max-width:1180px;outline:none}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px}
 .stat{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
 .stat b{display:block;font-size:30px;font-family:var(--display);color:var(--brand-d);line-height:1.2}
-.stat span{font-size:13px;color:var(--ink-2)}
+.stat>span{font-size:13px;color:var(--ink-2)}
 a.stat{color:inherit;transition:border-color .2s}
 a.stat:hover{border-color:var(--gold)}
 .stat.gold{border-top:4px solid var(--gold)}
@@ -577,7 +577,7 @@ a.visits-pill:hover{border-color:var(--brand)}
 .hero-banner h1{margin:0;font-family:var(--display);font-size:42px;font-weight:800;line-height:1.15;color:#ffffff;text-wrap:balance}
 .hero-banner p{margin:0;font-size:17px;color:#cfd6e4}
 .hb-facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.hb-facts span{font-size:14px;color:#e6e9f1;background:rgba(255,255,255,.08);border:1px solid rgba(217,184,116,.35);border-radius:999px;padding:4px 12px;font-variant-numeric:tabular-nums}
+.hb-facts>span{font-size:14px;color:#e6e9f1;background:rgba(255,255,255,.08);border:1px solid rgba(217,184,116,.35);border-radius:999px;padding:4px 12px;font-variant-numeric:tabular-nums}
 .hb-facts b{color:#e3c27a;font-size:16px}
 .hb-arc{position:absolute;left:0;right:0;bottom:-1px;width:100%;height:26px}
 .hb-arc path{fill:var(--bg)}
@@ -835,3 +835,9 @@ a.visits-pill:hover{border-color:var(--brand)}
 .kin-paths li.lca{font-weight:800}
 .kin-paths li small{color:var(--ink-3)}
 @media (max-width:640px){.kin-head{grid-template-columns:1fr auto;}.kin-bar{grid-column:1/-1;order:3}.kin-meta{order:4}.kin-paths{grid-template-columns:1fr}}
+
+/* عدّاد دوّار */
+.odo{display:inline-flex;direction:ltr;overflow:hidden;height:1.15em;line-height:1.15em;vertical-align:bottom}
+.odo .col{display:flex;flex-direction:column;transition:transform 1.6s cubic-bezier(.2,.8,.2,1)}
+.odo .col span{display:block;font:inherit;color:inherit;height:1.15em;line-height:1.15em;text-align:center;padding:0;margin:0;border:0;background:none}
+@media (prefers-reduced-motion:reduce){.odo .col{transition:none}}

@@ -299,7 +299,21 @@ function renderHome(){
       ${tile("#/data","data","استيراد وتصدير","Excel")}
     </div>
     ${recent.length ? `<div class="sec-h">آخر السجلات المحدّثة</div><div class="plist">${recent.map(p => personBtn(p, p.updated_at ? "حُدّث " + fmtDate(p.updated_at.slice(0, 10)) : "")).join("")}</div>` : ""}`;
-  applyPerms(); fillVisitStat();
+  applyPerms(); fillVisitStat(); homeOdo();
+}
+
+/* عدّاد دوّار لأرقام الصفحة الرئيسية — يعمل في كل مرة تُعرض فيها */
+function odo(el, delay){
+  const s = (el.textContent || "").trim();
+  if(!/^\d+$/.test(s) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  el.setAttribute("aria-label", s);
+  el.innerHTML = '<span class="odo" aria-hidden="true">' + [...s].map(() => '<span class="col">' + [...Array(20)].map((_, i) => "<span>" + (i % 10) + "</span>").join("") + "</span>").join("") + "</span>";
+  const cols = el.querySelectorAll(".col");
+  setTimeout(() => cols.forEach((c, i) => { c.style.transitionDelay = (i * 0.08) + "s"; c.style.transform = "translateY(-" + ((10 + +s[i]) * 1.15) + "em)"; }), delay + 30);
+}
+function homeOdo(){
+  document.querySelectorAll("#view .hb-facts b").forEach((b, i) => odo(b, 200 + i * 120));
+  document.querySelectorAll("#view .stats .stat > b").forEach((b, i) => odo(b, 350 + i * 90));
 }
 
 /* ===== من نحن ===== */
