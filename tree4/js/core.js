@@ -147,18 +147,8 @@ async function loadAll(){
   const [people, spouses, lookups] = await Promise.all([fetchAll("f4_people", "serial"), fetchAll("f4_spouses", "id"), fetchAll("f4_lookups", "sort")]);
   S.people = people; S.spouses = spouses; indexPeople();
   S.full = null; S.treeAll = null;
-  /* المستخدم المقيّد بأسرته: الشجرة تعرض كل العائلة (أسماء وروابط فقط) */
-  if(isRestricted()){
-    const [tp, ts] = await Promise.all([db.rpc("f4_tree_people"), db.rpc("f4_tree_spouses")]);
-    if(!tp.error && !ts.error){
-      const own = new Map(people.map(p => [p.id, p]));
-      S.allowed = new Set(own.keys());
-      S.treeAll = {
-        people:(tp.data || []).map(t => own.get(t.id) || {...t, _stub:true, birth_date:t.birth_year ? `${t.birth_year}-01-01` : null, photo_path:null}).sort((a, b) => a.serial - b.serial),
-        spouses:ts.data || []
-      };
-    }
-  }
+  /* المستخدم المقيّد بأسرته: يرى أسرته فقط في كل الصفحات، والشجرة كذلك (لا تُحمَّل بقية العائلة) */
+  S.allowed = isRestricted() ? new Set(people.map(p => p.id)) : null;
   S.lookups = {}; lookups.forEach(l => (S.lookups[l.kind] ||= []).push(l));
   Object.values(S.lookups).forEach(a => a.sort((x, y) => x.sort - y.sort || x.name.localeCompare(y.name, "ar")));
 }
