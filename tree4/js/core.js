@@ -132,7 +132,7 @@ async function fetchAll(table, order){
   }
   return out;
 }
-const isRestricted = () => !!(S.me && S.me.family_only && S.me.role !== "admin");
+const isRestricted = () => !!(S.me && S.me.role !== "admin"); /* كل عضو غير مدير يرى فرع جده فقط */
 /* تبديل البيانات: صفحة الشجرة تستخدم كل العائلة، وباقي الصفحات المسموح فقط */
 function useTreeData(on){
   if(!S.treeAll) return;
@@ -147,7 +147,7 @@ async function loadAll(){
   const [people, spouses, lookups] = await Promise.all([fetchAll("f4_people", "serial"), fetchAll("f4_spouses", "id"), fetchAll("f4_lookups", "sort")]);
   S.people = people; S.spouses = spouses; indexPeople();
   S.full = null; S.treeAll = null;
-  /* المستخدم المقيّد بأسرته: الشجرة تعرض كل العائلة (أسماء وروابط فقط) */
+  /* العضو المقيّد: الشجرة تعرض فرع جده لأبيه وكل من ينحدر منه */
   if(isRestricted()){
     const [tp, ts] = await Promise.all([db.rpc("f4_tree_people"), db.rpc("f4_tree_spouses")]);
     if(!tp.error && !ts.error){

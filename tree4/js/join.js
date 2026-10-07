@@ -148,7 +148,6 @@ async function renderRequests(focusId){
           <label class="check"><input type="checkbox" data-k="add" ${s.add ? "checked" : ""} ${s.role === "admin" ? "disabled" : ""}> إضافة</label>
           <label class="check"><input type="checkbox" data-k="edit" ${s.edit ? "checked" : ""} ${s.role === "admin" ? "disabled" : ""}> تعديل</label>
           <label class="check"><input type="checkbox" data-k="del" ${s.del ? "checked" : ""} ${s.role === "admin" ? "disabled" : ""}> حذف</label>
-          <label class="check" title="يرى أسرته وسلسلة آبائه فقط، والشجرة كاملة بالأسماء"><input type="checkbox" data-k="family" ${s.family && s.role !== "admin" ? "checked" : ""} ${s.role === "admin" ? "disabled" : ""}> أسرته فقط</label>
         </div>
         <p class="muted rq-hint">بدون أي صلاحية يكون العضو «مشاهدة فقط». إذا لم تربطه بسجل، سيُطلب منه تسجيل بياناته في سجل العائلة عند أول دخول قبل التصفح.</p>
       </div>
@@ -184,8 +183,8 @@ async function renderRequests(focusId){
     }
     if(b.dataset.act === "ok"){
       const rights = s.role === "admin" ? "مدير (كل الصلاحيات)" : [s.add && "إضافة", s.edit && "تعديل", s.del && "حذف"].filter(Boolean).join("، ") || "مشاهدة فقط";
-      if(!await ask("الموافقة على العضو", `إضافة ${r.full_name} بصلاحية: ${rights}${s.family && s.role !== "admin" ? " · أسرته فقط" : ""}${!s.person && s.role !== "admin" ? " — وسيُطلب منه تسجيل بياناته عند أول دخول" : ""}؟`, {okText:"موافقة"})) return;
-      const {data:res, error} = await db.rpc("f4_approve_request", {p_id:id, p_role:s.role, p_add:s.add, p_edit:s.edit, p_delete:s.del, p_person:s.person, p_family_only:s.family && s.role !== "admin"});
+      if(!await ask("الموافقة على العضو", `إضافة ${r.full_name} بصلاحية: ${rights}${s.role !== "admin" ? " · فرع جده فقط" : ""}${!s.person && s.role !== "admin" ? " — وسيُطلب منه تسجيل بياناته عند أول دخول" : ""}؟`, {okText:"موافقة"})) return;
+      const {data:res, error} = await db.rpc("f4_approve_request", {p_id:id, p_role:s.role, p_add:s.add, p_edit:s.edit, p_delete:s.del, p_person:s.person, p_family_only:s.role !== "admin"});
       if(error) return toast(errMsg(error), true);
       toast(res === "no_account" ? "تمت الموافقة — لكن هذا طلب قديم بدون كلمة سر، اطلب منه تسجيل طلب جديد بنفس البريد أو أنشئ له كلمة سر" : "تمت الموافقة وأُضيف العضو، ويستطيع الدخول الآن");
       refreshReqBadge(); RQ.tab = "approved"; renderRequests();
