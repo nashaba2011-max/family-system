@@ -54,6 +54,11 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);dire
 .opts button:disabled{cursor:default}
 .opts .ok{border-color:var(--ok);background:var(--okbg)}
 .opts .no{border-color:var(--bad);background:var(--badbg);animation:shake .35s}
+.timer{display:flex;align-items:center;gap:8px;margin:2px 0 10px;font-weight:800;font-variant-numeric:tabular-nums}
+.timer .tb{flex:1;height:7px;border-radius:6px;background:var(--line);overflow:hidden}
+.timer .tb i{display:block;height:100%;width:100%;background:var(--gold);border-radius:6px;transition:width 1s linear,background .3s}
+.timer.low{color:var(--bad)} .timer.low .tb i{background:var(--bad)}
+.timeup{color:var(--bad);font-weight:800;margin-bottom:4px}
 .why{margin-top:12px;font-size:15px;line-height:1.8;background:var(--bg);border-radius:12px;padding:10px 12px;display:none}
 .why.show{display:block}
 .act{display:flex;gap:8px;margin-top:16px}
@@ -202,15 +207,24 @@ function intro(){
 }
 function setProg(n){ [...$('prog').children].forEach((el,i)=>{ el.className = results[i]===true?'ok':results[i]===false?'no':(i===n?'on':''); }); }
 const LV={e:['سهل','e',10],m:['متوسط','m',20],h:['صعب','h',30]};
+/* وقت الإجابة بالثواني حسب الصعوبة */
+const TIME={e:15,m:20,h:25}; let TMR=null;
+function stopTimer(){ if(TMR){ clearInterval(TMR); TMR=null; } }
+function startTimer(q){
+  stopTimer(); const total=TIME[q.lv]; let left=total; const box=$('tmr'), n=$('tmrN'), bar=$('tmrB');
+  const draw=()=>{ n.textContent=left; bar.style.width=(left/total*100)+'%'; box.classList.toggle('low', left<=5); };
+  draw(); TMR=setInterval(()=>{ left--; draw(); if(left<=0){ stopTimer(); answer(null,q); } },1000);
+}
 function show(){
   const q=Q[qi]; setProg(qi);
   $('body').innerHTML=`<span class="level ${LV[q.lv][1]}">${LV[q.lv][0]} · ${LV[q.lv][2]} نقطة</span>
-    <div class="q">${q.q}</div><div class="opts" id="opts">${q.opts.map(o=>`<button type="button">${o}</button>`).join('')}</div>
+    <div class="q">${q.q}</div><div class="timer" id="tmr" role="timer" aria-label="الوقت المتبقي">⏱ <span id="tmrN"></span><div class="tb"><i id="tmrB"></i></div></div><div class="opts" id="opts">${q.opts.map(o=>`<button type="button">${o}</button>`).join('')}</div>
     <div class="why" id="why">${q.why}</div><div class="act" id="nx" hidden><button class="btn" type="button" id="nb">${qi<Q.length-1?'السؤال التالي':'النتيجة'}</button></div>`;
-  [...$('opts').children].forEach(b=>b.onclick=()=>answer(b,q)); $('opts').firstElementChild.focus();
+  [...$('opts').children].forEach(b=>b.onclick=()=>answer(b,q)); $('opts').firstElementChild.focus(); startTimer(q);
 }
 function answer(b,q){
-  const ok=b.textContent===q.ans; [...$('opts').children].forEach(x=>{ x.disabled=true; if(x.textContent===q.ans) x.classList.add('ok'); }); if(!ok) b.classList.add('no');
+  stopTimer(); const ok=!!b && b.textContent===q.ans; [...$('opts').children].forEach(x=>{ x.disabled=true; if(x.textContent===q.ans) x.classList.add('ok'); }); if(b && !ok) b.classList.add('no');
+  if(!b) $('why').insertAdjacentHTML('afterbegin','<div class="timeup">⏰ انتهى الوقت!</div>');
   results[qi]=ok; setProg(qi); S.asked.push(q.key);
   if(ok){ const pts=LV[q.lv][2]; score+=pts; floatTxt('+'+pts,b); shoot(); }
   $('why').classList.add('show'); $('nx').hidden=false; $('nb').onclick=()=>{ qi++; qi<Q.length?show():end(); }; $('nb').focus();
@@ -226,7 +240,7 @@ function end(){
     <div class="act"><button class="btn" type="button" id="done">متابعة إلى الموقع</button></div></div>`;
   $('done').onclick=close; $('done').focus(); setProg(9);
 }
-function close(){ $('veil').hidden=true; }
+function close(){ stopTimer(); $('veil').hidden=true; }
 function open(){ build(); $('veil').hidden=false; intro(); }
 $('close').onclick=close;
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
