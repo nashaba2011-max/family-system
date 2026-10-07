@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>لعبة الأنساب</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: خلفية تحاكي الصفحة الرئيسية، وفوقها نافذة اللعبة في الوسط؛ شريط علوي صغير لأزرار التجربة فقط */
+:root{
+  --bg:#f3f0e8; --paper:#fffdf8; --ink:#1c2c47; --muted:#5d6779; --line:#e4dccb;
+  --navy:#1c2c47; --navy2:#24395e; --gold:#b59559; --gold2:#e3c27a; --cream:#f6f2e8;
+  --ok:#2e8b57; --okbg:#e3f3ea; --bad:#c0453b; --badbg:#fbe9e7;
+  --easy:#2e8b57; --mid:#c98a1a; --hard:#b23a48;
+  --font:"Tajawal",system-ui,"Segoe UI",sans-serif; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e131c;--paper:#162034;--ink:#eef0f5;--muted:#a6b0c2;--line:#2a3650;--okbg:#17321f;--badbg:#3a1f1d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e131c;--paper:#162034;--ink:#eef0f5;--muted:#a6b0c2;--line:#2a3650;--okbg:#17321f;--badbg:#3a1f1d;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);direction:rtl;min-height:100vh}
+.demo-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:10px 16px;background:#0b1220;color:#cfd6e4;font-size:13px}
+.demo-bar b{color:var(--gold2)}
+.demo-bar button{font:inherit;font-size:13px;font-weight:700;border:1px solid rgba(227,194,122,.5);background:transparent;color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer}
+/* خلفية الصفحة */
+.page{max-width:900px;margin:0 auto;padding:18px 16px 40px;filter:blur(3px);opacity:.55;pointer-events:none}
+.fake-hb{height:190px;border-radius:20px;background:linear-gradient(135deg,#1c2c47,#22365a);position:relative;overflow:hidden}
+.fake-hb::before{content:"";position:absolute;inset:0;opacity:.14;background-image:linear-gradient(45deg,#d9b874 1px,transparent 1px),linear-gradient(-45deg,#d9b874 1px,transparent 1px);background-size:30px 30px}
+.fake-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.fake-tiles i{height:90px;border-radius:14px;background:var(--paper);border:1px solid var(--line)}
+/* النافذة */
+.veil{position:fixed;inset:0;background:rgba(10,16,28,.55);display:grid;place-items:center;padding:16px;z-index:10}
+.veil[hidden]{display:none}
+.modal{width:100%;max-width:520px;background:var(--paper);border-radius:22px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.35);animation:pop .45s cubic-bezier(.2,.9,.3,1.2) both;max-height:calc(100vh - 32px);display:flex;flex-direction:column}
+.mh{position:relative;background:linear-gradient(135deg,#1c2c47,#24395e);color:#fff;padding:18px 20px 16px;overflow:hidden}
+.mh::before{content:"";position:absolute;inset:0;opacity:.16;background-image:linear-gradient(45deg,#d9b874 1px,transparent 1px),linear-gradient(-45deg,#d9b874 1px,transparent 1px);background-size:26px 26px}
+.mh>*{position:relative}
+.mh .row{display:flex;align-items:center;gap:10px}
+.mh h1{margin:0;font-size:22px;font-weight:800;flex:1}
+.mh h1 small{display:block;font-size:13px;font-weight:500;color:var(--gold2)}
+.x{width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff;font-size:18px;cursor:pointer;flex:none}
+.prog{display:flex;gap:6px;margin-top:12px}
+.prog i{flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.18)}
+.prog i.on{background:var(--gold2)}.prog i.ok{background:#5cc28a}.prog i.no{background:#e07a6f}
+.mb{padding:18px 20px 20px;overflow:auto}
+.msg{border:1px dashed var(--gold);border-radius:14px;padding:12px 14px;background:color-mix(in srgb,var(--gold) 8%,transparent);line-height:1.8}
+.msg b{color:var(--gold)}
+.fact{margin-top:10px;font-size:14px;color:var(--muted);line-height:1.7}
+.fact b{color:var(--ink)}
+.level{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;border-radius:999px;padding:3px 10px;color:#fff}
+.level.e{background:var(--easy)}.level.m{background:var(--mid)}.level.h{background:var(--hard)}
+.q{font-size:20px;font-weight:800;line-height:1.7;margin:10px 0 14px}
+.q em{font-style:normal;color:var(--gold)}
+.opts{display:grid;gap:8px}
+.opts button{font:inherit;font-size:16px;font-weight:700;text-align:right;border:2px solid var(--line);background:var(--paper);color:var(--ink);border-radius:14px;padding:11px 14px;cursor:pointer;transition:border-color .15s,transform .1s}
+.opts button:hover:not(:disabled){border-color:var(--gold)}
+.opts button:disabled{cursor:default}
+.opts .ok{border-color:var(--ok);background:var(--okbg)}
+.opts .no{border-color:var(--bad);background:var(--badbg);animation:shake .35s}
+.why{margin-top:12px;font-size:15px;line-height:1.8;background:var(--bg);border-radius:12px;padding:10px 12px;display:none}
+.why.show{display:block}
+.act{display:flex;gap:8px;margin-top:16px}
+.btn{flex:1;font:inherit;font-weight:800;font-size:16px;border:0;border-radius:14px;padding:12px;background:var(--navy);color:#fff;cursor:pointer}
+:root[data-theme="dark"] .btn{background:var(--gold);color:#1c2c47}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{background:var(--gold);color:#1c2c47}}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn:focus-visible,.opts button:focus-visible,.x:focus-visible{outline:3px solid var(--gold2);outline-offset:2px}
+.score{text-align:center}
+.score .big{font-size:56px;font-weight:800;color:var(--gold);line-height:1.1}
+.badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
+.badges span{border:1.5px solid var(--gold);border-radius:999px;padding:4px 12px;font-size:14px;font-weight:700}
+.next-visit{font-size:14px;color:var(--muted);line-height:1.8}
+.pts{position:absolute;left:20px;top:16px;font-weight:800;color:var(--gold2);font-size:15px}
+.float{position:fixed;font-weight:800;font-size:26px;color:var(--gold);pointer-events:none;animation:floatUp 1s forwards;z-index:20}
+.target{width:64px;height:64px;flex:none}
+@keyframes pop{from{opacity:0;transform:translateY(20px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes floatUp{to{transform:translateY(-70px);opacity:0}}
+@keyframes hit{0%{transform:translateX(70px) rotate(-12deg);opacity:0}30%{opacity:1}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+.demo-note{max-width:900px;margin:0 auto;padding:0 16px;color:var(--muted);font-size:13px}
+</style>
+
+<div class="demo-bar" role="region" aria-label="أدوات التجربة">
+  <span>تجربة: <b id="vNo">الزيارة 1</b></span>
+  <button type="button" id="newVisit">محاكاة زيارة جديدة</button>
+  <button type="button" id="reopen">فتح اللعبة مرة أخرى</button>
+  <button type="button" id="reset">البدء من الصفر</button>
+</div>
+<div class="page" aria-hidden="true"><div class="fake-hb"></div><div class="fake-tiles"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+
+<div class="veil" id="veil">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="gT">
+    <div class="mh">
+      <div class="row">
+        <svg class="target" viewBox="-34 -34 68 68" aria-hidden="true"><circle r="31" fill="#1c2c47" stroke="#e3c27a" stroke-width="2"/><circle r="23" fill="#f6f2e8"/><circle r="15" fill="#1c2c47"/><circle r="7" fill="#e3c27a"/><g id="arrow" style="opacity:0"><line x1="0" y1="0" x2="34" y2="-10" stroke="#e3c27a" stroke-width="3" stroke-linecap="round"/><path d="M30-13l10-1-6 7Z" fill="#f6f2e8"/></g></svg>
+        <h1 id="gT">لعبة الأنساب<small id="gSub">ثلاثة أسئلة لكل زيارة</small></h1>
+        <button class="x" type="button" id="close" aria-label="إغلاق">✕</button>
+      </div>
+      <div class="prog" id="prog"><i></i><i></i><i></i></div>
+    </div>
+    <div class="mb" id="body"></div>
+  </div>
+</div>
+<p class="demo-note">هذا نموذج للتجربة. الأسئلة تُولَّد تلقائياً من شجرة العائلة الحقيقية (الأسماء وصلات القرابة فقط). في البرنامج تظهر اللعبة مرة واحدة عند كل زيارة، وتُحفظ نتيجة كل عضو في حسابه.</p>
+
+<script>
+const DATA = {"p":[[1,"علي","عبدالله","محمد","النشابة","m",128,null,1],[2,"معصومة",null,null,null,"f",null,null,0],[3,"زينب","حسن",null,"العصفور","f",null,null,0],[4,"ماجد",null,null,"النشابة","m",null,null,1],[5,"أحمد","ماجد",null,"النشابة","m",4,null,1],[6,"عفيفة","ماجد",null,"النشابة","f",4,null,1],[7,"عبدالحسين","علي","عبدالله","النشابة","m",1,2,1],[8,"أحمد","علي","عبدالله","النشابة","m",1,2,1],[9,"خاتون","علي","عبدالله","النشابة","f",1,2,1],[10,"ملاك","السيد سعيد","عبدالله","الغريفي","f",null,null,0],[11,"مريم","جاسم","كاظم",null,"f",null,null,0],[12,"جعفر","عبدالحسين","علي","النشابة","m",7,10,0],[13,"مهدية","عبدالحسين","علي","النشابة","f",7,11,0],[14,"مدينة","أحمد","ماجد","النشابة","f",5,9,1],[15,"مجيد","أحمد","ماجد","النشابة","m",5,9,1],[16,"رباب","أحمد","ماجد","النشابة","f",5,9,0],[17,"يوسف","أحمد","ماجد","النشابة","m",5,9,0],[18,"عبدالصمد","أحمد","ماجد","النشابة","m",5,9,0],[19,"معصومة","أحمد","ماجد","النشابة","f",5,9,0],[20,"بدرية","أحمد","ماجد","النشابة","f",5,9,0],[21,"أميرة","أحمد","ماجد","النشابة","f",5,9,0],[22,"ملكة","جعفر","عبدالحسين","النشابة","f",12,16,1],[23,"عبدالحسين","جعفر","عبدالحسين","النشابة","m",12,16,0],[24,"عبدالواحد","جعفر","عبدالحسين","النشابة","m",12,16,0],[25,"عبدالاله","جعفر","عبدالحسين","النشابة","m",12,16,0],[26,"صباح","جعفر","عبدالحسين","النشابة","f",12,16,0],[27,"وجيهة","جعفر","عبدالحسين","النشابة","f",12,16,0],[28,"مصطفى","جعفر","عبدالحسين","النشابة","m",12,16,0],[29,"هيثم","جعفر","عبدالحسين","النشابة","m",12,16,0],[30,"نبيهة","جعفر","عبدالحسين","النشابة","f",12,16,0],[31,"علياء","جعفر","عبدالحسين","النشابة","f",12,16,0],[32,"فاطمة","أحمد","علي","النشابة","f",8,6,1],[33,"عبدالأمير","أحمد","علي","النشابة","m",8,6,1],[34,"حبيب","أحمد","علي","النشابة","m",8,6,1],[35,"سلمان","أحمد","علي","النشابة","m",8,6,0],[36,"نرجس","أحمد","علي","النشابة","f",8,6,0],[37,"خديجة","علي","عبدالله","النشابة","f",1,3,1],[38,"طيبة","علي","عبدالله","النشابة","f",1,3,0],[39,"مهدي",null,null,"السكري","m",null,null,0],[40,"مكية","مهدي",null,"السكري","f",39,37,0],[41,"عباس","مهدي",null,"السكري","m",39,37,0],[42,"نجوى","مهدي",null,"السكري","f",39,37,0],[43,"أحمد","مهدي",null,"السكري","m",39,37,0],[44,"مكي","مهدي",null,"السكري","m",39,37,0],[45,"طالب","مهدي",null,"السكري","m",39,37,0],[46,"وافدة","مهدي",null,"السكري","f",39,37,0],[47,"آدم","مهدي",null,"السكري","m",39,37,0],[48,"بلقيس","مهدي",null,"السكري","f",39,37,0],[49,"عبدالأمير","حسين","أحمد","بن خميس","m",null,null,0],[50,"تحسين","عبدالأمير","حسين","بن خميس","m",49,40,0],[51,"علي","عبدالأمير","حسين","بن خميس","m",49,40,0],[52,"محمد","عبدالأمير","حسين","بن خميس","m",49,40,0],[53,"ميعاد","عبدالأمير","حسين","بن خميس","f",49,40,0],[54,"ليما","سعيد",null,"ضيف","f",null,null,0],[55,"سلمان","عباس","مهدي","السكري","m",41,54,0],[56,"دانة","عباس","مهدي","السكري","f",41,54,0],[57,"مريم","عباس","مهدي","السكري","f",41,54,0],[58,"محمد","عباس","مهدي","السكري","m",41,54,0],[59,"فاضل","جاسم","أحمد","النشيط","m",null,null,0],[60,"أحمد","فاضل","جاسم","النشيط","m",59,42,0],[61,"هادي","فاضل","جاسم","النشيط","m",59,42,0],[62,"ليلى","فاضل","جاسم","النشيط","f",59,42,0],[63,"محمد","فاضل","جاسم","النشيط","m",59,42,0],[64,"رحاب","إبراهيم",null,"قمبر","f",null,null,0],[65,"فجر","أحمد","مهدي","السكري","f",43,64,0],[66,"يوسف","أحمد","مهدي","السكري","m",43,64,0],[67,"سمر","أحمد","مهدي","السكري","f",43,64,0],[68,"خديجة","أحمد","مهدي","السكري","f",43,64,0],[69,"عهود","سلمان",null,"أصبغي","f",null,null,0],[70,"زيد","مكي","مهدي","السكري","m",44,69,0],[71,"سلمان","مكي","مهدي","السكري","m",44,69,0],[72,"عبدالله","مكي","مهدي","السكري","m",44,69,0],[73,"آمال","مكي","مهدي",null,"f",null,null,0],[74,"زينب","طالب","مهدي","السكري","f",45,73,0],[75,"عقيل","طالب","مهدي","السكري","m",45,73,0],[76,"ياسر","محمود",null,"ميرزا","m",null,null,0],[77,"عمار","ياسر","محمود","ميرزا","m",76,46,0],[78,"محمود","ياسر","محمود","ميرزا","m",76,46,0],[79,"علي","ياسر","محمود","ميرزا","m",76,46,0],[80,"طه","ياسر","محمود","ميرزا","m",76,46,0],[81,"عقيلة","السيد علي","السيد هاشم",null,"f",null,null,0],[82,"علي","آدم","مهدي","السكري","m",47,81,0],[83,"ميرزا","آدم","مهدي","السكري","m",47,81,0],[84,"فاطمة","آدم","مهدي","السكري","f",47,81,0],[85,"رقية","آدم","مهدي","السكري","f",47,81,0],[86,"عباس",null,null,"السقيقاوي","m",null,null,0],[87,"فاضل","عباس",null,"السقيقاوي","m",86,38,0],[88,"زمزم","عباس",null,"السقيقاوي","f",86,38,0],[89,"علي","عباس",null,"السقيقاوي","m",86,38,0],[90,"زهير","عباس",null,"السقيقاوي","m",86,38,0],[91,"فاطمة","عباس",null,"السقيقاوي","f",86,38,0],[92,"عامر","عباس",null,"السقيقاوي","m",86,38,0],[93,"زهرة","عباس",null,"السقيقاوي","f",86,38,0],[94,"زينب","عباس",null,"السقيقاوي","f",86,38,0],[95,"أمير","عباس",null,"السقيقاوي","m",86,38,1],[96,"خديجة",null,null,null,"f",null,null,0],[97,"قاسم","فاضل","عباس","السقيقاوي","m",87,96,0],[98,"عباس","فاضل","عباس","السقيقاوي","m",87,96,0],[99,"حوراء","فاضل","عباس","السقيقاوي","f",87,96,0],[100,"سارة","فاضل","عباس","السقيقاوي","f",87,96,0],[101,"محمد",null,null,null,"m",null,null,0],[102,"جاسم","محمد",null,null,"m",101,88,0],[103,"محمد","محمد",null,null,"m",101,88,0],[104,"رقين",null,null,null,"f",null,null,0],[105,"لجين","علي","عباس","السقيقاوي","f",89,104,0],[106,"خلود","عبدالله","جاسم",null,"f",null,null,0],[107,"زهراء","زهير","عباس","السقيقاوي","f",90,106,0],[108,"بنين","زهير","عباس","السقيقاوي","f",90,106,0],[109,"يقين","زهير","عباس","السقيقاوي","f",90,106,0],[110,"أمير","زهير","عباس","السقيقاوي","m",90,106,0],[111,"زكريا","عبدالحميد","يوسف","البوسطة","m",null,null,0],[112,"حسين","زكريا","عبدالحميد","البوسطة","m",111,91,0],[113,"زينب","زكريا","عبدالحميد","البوسطة","f",111,91,0],[114,"حسن","زكريا","عبدالحميد","البوسطة","m",111,91,0],[115,"فاطمة","عبدالحسين","سلمان","العكرواوي","f",null,null,0],[116,"كوثر","عامر","عباس","السقيقاوي","f",92,115,0],[117,"علي","جمعة","محمد","قمبر","m",null,null,0],[118,"حسين","علي","جمعة","قمبر","m",117,93,0],[119,"بدر","علي","جمعة","قمبر","m",117,93,0],[120,"حسن","محمد","علي","مرهون","m",null,null,0],[121,"علي","إبراهيم",null,null,"m",null,null,0],[122,"حسين","علي","إبراهيم",null,"m",121,22,0],[123,"محمد","علي","إبراهيم",null,"m",121,22,0],[124,"أحمد","علي","إبراهيم",null,"m",121,22,0],[125,"شيماء","علي","إبراهيم",null,"f",121,22,0],[126,"علي","عبدالأمير","أحمد","النشابة","m",33,207,0],[127,"عمار","أحمد","علي","النشابة","m",129,14,0],[128,"عبدالله",null,null,"النشابة","m",null,null,1],[129,"احمد","علي","عبدالله","النشابة","m",130,null,1],[130,"علي","عبدالله","الزنجاوي 1","النشابة","m",null,null,1],[131,"عبدالله","الزنجاوي",null,"النشابة","m",null,null,1],[132,"حسين","علي","عبدالامير","النشابة","m",126,null,0],[133,"انيسة","احمد","ماجد","النشابة","f",5,9,0],[134,"عبدعلي","احمد","علي","النشابة","m",129,14,1],[135,"امينة","احمد","علي","النشابة","f",129,14,0],[136,"نجية","احمد","علي","النشابة","f",129,14,0],[137,"محمد","احمد","علي","النشابة","m",129,14,0],[138,"عبدالجليل","احمد","علي","النشابة","m",129,14,0],[139,"محمود","احمد","علي","النشابة","m",129,14,0],[140,"حسين","احمد","علي","النشابة","m",129,14,0],[141,"رائدة","احمد","علي","النشابة","f",129,14,0],[142,"منال","حسن",null,"العصفور","f",null,21,0],[143,"فاطمة","حسن",null,"العصفور","f",null,21,0],[144,"مروة","حسن",null,"العصفور","f",null,21,0],[145,"زهراء","حسن",null,"العصفور","f",null,21,0],[146,"امل","حسين","علي","النشابة","f",132,183,0],[147,"الاء","حسين","علي","النشابة","f",132,183,0],[148,"ميرزا","حبيب","احمد","النشابة","m",34,null,0],[149,"عادل","حبيب","احمد","النشابة","m",34,null,0],[150,"سعيد","حبيب","احمد","النشابة","m",34,null,0],[151,"نضال","حبيب","احمد","النشابة","m",34,null,1],[152,"احمد","حبيب","احمد","النشابة","m",34,null,0],[153,"خاتون","حبيب","احمد","النشابة","f",34,null,0],[154,"علي","حبيب","احمد","النشابة","m",34,null,0],[155,"سعاد","عبدالامير","احمد","النشابة","f",33,null,0],[156,"رقية","عبدالامير","احمد","النشابة","f",33,null,0],[157,"حسن","عبدالامير","احمد","النشابة","m",33,null,0],[158,"حسين","عبدالامير","احمد","النشابة","m",33,null,0],[159,"محمود","عبدالامير","احمد","النشابة","m",33,null,0],[160,"محمد","عبدالامير","احمد","النشابة","m",33,null,0],[161,"ماجد","سلمان","احمد","النشابة","m",35,20,0],[162,"ياسر","سلمان","احمد","النشابة","m",35,20,0],[163,"حنان","سلمان","احمد","النشابة","f",35,20,0],[164,"محمد حسن","عبدالمجيد","احمد","النشابة","m",15,13,0],[165,"عبدالنبي","عبدالمجيد","احمد","النشابة","m",15,13,0],[166,"عبدالرضا","عبدالمجيد","احمد","النشابة","m",15,13,0],[167,"فاطمة","عبدالمجيد","احمد","النشابة","f",15,13,0],[168,"زينب","عبدالمجيد","احمد","النشابة","f",15,13,0],[169,"بلقيس","عبدالمجيد","احمد","النشابة","f",15,13,0],[170,"فيصل","عبدالمجيد","احمد","النشابة","m",15,13,0],[171,"علي","عبدالمجيد","احمد","النشابة","m",15,13,0],[172,"زهراء","علي","عبدالامير","النشابة","f",126,null,0],[173,"سيد حسن","سيد علي","كاظم","العرادي","m",null,172,0],[174,"زينب","علي","عبدالامير","النشابة","f",126,null,0],[175,"نور","علي","عبدالامير","النشابة","f",126,null,0],[176,"فاطمة","حسن","عبدالامير","النشابة","f",157,null,0],[177,"حوراء","حسن","عبدالامير","النشابة","f",157,null,0],[178,"حيدر","حسن","عبدالامير","النشابة","m",157,null,0],[179,"سكينة","حسن","عبدالامير","النشابة","f",157,null,0],[180,"جواد","عبدالرضا","عبدالمجيد","النشابة","m",166,null,0],[181,"تقي","عبدالرضا","عبدالمجيد","النشابة","m",166,null,0],[182,"محمد","عبدالرضا","عبدالمجيد","النشابة","m",166,null,0],[183,"زهراء","عبدالرضا","عبدالمجيد","النشابة","f",166,null,0],[184,"فاطمة","عبدالرضا","عبدالمجيد","النشابة","f",166,null,0],[185,"حسن","عبدالرضا","عبدالمجيد","النشابة","m",166,null,0],[186,"عقيلة","عبدالله","عيسى","الحداد","f",205,204,0],[187,"ياسر","عمار","احمد","النشابة","m",127,186,0],[188,"احمد","عمار","احمد","النشابة","m",127,186,0],[189,"اسماء","عمار","احمد","النشابة","f",127,186,0],[190,"علي","عمار","احمد","النشابة","m",127,186,0],[191,"حوراء","عمار","احمد","النشابة","f",127,186,0],[192,"نور","علي","حسن","الحمراني","f",null,null,0],[193,"زينب","ياسر","عمار","النشابة","f",187,192,0],[194,"عمار","ياسر","عمار","النشابة","m",187,192,0],[195,"فاطمة","ياسر","عمار","النشابة","f",187,192,0],[196,"اسماء","ياسر","عمار","النشابة","f",187,192,0],[197,"سارة","حسن","راشد","طرادة","f",null,null,0],[198,"حسين","احمد","عمار","النشابة","m",188,197,0],[199,"علي","احمد","عمار","النشابة","m",188,197,0],[200,"زينب","احمد","عمار","النشابة","f",188,197,0],[201,"علي","احمد","عبدالرسول","كاظم","m",null,null,0],[202,"احمد","علي","احمد",null,"m",201,189,0],[203,"ملاك","عبدالمحسن",null,"التتان","f",null,null,0],[204,"اسماء","عيسى","سلمان","الوادي","f",null,null,1],[205,"عبدالله","عيسى","جاسم","الحداد","m",null,null,1],[206,"عبدالله","عيسى","جاسم","الحداد","m",null,null,0],[207,"حباب","جعفر","اسماعيل","غزوان","f",null,null,1],[208,"علي","عبدعلي",null,"ابو حطبة","m",null,null,0],[209,"حسن","علي","عبدعلي","ابو حطبة","m",208,32,0],[210,"مكي","علي","عبدعلي","ابو حطبة","m",208,32,0],[211,"مكية","علي","عبدعلي","ابو حطبة","f",208,32,0],[212,"سعيد","علي","عبدعلي","ابو حطبة","m",208,32,0],[213,"عبدعلي","علي","عبدعلي","ابو حطبة","m",208,32,0],[214,"علي","علي","عبدعلي","ابو حطبة","m",208,32,1],[215,"علي","حسين","علي","النشابة","m",132,null,0],[216,"حسن",null,null,"العصفور","m",null,null,0]],"s":[[1,2],[1,3],[7,10],[7,11],[5,9],[12,16],[15,13],[8,6],[39,37],[49,40],[41,54],[59,42],[43,64],[44,69],[45,73],[76,46],[47,81],[86,38],[87,96],[101,88],[89,104],[90,106],[111,91],[92,115],[117,93],[120,94],[121,22],[129,14],[132,183],[35,20],[187,192],[186,127],[201,189],[207,33],[216,21],[188,197],[208,32],[190,203],[204,205]]};
+// ===== تجهيز البيانات =====
+const P = new Map(); DATA.p.forEach(r => P.set(r[0], {id:r[0], n1:r[1], n2:r[2], n3:r[3], fam:r[4], g:r[5], f:r[6], m:r[7], dead:r[8]}));
+const SP = DATA.s;
+const kids = id => [...P.values()].filter(x => x.f === id || x.m === id);
+const nm = (p, k=3) => [p.n1, p.n2, p.n3].slice(0,k).filter(Boolean).join(' ') + (p.fam ? ' ' + p.fam : '');
+const spouseOf = p => { const s=SP.find(x=>x[0]===p.id||x[1]===p.id); return s?P.get(s[0]===p.id?s[1]:s[0]):null; };
+const lbl = (p,k=3) => { if(!p.n2){ const s=spouseOf(p); if(s) return p.n1+' ('+(p.g==='f'?'زوجة':'زوج')+' '+short(s)+')'; } return nm(p,k); };
+const fem = (L,A) => A.g==='f' ? L.split(' ').map(w=>/ه$/.test(w)?w+'ا':w).join(' ') : L;
+const huwa = B => B.g==='f'?'هي':'هو';
+const short = p => [p.n1, p.n2].filter(Boolean).join(' ');
+const rnd = a => a[Math.floor(Math.random()*a.length)];
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; };
+const norm = s => (s||'').replace(/[أإآ]/g,'ا').replace(/ة$/,'ه').trim();
+const keyOf = p => [p.n1,p.n2,p.n3].map(norm).join('|');
+const kc = {}; [...P.values()].forEach(p => kc[keyOf(p)] = (kc[keyOf(p)]||0)+1);
+const all = [...P.values()].filter(p => kc[keyOf(p)] === 1);   // نستبعد الأسماء المتطابقة حتى لا يلتبس السؤال
+const anc = p => { const m=new Map(), q=[[p,0,[]]]; while(q.length){ const [x,d,path]=q.shift(); if(!x||m.has(x.id)) continue; m.set(x.id,{d,path:[...path,x]}); [x.f,x.m].forEach(id=>{const y=P.get(id); if(y&&d<10) q.push([y,d+1,[...path,x]]);}); } return m; };
+function rel(A,B){ if(A.id===B.id) return null; const ma=anc(A), mb=anc(B); let best=null;
+  ma.forEach((va,id)=>{const vb=mb.get(id); if(vb&&(!best||va.d+vb.d<best.da+best.db)) best={id,da:va.d,db:vb.d,pa:va.path,pb:vb.path};});
+  if(!best) return null; const f=B.g==='f', g=(m,w)=>f?w:m, aPar=best.pa[1], bPar=best.pb[best.pb.length-2], viaF=aPar&&aPar.id===A.f, isM=x=>x&&x.g==='m';
+  const {da,db}=best; let L=null;
+  if(da===0) L=[null,g('ابنه','ابنته'),g('حفيده','حفيدته'),g('ابن حفيده','ابنة حفيده')][db];
+  else if(db===0) L=[null,g('والده','والدته'),g('جده','جدته'),g('جد والده','جدة والده')][da];
+  else if(da===1&&db===1) L=(A.f&&A.f===B.f&&A.m&&A.m===B.m)?g('أخوه الشقيق','أخته الشقيقة'):(A.f&&A.f===B.f?g('أخوه من الأب','أخته من الأب'):g('أخوه من الأم','أخته من الأم'));
+  else if(da===2&&db===1) L=viaF?g('عمه','عمته'):g('خاله','خالته');
+  else if(da===1&&db===2) L=isM(bPar)?g('ابن أخيه','ابنة أخيه'):g('ابن أخته','ابنة أخته');
+  else if(da===2&&db===2) L=g('ابن','ابنة')+' '+(viaF?(isM(bPar)?'عمه':'عمته'):(isM(bPar)?'خاله':'خالته'));
+  else if(da===3&&db===1) L=viaF?g('عم والده','عمة والده'):g('عم والدته','عمة والدته');
+  return L?{L,lca:P.get(best.id),da,db,pa:best.pa,pb:best.pb}:{L:null,lca:P.get(best.id),da,db,pa:best.pa,pb:best.pb};
+}
+// ===== مولّدات الأسئلة =====
+const withF = all.filter(p => P.get(p.f));
+const withM = all.filter(p => P.get(p.m));
+const parents = all.filter(p => kids(p.id).length >= 2);
+const males = all.filter(p => p.g==='m'), females = all.filter(p => p.g==='f');
+function distract(correct, pool, k=3){ const seen=new Set([short(correct)]); const out=[]; for(const x of shuffle(pool)){ const s=short(x); if(!seen.has(s)){ seen.add(s); out.push(x); } if(out.length===k) break; } return out; }
+const G = {
+ e:[
+  () => { const p=rnd(withF), f=P.get(p.f); return {key:'ef'+p.id, q:`من والد <em>${lbl(p,2)}</em>؟`, ans:short(f), opts:[f,...distract(f,males.filter(x=>x.id!==f.id && kids(x.id).length))].map(short), why:`${nm(p,3)}، فوالده ${nm(f,3)}.`}; },
+  () => { const p=rnd(withM), mo=P.get(p.m); return {key:'em'+p.id, q:`من والدة <em>${lbl(p,2)}</em>؟`, ans:short(mo), opts:[mo,...distract(mo,females.filter(x=>x.id!==mo.id && kids(x.id).length))].map(short), why:`أم ${p.n1} هي ${nm(mo,3)}.`}; },
+  () => { const y=rnd(parents), ks=kids(y.id), c=rnd(ks), others=distract(c, all.filter(x=>x.f!==y.id&&x.m!==y.id&&x.id!==y.id)); return {key:'ek'+y.id+'-'+c.id, q:`أيٌّ من هؤلاء من أبناء <em>${lbl(y,2)}</em>؟`, ans:short(c), opts:[c,...others].map(short), why:`أبناء ${y.n1}: ${ks.map(k=>k.n1).join('، ')}.`}; },
+ ],
+ m:[
+  () => { const p=rnd(withF.filter(x=>P.get(P.get(x.f).f))), gf=P.get(P.get(p.f).f); return {key:'mg'+p.id, q:`من جد <em>${lbl(p,2)}</em> ${p.g==='f'?'لأبيها':'لأبيه'}؟`, ans:short(gf), opts:[gf,...distract(gf,males.filter(x=>x.id!==gf.id&&kids(x.id).length>1))].map(short), why:`${p.n1} ← ${P.get(p.f).n1} ← ${gf.n1}: جده لأبيه ${nm(gf,3)}.`}; },
+  () => { for(let t=0;t<200;t++){ const a=rnd(all), b=rnd(all), r=rel(a,b); if(r&&r.L&&r.da+r.db>=2&&r.da+r.db<=3){ const pool=b.g==='m'?['عمه','خاله','أخوه الشقيق','ابن أخيه','ابن أخته','جده','حفيده','ابن عمه']:['عمته','خالته','أخته الشقيقة','ابنة أخيه','ابنة أخته','جدته','حفيدته','ابنة عمه']; const opts=[r.L,...shuffle(pool.filter(x=>x!==r.L)).slice(0,3)].map(x=>fem(x,a)); return {key:'mr'+a.id+'-'+b.id, q:`<em>${lbl(b,3)}</em> بالنسبة لـ <em>${lbl(a,3)}</em> ${huwa(b)}…`, ans:fem(r.L,a), opts, why:`يجمعهما ${nm(r.lca,2)}. ${r.pa.map(x=>x.n1).join(' ← ')} / ${r.pb.map(x=>x.n1).join(' ← ')}`}; } } },
+  () => { const y=rnd(parents.filter(x=>kids(x.id).length>=3)), n=kids(y.id).length; const opts=shuffle([n,n+1,n-1,n+2].filter(x=>x>0)).slice(0,4); if(!opts.includes(n)) opts[0]=n; return {key:'mc'+y.id, q:`كم عدد أبناء وبنات <em>${lbl(y,2)}</em> المسجلين في الشجرة؟`, ans:String(n), opts:opts.map(String), why:`${kids(y.id).map(k=>k.n1).join('، ')} — المجموع ${n}.`}; },
+ ],
+ h:[
+  () => { for(let t=0;t<300;t++){ const a=rnd(all), b=rnd(all), r=rel(a,b); if(r&&r.da>=2&&r.db>=2&&r.da+r.db>=4){ const lca=r.lca, others=distract(lca, males.filter(x=>kids(x.id).length>1&&x.id!==lca.id)); return {key:'hl'+a.id+'-'+b.id, q:`من الجد المشترك الأقرب بين <em>${lbl(a,2)}</em> و<em>${lbl(b,2)}</em>؟`, ans:short(lca), opts:[lca,...others].map(short), why:`${r.pa.map(x=>x.n1).join(' ← ')}<br>${r.pb.map(x=>x.n1).join(' ← ')}`}; } } },
+  () => { for(let t=0;t<300;t++){ const a=rnd(all), b=rnd(all), r=rel(a,b); if(r&&r.L&&r.da===2&&r.db===2){ const pool=b.g==='m'?['ابن عمه','ابن خاله','ابن عمته','ابن خالته','ابن أخيه','عمه']:['ابنة عمه','ابنة خاله','ابنة عمته','ابنة خالته','ابنة أخيه','عمته']; return {key:'hr'+a.id+'-'+b.id, q:`<em>${lbl(b,3)}</em> بالنسبة لـ <em>${lbl(a,3)}</em> ${huwa(b)}…`, ans:fem(r.L,a), opts:[r.L,...shuffle(pool.filter(x=>x!==r.L)).slice(0,3)].map(x=>fem(x,a)), why:`${r.pa.map(x=>x.n1).join(' ← ')}<br>${r.pb.map(x=>x.n1).join(' ← ')}`}; } } },
+  () => { const roots=all.filter(x=>!P.get(x.f)&&!P.get(x.m)&&kids(x.id).length); for(let t=0;t<300;t++){ const p=rnd(all), ma=anc(p); let far=null; ma.forEach((v,id)=>{ if(v.d>=3&&(!far||v.d>far.d)) far={...v,id}; }); if(far){ const c=P.get(far.id), d=far.d; return {key:'hd'+p.id, q:`كم جيلاً بين <em>${lbl(p,2)}</em> و${p.g==='f'?'جدها':'جده'} الأعلى <em>${nm(c,2)}</em>؟`, ans:String(d), opts:shuffle([d,d-1,d+1,d+2]).map(String), why:`${far.path.map(x=>x.n1).join(' ← ')} — ${d} أجيال.`}; } } },
+ ]
+};
+// ===== رسائل الترحيب ووقائع الشجرة =====
+const MSG = [
+  'أهلاً بك في <b>شجرة العائلة</b>. ثلاثة أسئلة سريعة: سهل ومتوسط وصعب. هل تعرف أهلك؟',
+  'أهلاً بعودتك! «صِلوا أرحامكم ولو بالسلام». جهّزنا لك أسئلة جديدة لم تُسأل من قبل.',
+  'مرحباً من جديد. كل زيارة لعبة جديدة؛ اجمع النقاط وحافظ على سلسلة زياراتك.',
+  'حيّاك الله. اليوم أسئلة عن الأجداد والأحفاد. ركّز في الصعب!',
+  'زيارة جديدة، أنساب جديدة. من يعرف شجرته يعرف جذوره.',
+  'أهلاً بك. هل تستطيع إصابة الهدف ثلاث مرات متتالية؟',
+  'نورت الشجرة! جرّب أسئلة اليوم وقارن نتيجتك بزيارتك الماضية.',
+  'السلام عليكم. سؤالك الصعب اليوم يحتاج تفكيراً في الأجيال.',
+];
+function facts(){
+  const cnt={}; all.forEach(p=>cnt[p.n1]=(cnt[p.n1]||0)+1); const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
+  const big=[...all].sort((a,b)=>kids(b.id).length-kids(a.id).length)[0];
+  let deep=null; all.forEach(p=>{ const ma=anc(p); let d=0; ma.forEach(v=>d=Math.max(d,v.d)); if(!deep||d>deep.d) deep={p,d}; });
+  const fams=new Set(all.map(p=>p.fam).filter(Boolean)).size;
+  return [
+    `أكثر اسم متكرر في الشجرة: <b>${top[0]}</b> (${top[1]} مرة).`,
+    `أكبر أسرة مسجلة: أسرة <b>${nm(big,2)}</b> بعدد ${kids(big.id).length} من الأبناء والبنات.`,
+    `أطول سلسلة نسب: <b>${deep.p.n1}</b> يرتفع نسبه ${deep.d} أجيال.`,
+    `في الشجرة اليوم <b>${all.length}</b> فرداً من <b>${fams}</b> عائلة.`,
+    `عدد من سُجّلت لهم زوجات وأزواج: <b>${SP.length}</b> زواجاً.`,
+  ];
+}
+const FACTS = facts();
+// ===== الحالة (في النموذج تُحفظ في المتصفح؛ في البرنامج تُحفظ في حساب العضو) =====
+const KEY='ansab-demo'; let S;
+try{ S=JSON.parse(localStorage.getItem(KEY)) }catch(e){}
+S = S || {visit:1, asked:[], total:0, best:0, streak:0, played:false};
+const save=()=>{ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
+let Q=[], qi=0, score=0, results=[];
+const $=id=>document.getElementById(id);
+function build(){
+  Q=[]; for(const lv of ['e','m','h']){ for(let t=0;t<40;t++){ const q=rnd(G[lv])(); if(q && !S.asked.includes(q.key) && new Set(q.opts).size===q.opts.length){ q.lv=lv; q.opts=shuffle(q.opts); Q.push(q); break; } } }
+}
+function intro(){
+  $('vNo').textContent='الزيارة '+S.visit; $('gSub').textContent='الزيارة رقم '+S.visit+' · ثلاثة أسئلة جديدة';
+  const msg=MSG[(S.visit-1)%MSG.length], fact=FACTS[(S.visit-1)%FACTS.length];
+  setProg(-1);
+  $('body').innerHTML=`<div class="msg">${msg}</div><p class="fact">💡 هل تعلم؟ ${fact}</p>
+    ${S.visit>1?`<p class="fact">مجموع نقاطك حتى الآن: <b>${S.total}</b> · أفضل نتيجة: <b>${S.best}</b></p>`:''}
+    <div class="act"><button class="btn" type="button" id="go">ابدأ اللعب</button><button class="btn ghost" type="button" id="later">لاحقاً</button></div>`;
+  $('go').onclick=()=>{ qi=0; score=0; results=[]; show(); }; $('later').onclick=close; $('go').focus();
+}
+function setProg(n){ [...$('prog').children].forEach((el,i)=>{ el.className = results[i]===true?'ok':results[i]===false?'no':(i===n?'on':''); }); }
+const LV={e:['سهل','e',10],m:['متوسط','m',20],h:['صعب','h',30]};
+function show(){
+  const q=Q[qi]; setProg(qi);
+  $('body').innerHTML=`<span class="level ${LV[q.lv][1]}">${LV[q.lv][0]} · ${LV[q.lv][2]} نقطة</span>
+    <div class="q">${q.q}</div><div class="opts" id="opts">${q.opts.map(o=>`<button type="button">${o}</button>`).join('')}</div>
+    <div class="why" id="why">${q.why}</div><div class="act" id="nx" hidden><button class="btn" type="button" id="nb">${qi<Q.length-1?'السؤال التالي':'النتيجة'}</button></div>`;
+  [...$('opts').children].forEach(b=>b.onclick=()=>answer(b,q)); $('opts').firstElementChild.focus();
+}
+function answer(b,q){
+  const ok=b.textContent===q.ans; [...$('opts').children].forEach(x=>{ x.disabled=true; if(x.textContent===q.ans) x.classList.add('ok'); }); if(!ok) b.classList.add('no');
+  results[qi]=ok; setProg(qi); S.asked.push(q.key);
+  if(ok){ const pts=LV[q.lv][2]; score+=pts; floatTxt('+'+pts,b); shoot(); }
+  $('why').classList.add('show'); $('nx').hidden=false; $('nb').onclick=()=>{ qi++; qi<Q.length?show():end(); }; $('nb').focus();
+}
+function shoot(){ const a=$('arrow'); a.style.animation='none'; void a.getBBox(); a.style.opacity=1; a.style.animation='hit .45s cubic-bezier(.3,1.4,.6,1) both'; }
+function floatTxt(t,el){ const r=el.getBoundingClientRect(), s=document.createElement('div'); s.className='float'; s.textContent=t; s.style.left=(r.left+20)+'px'; s.style.top=(r.top)+'px'; document.body.appendChild(s); setTimeout(()=>s.remove(),1000); }
+function end(){
+  const right=results.filter(Boolean).length; S.total+=score; S.best=Math.max(S.best,score); S.streak=right===3?S.streak+1:0; S.played=true; save();
+  const badges=[]; if(right===3) badges.push('🎯 ثلاث إصابات'); if(results[2]) badges.push('🏆 حلّال الصعب'); if(S.streak>=2) badges.push('🔥 '+S.streak+' زيارات كاملة متتالية'); if(S.visit>=3) badges.push('🌳 زائر وفيّ');
+  $('body').innerHTML=`<div class="score"><div class="big">${score}</div><div>نقطة · ${right} من 3 إجابات صحيحة</div>
+    <div class="badges">${badges.map(b=>`<span>${b}</span>`).join('')||'<span>حاول في زيارتك القادمة</span>'}</div>
+    <p class="next-visit">مجموع نقاطك: <b>${S.total}</b>. في زيارتك القادمة تنتظرك رسالة جديدة وثلاثة أسئلة لم تُسأل من قبل.</p>
+    <div class="act"><button class="btn" type="button" id="done">متابعة إلى الموقع</button></div></div>`;
+  $('done').onclick=close; $('done').focus(); setProg(9);
+}
+function close(){ $('veil').hidden=true; }
+function open(){ build(); $('veil').hidden=false; intro(); }
+$('close').onclick=close;
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
+$('newVisit').onclick=()=>{ S.visit++; S.played=false; save(); open(); };
+$('reopen').onclick=()=>{ if(!$('veil').hidden) return; open(); };
+$('reset').onclick=()=>{ S={visit:1,asked:[],total:0,best:0,streak:0,played:false}; save(); open(); };
+open();
+</script>
+
+</html>
