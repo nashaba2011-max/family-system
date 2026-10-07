@@ -18,6 +18,8 @@
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);direction:rtl;min-height:100vh}
 .demo-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:10px 16px;background:#0b1220;color:#cfd6e4;font-size:13px}
 .demo-bar b{color:var(--gold2)}
+.hits{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(227,194,122,.5);border-radius:999px;padding:4px 12px;font-variant-numeric:tabular-nums}
+.hits small{opacity:.75}
 .demo-bar button{font:inherit;font-size:13px;font-weight:700;border:1px solid rgba(227,194,122,.5);background:transparent;color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer}
 /* خلفية الصفحة */
 .page{max-width:900px;margin:0 auto;padding:18px 16px 40px;filter:blur(3px);opacity:.55;pointer-events:none}
@@ -84,6 +86,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);dire
 </style>
 
 <div class="demo-bar" role="region" aria-label="أدوات التجربة">
+  <span class="hits" title="عدد زوار رابط اللعبة">👁 <b id="hitT">…</b> زائر <small>· اليوم <b id="hitD">…</b></small></span>
   <span>تجربة: <b id="vNo">الزيارة 1</b></span>
   <button type="button" id="newVisit">محاكاة زيارة جديدة</button>
   <button type="button" id="reopen">فتح اللعبة مرة أخرى</button>
@@ -242,6 +245,15 @@ function end(){
 }
 function close(){ stopTimer(); $('veil').hidden=true; }
 function open(){ build(); $('veil').hidden=false; intro(); }
+/* عدّاد زوار الرابط: يُحسب مرة واحدة لكل جلسة متصفح */
+(async()=>{
+  let fresh=true; try{ fresh=!sessionStorage.getItem('ansab_hit'); sessionStorage.setItem('ansab_hit','1'); }catch(e){}
+  try{
+    const r=await fetch('https://lzadmbjhcxqvafykntsp.supabase.co/rest/v1/rpc/f4_game_hit',{method:'POST',headers:{'apikey':'sb_publishable_X4VEzOBLuT8d-b7Tsz9IJQ_1QHW9BIe','Content-Type':'application/json'},body:JSON.stringify({p_new:fresh})});
+    if(!r.ok) throw 0; const d=await r.json(); const f=n=>Number(n).toLocaleString('en-US');
+    $('hitT').textContent=f(d.total); $('hitD').textContent=f(d.today);
+  }catch(e){ $('hitT').closest('.hits').hidden=true; }
+})();
 $('close').onclick=close;
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
 $('newVisit').onclick=()=>{ S.visit++; S.played=false; save(); open(); };
