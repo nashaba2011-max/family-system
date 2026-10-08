@@ -191,7 +191,7 @@ function bindRecord(){
       R.p[key] = p.id;
       if(isF){ R.p.name2 = p.name1 || ""; R.p.name3 = p.name2 || ""; R.p.name4 = p.name3 || ""; R.p.name5 = p.name4 || ""; R.p.name6 = p.name5 || "";
         if(p.family) R.p.family = p.family; if(p.branch) R.p.branch = p.branch;
-        if(!R.p.mother_id){ const w = spousesOf(p).filter(s => s.person); if(w.length === 1){ R.p.mother_id = w[0].person.id; R.p.mother_name = ""; } }
+        if(!R.p.mother_id && !(R.p.mother_name || "").trim()){ const w = spousesOf(p).filter(s => s.person); if(w.length === 1){ R.p.mother_id = w[0].person.id; R.p.mother_name = ""; } } /* لا نستبدل اسم أم مكتوباً */
         toast("رُبط الأب وعُبّئت أسماء الأجداد والعائلة"); }
       else R.p.mother_name = "";
       setDirty(true); drawRecord("t2"); return;
