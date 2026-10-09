@@ -20,6 +20,7 @@ const ROUTES = {
   about:    {title:"من نحن", render:n => renderAbout(n)},
   events:   {title:"مناسبات العائلة", render:renderEvents},
   event:    {title:"مناسبة", render:id => renderEvent(+id)},
+  heritage: {title:"تراث العائلة", render:t => renderHeritage(t)},
 };
 let currentHash = "", skipGuard = false, restoring = false;
 let NAV_FROM_BACK = false, NAV_WAS_BACK = false, PAGE_NAME = "home";
@@ -284,6 +285,7 @@ function renderHome(){
       <a class="stat" href="#/report/inlaws" style="text-decoration:none"><b>${P.filter(p => p.affiliation === "منتسب بالزواج").length}</b><span>منتسبون بالزواج</span></a>
     </div>
     <div class="tiles">
+      ${heritageTile()}
       ${tile("#/add","add","إضافة سجل","ملف جديد برقم تسلسل", 'data-perm="add"')}
       ${tile("#/edit","edit","تعديل سجل","بالرقم أو بالاسم", 'data-perm="edit"')}
       ${tile("#/delete","del","حذف سجل","مع تأكيد قبل الحذف", 'data-perm="delete"')}
@@ -299,7 +301,7 @@ function renderHome(){
       ${tile("#/data","data","استيراد وتصدير","Excel")}
     </div>
     ${recent.length ? `<div class="sec-h">آخر السجلات المحدّثة</div><div class="plist">${recent.map(p => personBtn(p, p.updated_at ? "حُدّث " + fmtDate(p.updated_at.slice(0, 10)) : "")).join("")}</div>` : ""}`;
-  applyPerms(); fillVisitStat(); homeOdo();
+  applyPerms(); fillVisitStat(); homeOdo(); fillHeritageTile();
 }
 
 /* عدّاد دوّار لأرقام الصفحة الرئيسية — يعمل في كل مرة تُعرض فيها */
