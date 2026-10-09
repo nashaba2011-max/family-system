@@ -124,7 +124,7 @@ $("#loginForm").onsubmit = async e => {
 $("#lForgot").onclick = async () => {
   const email = $("#lEmail").value.trim().toLowerCase();
   if(!email){ $("#lErr").textContent = "اكتب بريدك أولاً ثم اضغط «نسيت كلمة السر»"; return; }
-  const {error} = await db.auth.resetPasswordForEmail(email, {redirectTo: location.href.split("#")[0]});
+  const {error} = await db.auth.resetPasswordForEmail(email, {redirectTo: APP_URL});
   $("#lErr").textContent = error ? errMsg(error) : "أرسلنا رابط تعيين كلمة السر إلى بريدك";
 };
 $("#lSignup").onclick = openJoin;

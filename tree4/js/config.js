@@ -67,3 +67,6 @@ const FIELDS = {
   notes:{label:"الملاحظات", type:"textarea", xl:"الملاحظات"},
 };
 const DATA_COLS = Object.keys(FIELDS).concat(["father_id","mother_id","photo_path"]);
+
+/* رابط البرنامج المنشور — يُستخدم في الروابط المرسلة حتى عند تشغيل النسخة المحلية من الكمبيوتر */
+const APP_URL = location.protocol === "file:" ? "https://nashaba2011-max.github.io/family-system/tree4/" : location.href.split("#")[0];
