@@ -1027,3 +1027,10 @@ a.visits-pill:hover{border-color:var(--brand)}
 .mk-thumbs button{position:absolute;top:3px;inset-inline-end:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:11px;cursor:pointer}
 .mk-rev{display:flex;gap:8px;background:var(--gold-l);border-radius:12px;padding:10px 12px;font-size:14px;margin-top:10px}
 @media (prefers-reduced-motion:reduce){.mk-ad,.mk-heart.on svg,.mk-live i{animation:none}.mk-sl,.mk-slide{transition:none}}
+
+/* تجميد الحساب */
+.u-frozen td{opacity:.6}.u-frozen td:nth-last-child(4){opacity:1}
+.btn.fz-on{background:#e3eefb;border-color:#7aa7e6;color:#1d4e9e}
+:root[data-theme="dark"] .btn.fz-on{background:#1c2c47;border-color:#4a78c0;color:#a9c8f5}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.fz-on{background:#1c2c47;border-color:#4a78c0;color:#a9c8f5}}
+.frozen-card{text-align:center}.frozen-card .fz-ic{font-size:44px;line-height:1;color:#4a78c0}

@@ -171,6 +171,10 @@ async function boot(session){
         : `<div class="card narrow"><h3>الحساب غير مفعّل</h3><p>البريد <b class="ltr">${esc(S.email)}</b> غير مضاف إلى البرنامج بعد. سجّل طلب انضمام من زر «تسجيل عضو جديد» في شاشة الدخول، أو اطلب من المدير إضافتك.</p><button class="btn" type="button" id="noRoleOut">تسجيل الخروج</button></div>`;
       $("#noRoleOut").onclick = () => db.auth.signOut(); return;
     }
+    if(data.frozen && data.role !== "admin"){
+      $("#view").innerHTML = `<div class="card narrow frozen-card"><div class="fz-ic" aria-hidden="true">❄</div><h3>الحساب مجمّد</h3><p>تم تجميد حسابك مؤقتاً من إدارة البرنامج، فلا يمكنك الدخول الآن. للاستفسار تواصل مع الإدارة عبر واتساب: <span class="ltr">${esc(CONTACT_WA)}</span></p><button class="btn" type="button" id="noRoleOut">تسجيل الخروج</button></div>`;
+      $("#noRoleOut").onclick = () => db.auth.signOut(); return;
+    }
     S.me = data;
     applyPerms();
     renderTopExtra();

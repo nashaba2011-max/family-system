@@ -94,20 +94,21 @@ async function renderUsers(){
       <button class="btn primary" type="submit">إضافة المستخدم</button>
       <p class="muted" style="font-size:13px;margin-bottom:0">بعد الإضافة: يفتح المستخدم رابط البرنامج، يكتب بريده وكلمة سر جديدة، ويضغط «أول مرة؟ أنشئ كلمة سر». المستخدم بدون أي صلاحية يستطيع المشاهدة والتقارير فقط. كل عضو غير مدير يرى فرع جده لأبيه فقط (جده والأعمام والعمات وأبناءهم إلى آخر جيل)، لذلك اربطه بسجله في العائلة.</p>
     </form>
-    <div class="card"><div class="tbl-wrap" style="border:0"><table class="tbl"><thead><tr><th>البريد</th><th>الاسم</th><th>النوع</th><th>إضافة</th><th>تعديل</th><th>حذف</th><th>سجله في العائلة</th><th>ما يراه</th><th>الزيارات</th><th>آخر زيارة</th><th></th></tr></thead><tbody id="uBody"><tr><td colspan="11"><div class="spin"></div></td></tr></tbody></table></div></div>`;
+    <div class="card"><div class="tbl-wrap" style="border:0"><table class="tbl"><thead><tr><th>البريد</th><th>الاسم</th><th>النوع</th><th>إضافة</th><th>تعديل</th><th>حذف</th><th>سجله في العائلة</th><th>ما يراه</th><th>الحالة</th><th>الزيارات</th><th>آخر زيارة</th><th></th></tr></thead><tbody id="uBody"><tr><td colspan="12"><div class="spin"></div></td></tr></tbody></table></div></div>`;
   const load = async () => {
     const [{data, error}, vis] = await Promise.all([db.from("f4_users").select("*").order("created_at"), db.rpc("f4_visit_by_user")]);
-    if(error){ $("#uBody").innerHTML = `<tr><td colspan="11" class="err">${esc(errMsg(error))}</td></tr>`; return; }
+    if(error){ $("#uBody").innerHTML = `<tr><td colspan="12" class="err">${esc(errMsg(error))}</td></tr>`; return; }
     USERS = data;
     const V = new Map((vis.data || []).map(r => [r.email, r]));
     const ago = t => { if(!t) return "—"; const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 1 ? "الآن" : m < 60 ? `قبل ${m} د` : m < 1440 ? `قبل ${Math.round(m / 60)} س` : fmtDate(new Date(t).toLocaleDateString("en-CA", {timeZone:"Asia/Bahrain"})); };
     $("#uBody").innerHTML = data.map(u => { const me = u.email === S.email, adm = u.role === "admin";
       const cb = f => `<input type="checkbox" data-u="${esc(u.email)}" data-f="${f}" ${u[f] || adm ? "checked" : ""} ${adm || me ? "disabled" : ""} aria-label="${f}">`;
-      return `<tr><td class="ltr" style="text-align:start">${esc(u.email)}</td><td>${esc(u.display_name || "")}</td>
+      return `<tr class="${u.frozen && !adm ? "u-frozen" : ""}"><td class="ltr" style="text-align:start">${esc(u.email)}</td><td>${esc(u.display_name || "")}</td>
         <td><select class="inp" data-u="${esc(u.email)}" data-f="role" ${me ? "disabled" : ""} style="min-width:110px"><option value="user" ${adm ? "" : "selected"}>مستخدم</option><option value="admin" ${adm ? "selected" : ""}>مدير</option></select></td>
         <td>${cb("can_add")}</td><td>${cb("can_edit")}</td><td>${cb("can_delete")}</td>
         <td><button type="button" class="btn small" data-link-u="${esc(u.email)}" style="white-space:nowrap">${u.person_id && S.byId.get(u.person_id) ? nm(S.byId.get(u.person_id), fullName(S.byId.get(u.person_id), 3)) : "ربط بسجل"}</button></td>
         <td class="muted" style="font-size:13px;white-space:nowrap">${adm ? "الجميع" : u.person_id ? "فرع جده" : "لا شيء حتى يُربط"}</td>
+        <td>${adm || me ? '<span class="muted" style="font-size:13px">نشط</span>' : `<button type="button" class="btn small ${u.frozen ? "fz-on" : ""}" data-freeze="${esc(u.email)}" aria-pressed="${!!u.frozen}" title="${u.frozen ? "الحساب مجمّد — اضغط لإلغاء التجميد" : "تجميد الحساب: يمنعه من الدخول دون حذفه"}">${u.frozen ? "❄ مجمّد" : "تجميد"}</button>`}</td>
         <td><b>${V.get(u.email)?.visits ?? 0}</b></td><td class="muted" style="font-size:13px;white-space:nowrap">${ago(V.get(u.email)?.last_visit)}</td>
         <td style="text-align:end">${me ? '<span class="muted" style="font-size:13px">أنت</span>' : `<button class="btn small danger" type="button" data-rm="${esc(u.email)}">إزالة</button>`}</td></tr>`; }).join("");
   };
@@ -131,6 +132,14 @@ async function renderUsers(){
     toast(error ? errMsg(error) : "تم الحفظ", !!error); load();
   };
   $("#uBody").onclick = async e => {
+    const fz = e.target.closest("[data-freeze]");
+    if(fz){
+      const u = USERS.find(x => x.email === fz.dataset.freeze); if(!u) return;
+      const on = !u.frozen, who = u.display_name || u.email;
+      if(!(await ask(on ? "تجميد الحساب" : "إلغاء التجميد", on ? `تجميد حساب «${who}»؟ لن يستطيع الدخول أو مشاهدة أي بيانات حتى تلغي التجميد، وتبقى بياناته وصلاحياته محفوظة.` : `إلغاء تجميد حساب «${who}»؟ سيعود للدخول بنفس صلاحياته السابقة.`, {okText:on ? "تجميد" : "إلغاء التجميد", danger:on}))) return;
+      const {error} = await db.from("f4_users").update({frozen:on}).eq("email", u.email);
+      toast(error ? errMsg(error) : on ? "تم تجميد الحساب ❄" : "تم إلغاء التجميد", !!error); load(); return;
+    }
     const lk = e.target.closest("[data-link-u]");
     if(lk){
       const u = USERS.find(x => x.email === lk.dataset.linkU);
