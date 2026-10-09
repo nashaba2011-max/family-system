@@ -47,6 +47,11 @@ async function renderRecord(id, newSerial){
     if(!p){ $("#view").innerHTML = isRestricted() ? `<div class="card narrow empty">لا تملك صلاحية الاطلاع على بيانات هذا الفرد. <a href="#/tree">العودة للشجرة</a></div>` : `<div class="card narrow empty">السجل غير موجود — ربما حُذف. <a href="#/list">العودة للبحث</a></div>`; return; }
     R.p = {...p}; R.isNew = false; R.editable = can("edit");
     R.spouses = S.spouses.filter(s => s.person_id === p.id).map(s => ({ord:s.ord, spouse_id:s.spouse_id, spouse_name:s.spouse_name || ""}));
+    // الزواج المسجل من جهة الطرف الآخر فقط يظهر هنا أيضاً (ويُحفظ للطرفين عند الحفظ)
+    S.spouses.filter(s => s.spouse_id === p.id && S.byId.get(s.person_id) && !R.spouses.some(x => x.spouse_id === s.person_id)).forEach(s => {
+      let o = 1; while(R.spouses.some(x => x.ord === o)) o++;
+      R.spouses.push({ord:o, spouse_id:s.person_id, spouse_name:""});
+    });
   }else{
     if(S.bySerial.get(newSerial)){ location.hash = "#/rec/" + S.bySerial.get(newSerial).id; return; }
     R.p = {serial:newSerial, status:"على قيد الحياة", family:lk("family")[0] || "", branch:lk("branch")[0] || ""};
@@ -302,6 +307,7 @@ async function saveRecord(){
     let newSp = [];
     if(want.length){ const {data, error} = await db.from("f4_spouses").insert(want).select(); if(error) throw error; newSp = data; }
     S.spouses = S.spouses.filter(s => s.person_id !== saved.id).concat(newSp);
+    await syncSpouseLinks(saved.id, want.filter(w => w.spouse_id).map(w => w.spouse_id));
     upsertLocal(saved);
     const wasNew = R.isNew;
     setDirty(false); R.photoBlob = null; R.photoRemoved = false;
@@ -313,4 +319,17 @@ async function saveRecord(){
   }finally{
     const b = $("#rSave"); if(b){ b.disabled = false; b.textContent = R.isNew ? "حفظ السجل" : "حفظ التعديلات"; }
   }
+}
+
+/* الزواج للطرفين: كل زوج/زوجة مختار يُسجَّل في سجل الطرف الآخر أيضاً، ومن أُزيل يُزال الرابط من سجله */
+async function syncSpouseLinks(pid, ids){
+  try{
+    const add = ids.filter(id => !S.spouses.some(s => s.person_id === id && s.spouse_id === pid)).map(id => {
+      let o = 1; while(S.spouses.some(s => s.person_id === id && s.ord === o)) o++;
+      return {person_id:id, ord:o, spouse_id:pid, spouse_name:null};
+    });
+    if(add.length){ const {data, error} = await db.from("f4_spouses").insert(add).select(); if(!error && data) S.spouses = S.spouses.concat(data); }
+    const gone = S.spouses.filter(s => s.spouse_id === pid && !ids.includes(s.person_id));
+    for(const g of gone){ const {error} = await db.from("f4_spouses").delete().eq("id", g.id); if(!error) S.spouses = S.spouses.filter(s => s.id !== g.id); }
+  }catch(e){ console.warn("spouse sync", e); }
 }
