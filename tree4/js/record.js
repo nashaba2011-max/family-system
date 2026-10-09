@@ -14,7 +14,9 @@ const TAB_FIELDS = {
 function fieldHtml(k, v){
   const ro = !R.editable;
   if(k === "_age") return `<div class="field"><label for="f__age">العمر</label><input class="inp" id="f__age" readonly tabindex="-1" value="${esc(ageOf(R.p))}"></div>`;
-  const f = FIELDS[k], id = "f_" + k, req = ["serial","name1"].includes(k);
+  const f = FIELDS[k], id = "f_" + k, req = (k === "serial" && isAdmin()) || k === "name1";
+  /* رقم التسلسل يحدده البرنامج للعضو — لا يكتبه ولا يغيّره */
+  if(k === "serial" && !isAdmin()) return `<div class="field" data-k="serial"><label for="${id}">${esc(f.label)}</label><input class="inp ltr" id="${id}" readonly tabindex="-1" value="${R.isNew ? "" : esc(v)}" placeholder="يحدده البرنامج تلقائياً عند الحفظ"><div class="ferr" id="e_serial"></div></div>`;
   const dead = ["death_date","burial_place"].includes(k);
   let ctl;
   if(f.type === "textarea") ctl = `<textarea class="inp" id="${id}" name="${k}" maxlength="8000" ${ro ? "readonly" : ""}>${esc(v)}</textarea>`;
@@ -53,7 +55,8 @@ async function renderRecord(id, newSerial){
       R.spouses.push({ord:o, spouse_id:s.person_id, spouse_name:""});
     });
   }else{
-    if(S.bySerial.get(newSerial)){ location.hash = "#/rec/" + S.bySerial.get(newSerial).id; return; }
+    if(!isAdmin()) newSerial = null;
+    else if(S.bySerial.get(newSerial)){ location.hash = "#/rec/" + S.bySerial.get(newSerial).id; return; }
     R.p = {serial:newSerial, status:"على قيد الحياة", family:lk("family")[0] || "", branch:lk("branch")[0] || ""};
     R.isNew = true; R.editable = can("add"); R.spouses = [];
   }
@@ -77,7 +80,7 @@ function drawRecord(activeTab){
       <div class="photo" id="rPhoto" role="${R.editable ? "button" : "img"}" tabindex="${R.editable ? 0 : -1}" aria-label="الصورة الشخصية">${R.editable ? "إضافة صورة" : "لا توجد صورة"}</div>
       <input type="file" id="rFile" accept="image/*" hidden>
       <div class="rec-name"><h2 id="rTitle" class="${gcls(p)}">${esc(longName(p) || "اسم جديد")}</h2>
-        <div class="meta"><span class="chip gold">رقم ${esc(p.serial)}</span>${p.gender ? `<span class="chip ${isM(p) ? "" : "f"}">${esc(p.gender)}</span>` : ""}${isDead(p) ? '<span class="chip dead">متوفى</span>' : ""}${ageOf(p) !== "" ? `<span class="chip">${ageOf(p)} سنة</span>` : ""}${p.branch ? `<span class="chip">فرع ${esc(p.branch)}</span>` : ""}${p.affiliation === "منتسب بالزواج" ? '<span class="chip inlaw">منتسب بالزواج</span>' : ""}</div>
+        <div class="meta"><span class="chip gold">${p.serial ? "رقم " + esc(p.serial) : "رقم تلقائي"}</span>${p.gender ? `<span class="chip ${isM(p) ? "" : "f"}">${esc(p.gender)}</span>` : ""}${isDead(p) ? '<span class="chip dead">متوفى</span>' : ""}${ageOf(p) !== "" ? `<span class="chip">${ageOf(p)} سنة</span>` : ""}${p.branch ? `<span class="chip">فرع ${esc(p.branch)}</span>` : ""}${p.affiliation === "منتسب بالزواج" ? '<span class="chip inlaw">منتسب بالزواج</span>' : ""}</div>
         ${R.editable ? "" : '<p class="muted" style="font-size:13px;margin:6px 0 0">للعرض فقط — ليست لديك صلاحية التعديل.</p>'}
       </div>
       ${R.editable && !R.isNew ? `<button class="btn small" type="button" id="rRmPhoto" ${p.photo_path ? "" : "hidden"}>حذف الصورة</button>` : ""}
@@ -253,7 +256,8 @@ function bindRecord(){
 function validate(p){
   const errs = {};
   const serial = parseInt(p.serial, 10);
-  if(!(serial > 0)) errs.serial = "رقم التسلسل مطلوب";
+  if(!isAdmin()){} // العضو: البرنامج يحدد الرقم
+  else if(!(serial > 0)) errs.serial = "رقم التسلسل مطلوب";
   else { const ex = S.bySerial.get(serial); if(ex && ex.id !== p.id) errs.serial = `الرقم مستخدم لـ «${fullName(ex, 3)}»`; }
   if(!p.name1) errs.name1 = "الاسم الأول مطلوب";
   if(p.cpr && !/^\d{9}$/.test(p.cpr)) errs.cpr = "الرقم الشخصي 9 أرقام";
@@ -278,7 +282,7 @@ async function saveRecord(){
   }
   const row = {};
   DATA_COLS.forEach(k => { if(k in p || k in FIELDS){ let v = p[k]; if(typeof v === "string") v = v.trim(); row[k] = v === "" || v === undefined ? null : v; } });
-  row.serial = parseInt(p.serial, 10);
+  if(isAdmin()) row.serial = parseInt(p.serial, 10); else delete row.serial; // للعضو يحدده البرنامج
   if(row.phone) row.phone = row.phone.replace(/[\s-]/g, ""); if(row.phone2) row.phone2 = row.phone2.replace(/[\s-]/g, "");
   if(row.status !== "متوفى"){ row.death_date = null; row.burial_place = null; }
   // الانتساب تلقائياً إن تُرك فارغاً: ابن/بنت لأحد من العائلة، أو من عائلة النشابة = من العائلة
