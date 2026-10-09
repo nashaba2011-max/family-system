@@ -146,8 +146,22 @@ async function qrRecordButton(p){
     if(!isAdmin() && S.me.person_id === p.id){
       await qrLib(); const r = await db.rpc("f4_qr_mine", {p_new:false}); if(r.error) return; tok = r.data; open = qrMine; name = qrName(S.me); title = "رمز دخولك السريع";
     }else if(isAdmin()){
-      const {data} = await db.from("f4_users").select("*").eq("person_id", p.id).neq("role", "admin");
-      const u = (data || [])[0]; if(!u) return;
+      const {data} = await db.from("f4_users").select("*").eq("person_id", p.id).order("created_at");
+      if((data || []).some(x => x.role === "admin") && !(data || []).some(x => x.role !== "admin")) return; // ملف مدير
+      const u = (data || []).find(x => x.role !== "admin");
+      if(!u){ // لا يوجد حساب: نعرض إنشاء رمز دخول للفرد
+        if(isDead(p) || !$("#rQrSlot")) return;
+        box.innerHTML = `<span class="rq-code rq-empty" aria-hidden="true">▦</span><div class="rq-tx"><b>رمز الدخول السريع</b><small>لا يوجد حساب دخول لهذا الفرد بعد</small>
+          <span class="rq-acts"><button class="btn small primary" type="button" id="rQrMake">إنشاء رمز دخول</button></span></div>`;
+        box.hidden = false;
+        $("#rQrMake").onclick = async () => {
+          if(!(await ask("إنشاء رمز دخول", `إنشاء حساب ورمز دخول سريع لـ «${fullName(p, 3)}»؟ يدخل بالرمز مباشرة بدون بريد ولا كلمة سر، بصلاحية إضافة وتعديل (بدون حذف)، ويرى فرع جده فقط. تستطيع تغيير صلاحياته أو تجميده من صفحة المستخدمين.`, {okText:"إنشاء"}))) return;
+          const {error} = await db.rpc("f4_qr_for_person", {p_person:p.id});
+          if(error) return toast(errMsg(error), true);
+          toast("أُنشئ رمز الدخول ✓"); qrRecordButton(p);
+        };
+        return;
+      }
       await qrLib(); const r = await db.rpc("f4_qr_get", {p_email:u.email, p_new:false}); if(r.error) return; tok = r.data; open = () => qrCard(u); name = qrName(u); title = "رمز الدخول السريع";
     }else return;
   }catch(e){ return; }
