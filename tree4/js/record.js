@@ -304,7 +304,7 @@ async function saveRecord(){
       const old = saved.photo_path; const {data} = await db.from("f4_people").update({photo_path:null}).eq("id", saved.id).select().single(); if(data) saved = data; db.storage.from(PHOTO_BUCKET).remove([old]);
     }
     // الأزواج
-    const want = R.spouses.filter(s => s.spouse_id || (s.spouse_name || "").trim()).map(s => ({person_id:saved.id, ord:s.ord, spouse_id:s.spouse_id || null, spouse_name:s.spouse_id ? null : s.spouse_name.trim()}));
+    const want = R.spouses.filter(s => s.spouse_id || (s.spouse_name || "").trim()).map(s => ({person_id:saved.id, ord:s.ord, spouse_id:s.spouse_id || null, spouse_name:s.spouse_id ? null : s.spouse_name.trim().replace(/^(زوجته|زوجتة|زوجها|الزوجة|الزوج|زوجة|زوج)\s+/, "").trim()}));
     const oldNames = new Set(S.spouses.filter(s => s.person_id === saved.id && s.spouse_name).map(s => s.spouse_name.trim()));
     const newNames = want.filter(w => w.spouse_name && !oldNames.has(w.spouse_name)).map(w => w.spouse_name);
     const del = await db.from("f4_spouses").delete().eq("person_id", saved.id); if(del.error) throw del.error;
