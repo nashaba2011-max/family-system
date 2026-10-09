@@ -94,6 +94,7 @@ async function renderUsers(){
       <button class="btn primary" type="submit">إضافة المستخدم</button>
       <p class="muted" style="font-size:13px;margin-bottom:0">بعد الإضافة: يفتح المستخدم رابط البرنامج، يكتب بريده وكلمة سر جديدة، ويضغط «أول مرة؟ أنشئ كلمة سر». المستخدم بدون أي صلاحية يستطيع المشاهدة والتقارير فقط. كل عضو غير مدير يرى فرع جده لأبيه فقط (جده والأعمام والعمات وأبناءهم إلى آخر جيل)، لذلك اربطه بسجله في العائلة.</p>
     </form>
+    <div class="qr-bar"><button class="btn" type="button" id="qrAllBtn">▦ بطاقات QR لكل الأعضاء</button><span class="muted">رمز لكل عضو يدخل به مباشرة من كاميرا الجوال بدون كلمة سر</span></div>
     <div class="card"><div class="tbl-wrap" style="border:0"><table class="tbl"><thead><tr><th>البريد</th><th>الاسم</th><th>النوع</th><th>إضافة</th><th>تعديل</th><th>حذف</th><th>سجله في العائلة</th><th>ما يراه</th><th>الحالة</th><th>الزيارات</th><th>آخر زيارة</th><th></th></tr></thead><tbody id="uBody"><tr><td colspan="12"><div class="spin"></div></td></tr></tbody></table></div></div>`;
   const load = async () => {
     const [{data, error}, vis] = await Promise.all([db.from("f4_users").select("*").order("created_at"), db.rpc("f4_visit_by_user")]);
@@ -110,8 +111,9 @@ async function renderUsers(){
         <td class="muted" style="font-size:13px;white-space:nowrap">${adm ? "الجميع" : u.person_id ? "فرع جده" : "لا شيء حتى يُربط"}</td>
         <td>${adm || me ? '<span class="muted" style="font-size:13px">نشط</span>' : `<button type="button" class="btn small ${u.frozen ? "fz-on" : ""}" data-freeze="${esc(u.email)}" aria-pressed="${!!u.frozen}" title="${u.frozen ? "الحساب مجمّد — اضغط لإلغاء التجميد" : "تجميد الحساب: يمنعه من الدخول دون حذفه"}">${u.frozen ? "❄ مجمّد" : "تجميد"}</button>`}</td>
         <td><b>${V.get(u.email)?.visits ?? 0}</b></td><td class="muted" style="font-size:13px;white-space:nowrap">${ago(V.get(u.email)?.last_visit)}</td>
-        <td style="text-align:end">${me ? '<span class="muted" style="font-size:13px">أنت</span>' : `<button class="btn small danger" type="button" data-rm="${esc(u.email)}">إزالة</button>`}</td></tr>`; }).join("");
+        <td style="text-align:end">${me ? '<span class="muted" style="font-size:13px">أنت</span>' : `<span style="display:inline-flex;gap:6px">${adm ? "" : `<button class="btn small" type="button" data-qr="${esc(u.email)}" title="رمز دخول سريع">QR</button>`}<button class="btn small danger" type="button" data-rm="${esc(u.email)}">إزالة</button></span>`}</td></tr>`; }).join("");
   };
+  $("#qrAllBtn").onclick = () => qrAll(USERS || []);
   $("#uRole").onchange = e => { const a = e.target.value === "admin"; ["#uAdd","#uEdit","#uDel"].forEach(s => { $(s).checked = a || $(s).checked; $(s).disabled = a; }); };
   $("#uForm").onsubmit = async e => {
     e.preventDefault(); $("#uErr").textContent = "";
@@ -132,6 +134,7 @@ async function renderUsers(){
     toast(error ? errMsg(error) : "تم الحفظ", !!error); load();
   };
   $("#uBody").onclick = async e => {
+    const qb = e.target.closest("[data-qr]"); if(qb){ const u = USERS.find(x => x.email === qb.dataset.qr); if(u) qrCard(u); return; }
     const fz = e.target.closest("[data-freeze]");
     if(fz){
       const u = USERS.find(x => x.email === fz.dataset.freeze); if(!u) return;

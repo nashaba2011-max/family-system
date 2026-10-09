@@ -146,6 +146,7 @@ $("#logoutBtn").onclick = async () => {
 
 let booted = false;
 db.auth.onAuthStateChange((event, session) => {
+  if(QR_PENDING) return; // دخول برمز QR قيد التنفيذ
   if(event === "PASSWORD_RECOVERY"){
     setTimeout(async () => {
       const p = await ask("كلمة سر جديدة", "اكتب كلمة السر الجديدة (6 أحرف على الأقل)", {input:true, type:"password"});
@@ -156,6 +157,7 @@ db.auth.onAuthStateChange((event, session) => {
   if(booted) return; booted = true;
   setTimeout(() => boot(session), 0); // خارج نداء المصادقة لتجنب التعليق
 });
+if(QR_PENDING) qrLogin(QR_PENDING);
 
 async function boot(session){
   S.email = (session.user.email || "").toLowerCase();
