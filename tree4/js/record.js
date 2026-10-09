@@ -65,6 +65,7 @@ function drawRecord(activeTab){
         <a class="btn small" href="#/tree/${p.id}">الشجرة</a>
         <button class="btn small" type="button" id="rRepS">تقرير مختصر</button>
         <button class="btn small" type="button" id="rRepL">تقرير مطوّل</button>
+        <span id="rQrSlot" style="display:contents"></span>
         ${waLink(p.phone) ? `<a class="btn small wa" target="_blank" rel="noopener" href="${esc(waLink(p.phone))}">واتساب</a>` : ""}
         ${can("delete") ? `<button class="btn small danger" type="button" id="rDel">حذف</button>` : ""}
       </div></div>
@@ -234,6 +235,7 @@ function bindRecord(){
     catch(err){ toast("تعذر قراءة الصورة", true); }
   };
   if($("#rRmPhoto")) $("#rRmPhoto").onclick = () => { R.photoBlob = null; R.photoRemoved = true; ph.style.backgroundImage = ""; ph.textContent = "إضافة صورة"; $("#rRmPhoto").hidden = true; setDirty(true); };
+  if(!R.isNew) qrRecordButton(S.byId.get(R.p.id) || R.p);
   if($("#rRepS")){
     $("#rRepS").onclick = async () => printHtml(await personReport(S.byId.get(R.p.id), false));
     $("#rRepL").onclick = async () => printHtml(await personReport(S.byId.get(R.p.id), true));

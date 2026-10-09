@@ -113,3 +113,39 @@ async function qrAll(users){
   for(const u of list){ const {data, error} = await db.rpc("f4_qr_get", {p_email:u.email, p_new:false}); if(!error && data) items.push({name:qrName(u), link:qrUrl(data)}); }
   qrPrint(items);
 }
+
+/* ---------- رمز العضو نفسه (يظهر في ملفه) ---------- */
+async function qrMine(){
+  try{ await qrLib(); }catch(e){ return toast("تعذر تحميل مولّد رمز QR — تحقق من الإنترنت", true); }
+  const get = async fresh => { const {data, error} = await db.rpc("f4_qr_mine", {p_new:fresh}); if(error) throw error; return data; };
+  let tok; try{ tok = await get(false); }catch(e){ return toast(errMsg(e), true); }
+  const name = qrName(S.me), link = qrUrl(tok);
+  modal("رمز دخولك السريع", `
+    <div class="qr-card">
+      <div class="qr-hd"><img src="img/logo-mark.png" alt="" width="40" height="40"><span><b>شجرة العائلة</b><small>دخول مباشر بدون كلمة سر</small></span></div>
+      <div class="qr-code">${qrSvg(link)}</div>
+      <b class="qr-name">${esc(name)}</b>
+      <small class="qr-hint">امسح الرمز بكاميرا الجوال لتدخل مباشرة</small>
+    </div>
+    <p class="muted" style="text-align:center;font-size:13.5px;margin:10px 0 0">احفظ الصورة في جوالك أو خذ لقطة شاشة، وامسحها من أي جهاز لتدخل بحسابك مباشرة.</p>
+    <div class="qr-warn">🔒 هذا الرمز مفتاح حسابك: لا ترسله لأحد. إذا شاركته بالخطأ اضغط «رمز جديد» فيتوقف القديم فوراً.</div>
+    <div class="qr-acts"><button class="btn primary" type="button" id="qrDown">تنزيل صورة</button><button class="btn" type="button" id="qrPrint">طباعة</button></div>`,
+    {foot:`<button class="btn" type="button" id="qrNew">رمز جديد</button><button class="btn primary" type="button" onclick="this.closest('dialog').close()">إغلاق</button>`});
+  $("#qrDown").onclick = () => qrPng(name, link);
+  $("#qrPrint").onclick = () => qrPrint([{name, link}]);
+  $("#qrNew").onclick = async () => {
+    if(!(await ask("رمز جديد", "إنشاء رمز جديد؟ الرمز القديم وأي صورة محفوظة منه تتوقف فوراً.", {okText:"إنشاء"}))) return qrMine();
+    try{ await get(true); toast("أُنشئ رمز جديد ✓ — نزّل الصورة الجديدة"); }catch(e){ toast(errMsg(e), true); } qrMine();
+  };
+}
+/* زر QR في ملف الشخص: لصاحب الملف نفسه، وللمدير إن كان الملف مربوطاً بحساب عضو */
+async function qrRecordButton(p){
+  const box = $("#rQrSlot"); if(!box || !p) return;
+  if(!isAdmin() && S.me.person_id === p.id){ box.innerHTML = `<button class="btn small qr-btn" type="button" id="rQr">▦ رمز دخولي QR</button>`; $("#rQr").onclick = qrMine; return; }
+  if(isAdmin()){
+    const {data} = await db.from("f4_users").select("*").eq("person_id", p.id).neq("role", "admin");
+    const u = (data || [])[0]; if(!u || !$("#rQrSlot")) return;
+    box.innerHTML = `<button class="btn small qr-btn" type="button" id="rQr" title="رمز الدخول السريع لحساب ${esc(u.display_name || u.email)}">▦ QR الدخول</button>`;
+    $("#rQr").onclick = () => qrCard(u);
+  }
+}

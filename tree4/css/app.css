@@ -1044,3 +1044,4 @@ a.visits-pill:hover{border-color:var(--brand)}
 .qr-name{font-size:18px}.qr-hint{color:#7c8496;font-size:13px}
 .qr-warn{margin-top:12px;background:var(--gold-l);border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.7}
 .qr-acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+.btn.qr-btn{border-color:var(--gold);color:var(--gold)}

@@ -128,6 +128,7 @@ $("#lForgot").onclick = async () => {
   $("#lErr").textContent = error ? errMsg(error) : "أرسلنا رابط تعيين كلمة السر إلى بريدك";
 };
 $("#lSignup").onclick = openJoin;
+$("#myQrBtn").onclick = () => { closeNav(); qrMine(); };
 $("#pwBtn").onclick = async () => {
   closeNav();
   const p1 = await ask("تغيير كلمة السر", "اكتب كلمة السر الجديدة (6 أحرف على الأقل)", {input:true, type:"password", okText:"متابعة"});
@@ -242,6 +243,7 @@ async function fillVisitStat(){
 function applyPerms(){
   $$("[data-perm]").forEach(el => el.hidden = !can(el.dataset.perm));
   $$("[data-admin]").forEach(el => el.hidden = !isAdmin());
+  const mq = $("#myQrBtn"); if(mq) mq.hidden = isAdmin();
   const rights = (isAdmin() ? "مدير" : ["add","edit","delete"].filter(can).map(p => ({add:"إضافة", edit:"تعديل", delete:"حذف"}[p])).join("، ") || "مشاهدة فقط") + (!isAdmin() ? " · فرع جده" : "");
   $("#whoAmI").innerHTML = `<div class="who-l1"><b>${esc(S.me.display_name || "مرحباً")}</b><span class="who-role">${esc(rights)}</span></div><span class="who-mail ltr">${esc(S.email)}</span>`;
   $("#whoAmI").title = S.email;
