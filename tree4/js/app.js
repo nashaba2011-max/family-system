@@ -21,7 +21,7 @@ const ROUTES = {
   events:   {title:"مناسبات العائلة", render:renderEvents},
   event:    {title:"مناسبة", render:id => renderEvent(+id)},
   heritage: {title:"تراث العائلة", render:t => renderHeritage(t)},
-  market:   {title:"سوق العائلة", render:renderMarket},
+  market:   {title:"سوق العائلة", render:renderMarket, admin:true}, // مخفي عن المستخدمين مؤقتاً — للمدير فقط
 };
 let currentHash = "", skipGuard = false, restoring = false;
 let NAV_FROM_BACK = false, NAV_WAS_BACK = false, PAGE_NAME = "home";
@@ -288,7 +288,7 @@ function renderHome(){
     </div>
     <div class="tiles">
       ${heritageTile()}
-      ${marketTile()}
+      ${isAdmin() ? marketTile() : ""}
       ${tile("#/add","add","إضافة سجل","ملف جديد برقم تسلسل", 'data-perm="add"')}
       ${tile("#/edit","edit","تعديل سجل","بالرقم أو بالاسم", 'data-perm="edit"')}
       ${tile("#/delete","del","حذف سجل","مع تأكيد قبل الحذف", 'data-perm="delete"')}
@@ -304,7 +304,7 @@ function renderHome(){
       ${tile("#/data","data","استيراد وتصدير","Excel")}
     </div>
     ${recent.length ? `<div class="sec-h">آخر السجلات المحدّثة</div><div class="plist">${recent.map(p => personBtn(p, p.updated_at ? "حُدّث " + fmtDate(p.updated_at.slice(0, 10)) : "")).join("")}</div>` : ""}`;
-  applyPerms(); fillVisitStat(); homeOdo(); fillHeritageTile(); bindNew24(); fillMarketTile();
+  applyPerms(); fillVisitStat(); homeOdo(); fillHeritageTile(); bindNew24(); if(isAdmin()) fillMarketTile();
 }
 
 /* عدّاد المضافين خلال 24 ساعة — للمدير فقط */
