@@ -1053,3 +1053,4 @@ a.visits-pill:hover{border-color:var(--brand)}
 .rq-acts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 @media (max-width:640px){.rec-qr{margin-inline-start:0;width:100%}}
 .rq-empty{display:grid;place-items:center;font-size:44px;color:var(--ink-3);background:var(--bg)!important;border-style:dashed!important;cursor:default}
+.sp-btns{display:inline-flex;gap:6px}

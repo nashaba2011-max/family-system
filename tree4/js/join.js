@@ -18,9 +18,9 @@ function termsHtml(txt){
   }).join("");
 }
 
-function openJoin(){
+function openJoin(pre){
   JOIN.step = 1;
-  JOIN.data = {email:$("#lEmail").value.trim().toLowerCase()};
+  JOIN.data = {email:$("#lEmail").value.trim().toLowerCase(), ...(pre && typeof pre === "object" && !pre.type ? pre : {})};
   const d = $("#dJoin"); drawJoin(); d.showModal();
 }
 function drawJoin(){

@@ -154,7 +154,10 @@ db.auth.onAuthStateChange((event, session) => {
       if(p){ const {error} = await db.auth.updateUser({password:p}); toast(error ? errMsg(error) : "تم تغيير كلمة السر", !!error); }
     }, 0);
   }
-  if(!session){ booted = false; S.me = null; S.mustRegister = false; $("#app").hidden = true; $("#vLogin").hidden = false; return; }
+  if(!session){ booted = false; S.me = null; S.mustRegister = false; $("#app").hidden = true; $("#vLogin").hidden = false;
+    const jm = location.hash.match(/^#\/join(?:\/([^/]*))?(?:\/([^/]*))?/);
+    if(jm && !$("#dJoin").open){ const dec = x => { try{ return decodeURIComponent(x || ""); }catch(e){ return ""; } }; setTimeout(() => openJoin({name:dec(jm[1]), relation:dec(jm[2])}), 50); }
+    return; }
   if(booted) return; booted = true;
   setTimeout(() => boot(session), 0); // خارج نداء المصادقة لتجنب التعليق
 });

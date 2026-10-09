@@ -121,7 +121,7 @@ function spouseRows(){
     h += `<div class="spouse-row"><span class="n">${i}</span>
       <div class="linkf"><button type="button" class="pv ${sp ? "" : "empty"}" data-sp="${i}" ${R.editable ? "" : "disabled"}>${sp ? nm(sp, fullName(sp, 4)) + ` <small class="muted">#${sp.serial}</small>` : R.editable ? `اختر ${word} من السجلات…` : "—"}</button></div>
       <input class="inp sp-name" data-spname="${i}" placeholder="أو اكتب الاسم إن لم يكن مسجلاً" value="${esc(sp ? "" : s.spouse_name)}" ${sp || !R.editable ? "disabled" : ""} aria-label="اسم ${word} ${i}">
-      ${R.editable && (sp || s.spouse_name) ? `<button type="button" class="btn small" data-spclr="${i}" aria-label="إزالة">✕</button>` : "<span></span>"}</div>`;
+      ${R.editable && (sp || s.spouse_name) ? `<span class="sp-btns">${!sp && s.spouse_name && !R.isNew ? `<button type="button" class="btn small wa" data-spinv="${i}" title="دعوة لاستكمال التسجيل">دعوة</button>` : ""}<button type="button" class="btn small" data-spclr="${i}" aria-label="إزالة">✕</button></span>` : "<span></span>"}</div>`;
   }
   return h;
 }
@@ -227,6 +227,8 @@ function bindRecord(){
       if(s){ s.spouse_id = pick.id; s.spouse_name = ""; } else R.spouses.push({ord:i, spouse_id:pick.id, spouse_name:""});
       setDirty(true); $("#spBox").innerHTML = spouseRows(); return;
     }
+    const iv = e.target.closest("[data-spinv]");
+    if(iv){ const sp = R.spouses.find(x => x.ord === +iv.dataset.spinv); if(sp && sp.spouse_name) spouseInvite(S.byId.get(R.p.id) || R.p, sp.spouse_name.trim()); return; }
     const c = e.target.closest("[data-spclr]");
     if(c){ readForm(); R.spouses = R.spouses.filter(s => s.ord !== +c.dataset.spclr); setDirty(true); $("#spBox").innerHTML = spouseRows(); }
   });
@@ -303,6 +305,8 @@ async function saveRecord(){
     }
     // الأزواج
     const want = R.spouses.filter(s => s.spouse_id || (s.spouse_name || "").trim()).map(s => ({person_id:saved.id, ord:s.ord, spouse_id:s.spouse_id || null, spouse_name:s.spouse_id ? null : s.spouse_name.trim()}));
+    const oldNames = new Set(S.spouses.filter(s => s.person_id === saved.id && s.spouse_name).map(s => s.spouse_name.trim()));
+    const newNames = want.filter(w => w.spouse_name && !oldNames.has(w.spouse_name)).map(w => w.spouse_name);
     const del = await db.from("f4_spouses").delete().eq("person_id", saved.id); if(del.error) throw del.error;
     let newSp = [];
     if(want.length){ const {data, error} = await db.from("f4_spouses").insert(want).select(); if(error) throw error; newSp = data; }
@@ -314,6 +318,7 @@ async function saveRecord(){
     toast(wasNew ? "تم حفظ السجل الجديد ✓" : "تم حفظ التعديلات ✓");
     if(wasNew){ R.isNew = false; skipGuard = true; location.hash = "#/rec/" + saved.id; }
     else { R.p = {...saved}; R.editable = can("edit"); drawRecord($(".tab.on")?.dataset.tab); }
+    if(newNames.length) setTimeout(() => spouseInvite(saved, newNames[0]), wasNew ? 700 : 300);
   }catch(err){
     $("#rErr").textContent = errMsg(err); toast(errMsg(err), true);
   }finally{
@@ -332,4 +337,26 @@ async function syncSpouseLinks(pid, ids){
     const gone = S.spouses.filter(s => s.spouse_id === pid && !ids.includes(s.person_id));
     for(const g of gone){ const {error} = await db.from("f4_spouses").delete().eq("id", g.id); if(!error) S.spouses = S.spouses.filter(s => s.id !== g.id); }
   }catch(e){ console.warn("spouse sync", e); }
+}
+
+/* دعوة الزوج/الزوجة غير المسجل لاستكمال تسجيل بياناته عبر واتساب */
+function spouseInvite(p, name){
+  if(!p || !name) return;
+  const isWife = isM(p), rel = `${isWife ? "زوجة" : "زوج"} ${fullName(p, 3)}`;
+  const link = APP_URL + "#/join/" + encodeURIComponent(name) + "/" + encodeURIComponent(rel);
+  const first = name.trim().split(/\s+/)[0];
+  const msg = `السلام عليكم ${isWife ? "الأخت" : "الأخ"} ${first}،\nتم تسجيل اسمك في برنامج شجرة عائلة النشابة بصفتك ${rel}.\nنرجو ${isWife ? "منكِ" : "منك"} استكمال تسجيل بياناتك من الرابط التالي (يفتح نموذج التسجيل وفيه اسمك جاهز):\n${link}`;
+  modal(`دعوة ${name} لاستكمال التسجيل`, `
+    <p style="margin-top:0">حُفظ اسم <b>${esc(name)}</b> في خانة ${isWife ? "الزوجة" : "الزوج"}. أرسل ${isWife ? "لها" : "له"} رسالة تنبيه لاستكمال تسجيل ${isWife ? "بياناتها" : "بياناته"} في البرنامج.</p>
+    <div class="field"><label for="invPhone">رقم واتساب ${isWife ? "الزوجة" : "الزوج"}</label><input class="inp ltr" id="invPhone" type="tel" inputmode="tel" maxlength="20" placeholder="3xxxxxxx"></div>
+    <div class="field"><label for="invMsg">نص الرسالة</label><textarea class="inp" id="invMsg" rows="6">${esc(msg)}</textarea></div>
+    <p class="muted" style="font-size:13px;margin:0">عند الإرسال يفتح واتساب برسالة جاهزة، وعند فتح الرابط يظهر نموذج التسجيل وفيه الاسم وصلة القرابة. بعد موافقة المدير على ${isWife ? "طلبها، اربط سجلها" : "طلبه، اربط سجله"} بخانة ${isWife ? "الزوجة" : "الزوج"}.</p>`,
+    {foot:`<button class="btn" type="button" onclick="this.closest('dialog').close()">لاحقاً</button><button class="btn" type="button" id="invCopy">نسخ الرسالة</button><button class="btn wa" type="button" id="invSend">إرسال عبر واتساب</button>`});
+  $("#invSend").onclick = () => {
+    const ph = $("#invPhone").value.trim(), url = ph ? waLink(ph, $("#invMsg").value) : "https://wa.me/?text=" + encodeURIComponent($("#invMsg").value);
+    if(ph && !url){ toast("رقم الهاتف غير صحيح", true); return; }
+    window.open(url, "_blank", "noopener"); $("#dModal").close(); toast("فُتح واتساب برسالة الدعوة");
+  };
+  $("#invCopy").onclick = async () => { try{ await navigator.clipboard.writeText($("#invMsg").value); toast("نُسخت الرسالة"); }catch(e){ toast("تعذر النسخ", true); } };
+  setTimeout(() => $("#invPhone")?.focus(), 30);
 }
