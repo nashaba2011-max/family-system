@@ -275,6 +275,7 @@ function renderHome(){
       <svg class="hb-arc" viewBox="0 0 1000 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60 Q500 -10 1000 60 Z"></path></svg>
     </section>
 
+    ${isAdmin() ? new24Html() : ""}
     <div class="stats">
       <div class="stat gold"><b>${P.length}</b><span>إجمالي الأفراد</span></div>
       <div class="stat st-alive"><b>${alive}</b><span>على قيد الحياة</span></div>
@@ -301,7 +302,26 @@ function renderHome(){
       ${tile("#/data","data","استيراد وتصدير","Excel")}
     </div>
     ${recent.length ? `<div class="sec-h">آخر السجلات المحدّثة</div><div class="plist">${recent.map(p => personBtn(p, p.updated_at ? "حُدّث " + fmtDate(p.updated_at.slice(0, 10)) : "")).join("")}</div>` : ""}`;
-  applyPerms(); fillVisitStat(); homeOdo(); fillHeritageTile();
+  applyPerms(); fillVisitStat(); homeOdo(); fillHeritageTile(); bindNew24();
+}
+
+/* عدّاد المضافين خلال 24 ساعة — للمدير فقط */
+const added24 = () => { const t = Date.now() - 864e5; return S.people.filter(p => p.created_at && new Date(p.created_at).getTime() >= t).sort((a, b) => b.created_at.localeCompare(a.created_at)); };
+function new24Html(){
+  const n = added24().length;
+  return `<button type="button" class="new24${n ? "" : " zero"}" id="new24" data-admin aria-label="المضافون خلال آخر 24 ساعة: ${n}">
+    <span class="n24"><b>${n}</b></span><span class="t24"><b>${n ? (n === 1 ? "سجل جديد" : n === 2 ? "سجلان جديدان" : n <= 10 ? "سجلات جديدة" : "سجلاً جديداً") : "لا سجلات جديدة"}</b><small>أُضيفت خلال آخر 24 ساعة · للمدير فقط</small></span>${n ? '<span class="go24">عرض ‹</span>' : ""}</button>`;
+}
+const agoT = t => { const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 1 ? "الآن" : m < 60 ? `قبل ${m} دقيقة` : `قبل ${Math.round(m / 60)} ساعة`; };
+function bindNew24(){
+  const b = $("#new24"); if(!b) return;
+  b.onclick = () => {
+    const L = added24(); if(!L.length) return;
+    const by = p => (p.created_by || p.updated_by || "").split("@")[0];
+    const d = modal(`المضافون خلال آخر 24 ساعة (${L.length})`, `<div class="plist">${L.map(p => personBtn(p, [agoT(p.created_at), by(p) && "بواسطة " + by(p)].filter(Boolean).join(" · "))).join("")}</div>`,
+      {foot:`<button class="btn primary" type="button" onclick="this.closest('dialog').close()">إغلاق</button>`});
+    d.querySelectorAll(".pbtn").forEach(x => x.addEventListener("click", () => d.close()));
+  };
 }
 
 /* عدّاد دوّار لأرقام الصفحة الرئيسية — يعمل في كل مرة تُعرض فيها */
@@ -316,6 +336,7 @@ function odo(el, delay){
 function homeOdo(){
   document.querySelectorAll("#view .hb-facts b").forEach((b, i) => odo(b, 200 + i * 120));
   document.querySelectorAll("#view .stats .stat > b").forEach((b, i) => odo(b, 350 + i * 90));
+  const n24 = document.querySelector("#view .new24 .n24 b"); if(n24) odo(n24, 150);
 }
 
 /* ===== من نحن ===== */

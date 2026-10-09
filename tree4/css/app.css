@@ -901,3 +901,15 @@ a.visits-pill:hover{border-color:var(--brand)}
 .her-audio{width:100%}
 .her-text{white-space:pre-wrap;margin-top:10px;line-height:1.9}
 .her-text.story{font-family:var(--her-serif);font-size:20px;background:var(--sepia);color:var(--ink);border-radius:12px;padding:14px 16px}
+
+/* عدّاد المضافين خلال 24 ساعة (للمدير) */
+.new24{width:100%;display:flex;align-items:center;gap:14px;text-align:start;font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-inline-start:5px solid var(--ok);border-radius:var(--radius);padding:12px 16px;margin:0 0 12px;box-shadow:var(--shadow);cursor:pointer}
+.new24:hover{border-color:var(--ok)}
+.new24:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.new24.zero{border-inline-start-color:var(--line);cursor:default}
+.new24 .n24{flex:none;min-width:58px;height:58px;padding:0 10px;border-radius:14px;display:grid;place-items:center;background:var(--ok-l);color:var(--ok)}
+.new24.zero .n24{background:var(--bg);color:var(--ink-3)}
+.new24 .n24 b{font-size:28px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
+.new24 .t24{display:flex;flex-direction:column;min-width:0;flex:1}
+.new24 .t24 b{font-size:17px}.new24 .t24 small{color:var(--ink-3);font-size:13px}
+.new24 .go24{flex:none;font-weight:700;font-size:14px;color:var(--ok)}
