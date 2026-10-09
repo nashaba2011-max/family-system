@@ -169,7 +169,8 @@ a.stat:hover{border-color:var(--gold)}
 .sec-h{font-size:15px;color:var(--ink-2);margin:22px 0 10px;font-weight:700}
 
 /* ===== تبويبات ===== */
-.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:2px solid var(--line);margin-bottom:16px;scrollbar-width:thin}
+.tabs{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;border-bottom:2px solid var(--line);margin-bottom:16px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
 .tab{border:0;background:none;padding:10px 14px;font-weight:700;color:var(--ink-2);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;min-height:44px}
 .tab.on{color:var(--brand-d);border-bottom-color:var(--gold)}
 .tabpane[hidden]{display:none}
