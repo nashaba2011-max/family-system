@@ -138,14 +138,25 @@ async function qrMine(){
     try{ await get(true); toast("أُنشئ رمز جديد ✓ — نزّل الصورة الجديدة"); }catch(e){ toast(errMsg(e), true); } qrMine();
   };
 }
-/* زر QR في ملف الشخص: لصاحب الملف نفسه، وللمدير إن كان الملف مربوطاً بحساب عضو */
+/* بطاقة QR صغيرة داخل ملف الشخص: لصاحب الملف نفسه، وللمدير إن كان الملف مربوطاً بحساب عضو */
 async function qrRecordButton(p){
   const box = $("#rQrSlot"); if(!box || !p) return;
-  if(!isAdmin() && S.me.person_id === p.id){ box.innerHTML = `<button class="btn small qr-btn" type="button" id="rQr">▦ رمز دخولي QR</button>`; $("#rQr").onclick = qrMine; return; }
-  if(isAdmin()){
-    const {data} = await db.from("f4_users").select("*").eq("person_id", p.id).neq("role", "admin");
-    const u = (data || [])[0]; if(!u || !$("#rQrSlot")) return;
-    box.innerHTML = `<button class="btn small qr-btn" type="button" id="rQr" title="رمز الدخول السريع لحساب ${esc(u.display_name || u.email)}">▦ QR الدخول</button>`;
-    $("#rQr").onclick = () => qrCard(u);
-  }
+  let tok = null, open = null, name = "", title = "";
+  try{
+    if(!isAdmin() && S.me.person_id === p.id){
+      await qrLib(); const r = await db.rpc("f4_qr_mine", {p_new:false}); if(r.error) return; tok = r.data; open = qrMine; name = qrName(S.me); title = "رمز دخولك السريع";
+    }else if(isAdmin()){
+      const {data} = await db.from("f4_users").select("*").eq("person_id", p.id).neq("role", "admin");
+      const u = (data || [])[0]; if(!u) return;
+      await qrLib(); const r = await db.rpc("f4_qr_get", {p_email:u.email, p_new:false}); if(r.error) return; tok = r.data; open = () => qrCard(u); name = qrName(u); title = "رمز الدخول السريع";
+    }else return;
+  }catch(e){ return; }
+  if(!tok || !$("#rQrSlot")) return;
+  const link = qrUrl(tok);
+  box.innerHTML = `<button type="button" class="rq-code" id="rQrBig" title="تكبير الرمز">${qrSvg(link, 4)}</button>
+    <div class="rq-tx"><b>${title}</b><small>امسحه بكاميرا الجوال للدخول مباشرة</small>
+      <span class="rq-acts"><button class="btn small" type="button" id="rQrDown">تنزيل صورة</button><button class="btn small" type="button" id="rQrMore">المزيد</button></span></div>`;
+  box.hidden = false;
+  $("#rQrDown").onclick = () => qrPng(name, link);
+  $("#rQrBig").onclick = open; $("#rQrMore").onclick = open;
 }

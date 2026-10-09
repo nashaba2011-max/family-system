@@ -65,7 +65,6 @@ function drawRecord(activeTab){
         <a class="btn small" href="#/tree/${p.id}">الشجرة</a>
         <button class="btn small" type="button" id="rRepS">تقرير مختصر</button>
         <button class="btn small" type="button" id="rRepL">تقرير مطوّل</button>
-        <span id="rQrSlot" style="display:contents"></span>
         ${waLink(p.phone) ? `<a class="btn small wa" target="_blank" rel="noopener" href="${esc(waLink(p.phone))}">واتساب</a>` : ""}
         ${can("delete") ? `<button class="btn small danger" type="button" id="rDel">حذف</button>` : ""}
       </div></div>
@@ -77,6 +76,7 @@ function drawRecord(activeTab){
         ${R.editable ? "" : '<p class="muted" style="font-size:13px;margin:6px 0 0">للعرض فقط — ليست لديك صلاحية التعديل.</p>'}
       </div>
       ${R.editable && !R.isNew ? `<button class="btn small" type="button" id="rRmPhoto" ${p.photo_path ? "" : "hidden"}>حذف الصورة</button>` : ""}
+      <div class="rec-qr" id="rQrSlot" hidden></div>
     </div>
     <div class="tabs" role="tablist">${TABS.map(([k, t]) => `<button type="button" role="tab" class="tab ${k === tab ? "on" : ""}" data-tab="${k}" aria-selected="${k === tab}">${t}</button>`).join("")}</div>
     <form id="recForm" novalidate>

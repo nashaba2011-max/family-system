@@ -1045,3 +1045,9 @@ a.visits-pill:hover{border-color:var(--brand)}
 .qr-warn{margin-top:12px;background:var(--gold-l);border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.7}
 .qr-acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
 .btn.qr-btn{border-color:var(--gold);color:var(--gold)}
+.rec-qr{margin-inline-start:auto;display:flex;align-items:center;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:8px 12px 8px 8px;box-shadow:var(--shadow)}
+.rq-code{flex:none;width:96px;height:96px;padding:4px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:zoom-in}
+.rq-code svg{width:100%;height:100%;display:block}
+.rq-tx{display:flex;flex-direction:column;gap:2px;min-width:0}.rq-tx b{font-size:15px}.rq-tx small{color:var(--ink-3);font-size:12.5px}
+.rq-acts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+@media (max-width:640px){.rec-qr{margin-inline-start:0;width:100%}}
