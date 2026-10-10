@@ -20,7 +20,8 @@ function fieldHtml(k, v){
   if(k === "serial" && !isAdmin()) return `<div class="field" data-k="serial"><label for="${id}">${esc(f.label)}</label><input class="inp ltr" id="${id}" readonly tabindex="-1" value="${R.isNew ? "" : esc(v)}" placeholder="يحدده البرنامج تلقائياً عند الحفظ"><div class="ferr" id="e_serial"></div></div>`;
   const dead = ["death_date","burial_place"].includes(k);
   let ctl;
-  if(f.type === "textarea") ctl = `<textarea class="inp" id="${id}" name="${k}" maxlength="8000" ${ro ? "readonly" : ""}>${esc(v)}</textarea>`;
+  /* الملاحظات بلا حد للأحرف، والمربع يتمدد مع النص */
+  if(f.type === "textarea") ctl = `<textarea class="inp grow" id="${id}" name="${k}" ${ro ? "readonly" : ""}>${esc(v)}</textarea>`;
   else if(f.opts || (f.lk && !f.free)){
     let opts = f.opts || (k === "area" ? areasOf(R.p.governorate) : lk(f.lk));
     if(v && !opts.includes(v)) opts = opts.concat([v]); // قيمة قديمة غير موجودة في القائمة
@@ -170,10 +171,12 @@ function readForm(){
   $$("[data-spnat]").forEach(el => { if(el.disabled) return; const s = R.spouses.find(x => x.ord === +el.dataset.spnat); if(s) s.spouse_nationality = el.value.trim(); });
 }
 function bindRecord(){
+  requestAnimationFrame(() => $$("textarea.grow").forEach(growTa));
   const form = $("#recForm");
   $$(".tab").forEach(t => t.onclick = () => {
     $$(".tab").forEach(x => { x.classList.toggle("on", x === t); x.setAttribute("aria-selected", x === t); });
     $$(".tabpane").forEach(pn => pn.hidden = pn.dataset.pane !== t.dataset.tab);
+    $$("textarea.grow").forEach(growTa);
   });
   form.addEventListener("input", e => { if(R.editable) setDirty(true);
     if(["name1","name2","name3","name4","name5","name6","family","gender"].includes(e.target.name)){ readForm(); $("#rTitle").textContent = longName(R.p) || "اسم جديد"; $("#rTitle").className = gcls(R.p); }
@@ -367,3 +370,7 @@ function spouseInvite(p, name){
   $("#invCopy").onclick = async () => { try{ await navigator.clipboard.writeText($("#invMsg").value); toast("نُسخت الرسالة"); }catch(e){ toast("تعذر النسخ", true); } };
   setTimeout(() => $("#invPhone")?.focus(), 30);
 }
+
+/* تمديد مربع النص ليتسع لكل محتواه */
+function growTa(ta){ if(!ta || ta.offsetParent === null) return; ta.style.height = "auto"; ta.style.height = (ta.scrollHeight + 2) + "px"; }
+document.addEventListener("input", e => { if(e.target.matches?.("textarea.grow")) growTa(e.target); });

@@ -64,6 +64,7 @@ h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.35}
 .inp{width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:9px;background:var(--paper);padding:8px 12px}
 .inp:focus{border-color:var(--brand);outline:none}
 textarea.inp{min-height:110px;resize:vertical;line-height:1.7}
+textarea.inp.grow{min-height:260px;overflow:hidden;field-sizing:content}
 .inp[readonly]{background:var(--paper-2);color:var(--ink-2)}
 select.inp{cursor:pointer}
 .field{display:flex;flex-direction:column;gap:4px}
