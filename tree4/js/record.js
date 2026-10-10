@@ -5,7 +5,7 @@ const TABS = [
   ["t1","البيانات الشخصية"],["t2","النسب والزواج"],["t3","السكن والاتصال"],["t4","التعليم والعمل"],["t5","الحالة والصحة"],["t6","الملاحظات"],
 ];
 const TAB_FIELDS = {
-  t1:["serial","cpr","name1","name2","name3","name4","name5","name6","family","branch","affiliation","nickname","gender","birth_date","_age","birth_place"],
+  t1:["serial","cpr","name1","name2","name3","name4","name5","name6","family","branch","affiliation","nickname","gender","nationality","birth_date","_age","birth_place"],
   t3:["phone","phone2","email","governorate","area","house_no","flat_no","road_no","block_no"],
   t4:["education","specialization","job","workside","hobby"],
   t5:["status","death_date","burial_place","marital","blood"],
@@ -15,6 +15,7 @@ function fieldHtml(k, v){
   const ro = !R.editable;
   if(k === "_age") return `<div class="field"><label for="f__age">العمر</label><input class="inp" id="f__age" readonly tabindex="-1" value="${esc(ageOf(R.p))}"></div>`;
   const f = FIELDS[k], id = "f_" + k, req = (k === "serial" && isAdmin()) || k === "name1";
+  if(k === "nationality" && R.p.gender === "ذكر") return `<div class="field" data-k="nationality"><label for="${id}">${esc(f.label)}</label><input class="inp" id="${id}" name="nationality" readonly tabindex="-1" value="بحريني" title="الزوج دائماً بحريني"><div class="ferr" id="e_nationality"></div></div>`;
   /* رقم التسلسل يحدده البرنامج للعضو — لا يكتبه ولا يغيّره */
   if(k === "serial" && !isAdmin()) return `<div class="field" data-k="serial"><label for="${id}">${esc(f.label)}</label><input class="inp ltr" id="${id}" readonly tabindex="-1" value="${R.isNew ? "" : esc(v)}" placeholder="يحدده البرنامج تلقائياً عند الحفظ"><div class="ferr" id="e_serial"></div></div>`;
   const dead = ["death_date","burial_place"].includes(k);
@@ -48,7 +49,7 @@ async function renderRecord(id, newSerial){
     const p = S.byId.get(id);
     if(!p){ $("#view").innerHTML = isRestricted() ? `<div class="card narrow empty">لا تملك صلاحية الاطلاع على بيانات هذا الفرد. <a href="#/tree">العودة للشجرة</a></div>` : `<div class="card narrow empty">السجل غير موجود — ربما حُذف. <a href="#/list">العودة للبحث</a></div>`; return; }
     R.p = {...p}; R.isNew = false; R.editable = can("edit");
-    R.spouses = S.spouses.filter(s => s.person_id === p.id).map(s => ({ord:s.ord, spouse_id:s.spouse_id, spouse_name:s.spouse_name || ""}));
+    R.spouses = S.spouses.filter(s => s.person_id === p.id).map(s => ({ord:s.ord, spouse_id:s.spouse_id, spouse_name:s.spouse_name || "", spouse_nationality:s.spouse_nationality || ""}));
     // الزواج المسجل من جهة الطرف الآخر فقط يظهر هنا أيضاً (ويُحفظ للطرفين عند الحفظ)
     S.spouses.filter(s => s.spouse_id === p.id && S.byId.get(s.person_id) && !R.spouses.some(x => x.spouse_id === s.person_id)).forEach(s => {
       let o = 1; while(R.spouses.some(x => x.ord === o)) o++;
@@ -57,7 +58,7 @@ async function renderRecord(id, newSerial){
   }else{
     if(!isAdmin()) newSerial = null;
     else if(S.bySerial.get(newSerial)){ location.hash = "#/rec/" + S.bySerial.get(newSerial).id; return; }
-    R.p = {serial:newSerial, status:"على قيد الحياة", family:lk("family")[0] || "", branch:lk("branch")[0] || ""};
+    R.p = {serial:newSerial, nationality:"بحريني", status:"على قيد الحياة", family:lk("family")[0] || "", branch:lk("branch")[0] || ""};
     R.isNew = true; R.editable = can("add"); R.spouses = [];
   }
   drawRecord();
@@ -116,14 +117,15 @@ function drawRecord(activeTab){
   loadPhoto();
 }
 function spouseRows(){
-  const word = isM(R.p) ? "الزوجة" : "الزوج", n = isM(R.p) ? 4 : 1;
-  let h = "";
+  const word = isM(R.p) ? "الزوجة" : "الزوج", n = isM(R.p) ? 4 : 1, wife = isM(R.p);
+  let h = wife ? `<datalist id="dl_spnat">${lkUsed("nationality").map(o => `<option value="${esc(o)}">`).join("")}</datalist>` : "";
   for(let i = 1; i <= Math.max(n, ...R.spouses.map(s => s.ord)); i++){
     const s = R.spouses.find(x => x.ord === i) || {ord:i, spouse_id:null, spouse_name:""};
     const sp = S.byId.get(s.spouse_id);
-    h += `<div class="spouse-row"><span class="n">${i}</span>
+    h += `<div class="spouse-row${wife ? " wife" : ""}"><span class="n">${i}</span>
       <div class="linkf"><button type="button" class="pv ${sp ? "" : "empty"}" data-sp="${i}" ${R.editable ? "" : "disabled"}>${sp ? nm(sp, fullName(sp, 4)) + ` <small class="muted">#${sp.serial}</small>` : R.editable ? `اختر ${word} من السجلات…` : "—"}</button></div>
       <input class="inp sp-name" data-spname="${i}" placeholder="أو اكتب الاسم إن لم يكن مسجلاً" value="${esc(sp ? "" : s.spouse_name)}" ${sp || !R.editable ? "disabled" : ""} aria-label="اسم ${word} ${i}">
+      ${wife ? `<input class="inp sp-nat" data-spnat="${i}" list="dl_spnat" placeholder="الجنسية" value="${esc(sp ? (sp.nationality || "") : (s.spouse_nationality ?? (s.spouse_name ? "" : "بحريني")))}" ${sp || !R.editable ? "disabled" : ""} aria-label="جنسية ${word} ${i}" title="${sp ? "تُعدّل من سجلها" : "جنسية الزوجة"}">` : ""}
       ${R.editable && (sp || s.spouse_name) ? `<span class="sp-btns">${!sp && s.spouse_name && !R.isNew ? `<button type="button" class="btn small wa" data-spinv="${i}" title="دعوة لاستكمال التسجيل">دعوة</button>` : ""}<button type="button" class="btn small" data-spclr="${i}" aria-label="إزالة">✕</button></span>` : "<span></span>"}</div>`;
   }
   return h;
@@ -165,6 +167,7 @@ function readForm(){
   $$("[data-spname]").forEach(el => { const i = +el.dataset.spname; const s = R.spouses.find(x => x.ord === i);
     if(el.disabled) return;
     if(s) s.spouse_name = el.value.trim(); else if(el.value.trim()) R.spouses.push({ord:i, spouse_id:null, spouse_name:el.value.trim()}); });
+  $$("[data-spnat]").forEach(el => { if(el.disabled) return; const s = R.spouses.find(x => x.ord === +el.dataset.spnat); if(s) s.spouse_nationality = el.value.trim(); });
 }
 function bindRecord(){
   const form = $("#recForm");
@@ -182,7 +185,7 @@ function bindRecord(){
       $("#f_area").innerHTML = '<option value=""></option>' + areasOf(R.p.governorate).map(o => `<option ${o === R.p.area ? "selected" : ""}>${esc(o)}</option>`).join(""); }
     if(n === "area"){ const g = govOfArea(e.target.value); if(g){ $("#f_governorate").value = g; R.p.governorate = g; } }
     if(n === "status"){ const d = e.target.value === "متوفى"; $$('[data-k="death_date"],[data-k="burial_place"]').forEach(x => x.hidden = !d); }
-    if(n === "gender"){ readForm(); $("#spBox").innerHTML = spouseRows(); }
+    if(n === "gender"){ readForm(); if(R.p.gender === "ذكر") R.p.nationality = "بحريني"; const nf = $('[data-k="nationality"]'); if(nf) nf.outerHTML = fieldHtml("nationality", R.p.nationality || ""); $("#spBox").innerHTML = spouseRows(); }
   });
   form.onsubmit = e => { e.preventDefault(); saveRecord(); };
   $("#rCancel").onclick = async () => {
@@ -308,7 +311,7 @@ async function saveRecord(){
       const old = saved.photo_path; const {data} = await db.from("f4_people").update({photo_path:null}).eq("id", saved.id).select().single(); if(data) saved = data; db.storage.from(PHOTO_BUCKET).remove([old]);
     }
     // الأزواج
-    const want = R.spouses.filter(s => s.spouse_id || (s.spouse_name || "").trim()).map(s => ({person_id:saved.id, ord:s.ord, spouse_id:s.spouse_id || null, spouse_name:s.spouse_id ? null : s.spouse_name.trim().replace(/^(زوجته|زوجتة|زوجها|الزوجة|الزوج|زوجة|زوج)\s+/, "").trim()}));
+    const want = R.spouses.filter(s => s.spouse_id || (s.spouse_name || "").trim()).map(s => ({person_id:saved.id, ord:s.ord, spouse_id:s.spouse_id || null, spouse_name:s.spouse_id ? null : s.spouse_name.trim().replace(/^(زوجته|زوجتة|زوجها|الزوجة|الزوج|زوجة|زوج)\s+/, "").trim(), spouse_nationality:s.spouse_id ? null : (s.spouse_nationality || "").trim() || null}));
     const oldNames = new Set(S.spouses.filter(s => s.person_id === saved.id && s.spouse_name).map(s => s.spouse_name.trim()));
     const newNames = want.filter(w => w.spouse_name && !oldNames.has(w.spouse_name)).map(w => w.spouse_name);
     const del = await db.from("f4_spouses").delete().eq("person_id", saved.id); if(del.error) throw del.error;

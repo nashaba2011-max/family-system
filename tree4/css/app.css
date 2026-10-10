@@ -195,7 +195,8 @@ a.stat:hover{border-color:var(--gold)}
 .linkf .pv.empty{color:var(--ink-3);font-weight:400}
 .spouse-row{display:grid;grid-template-columns:44px 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px}
 .spouse-row .n{font-weight:700;color:var(--gold);text-align:center}
-@media (max-width:640px){.spouse-row{grid-template-columns:30px 1fr auto}.spouse-row .sp-name{grid-column:2/4}}
+.spouse-row.wife{grid-template-columns:44px 1fr 1fr 130px auto}
+@media (max-width:640px){.spouse-row,.spouse-row.wife{grid-template-columns:30px 1fr auto}.spouse-row .sp-name,.spouse-row .sp-nat{grid-column:2/4}}
 .derived{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px 16px;background:var(--paper-2);border-radius:10px;padding:12px;margin-top:12px}
 .derived div{font-size:14px}
 .derived span{color:var(--ink-3)}

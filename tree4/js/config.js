@@ -25,6 +25,7 @@ const LOOKUP_KINDS = {
   hobby:         {label:"الهوايات"},
   birthplace:    {label:"أماكن الميلاد"},
   burial:        {label:"أماكن الدفن"},
+  nationality:   {label:"الجنسيات"},
 };
 
 /* حقول السجل — مقابلة لحقول جدول t01cudata */
@@ -42,6 +43,7 @@ const FIELDS = {
   affiliation:{label:"الانتساب للعائلة", opts:["من العائلة","منتسب بالزواج"], xl:"الانتساب"},
   nickname:{label:"الكنية / اللقب", lk:"nickname", free:1, xl:"الكنية"},
   gender:{label:"الجنس", opts:["ذكر","أنثى"], xl:"الجنس"},
+  nationality:{label:"الجنسية", lk:"nationality", free:1, xl:"الجنسية"},
   marital:{label:"الحالة الاجتماعية", lk:"marital", xl:"الحالة الاجتماعية"},
   birth_date:{label:"تاريخ الميلاد", type:"date", xl:"تاريخ الميلاد"},
   birth_place:{label:"مكان الميلاد", lk:"birthplace", free:1, xl:"مكان الميلاد"},
