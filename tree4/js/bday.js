@@ -1,6 +1,8 @@
 /* ===== تهاني أعياد الميلاد — تنبيه للمديرين قبل يوم، والتهنئة يرسلها المدير بنفسه من واتساب ===== */
 const BD = {msg:null, greets:[]};
-const BD_DEFAULT = "كل عام وأنت بخير يا {الاسم} 🎂\nبمناسبة عيد ميلادك، أتمنى لك عاماً مليئاً بالصحة والسعادة والتوفيق.\n{المرسل}";
+/* التهنئة تُرسل دائماً باسم العائلة — لا باسم المدير المرسل */
+const BD_SIGN = "عن عائلة النشابة ومنتسبيها";
+const BD_DEFAULT = "كل عام وأنت بخير يا {الاسم} 🎂\nبمناسبة عيد ميلادك، نتمنى لك عاماً مليئاً بالصحة والسعادة والتوفيق.\n{المرسل}";
 
 function bdAddDays(iso, n){ const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
 const bdLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
@@ -26,8 +28,9 @@ async function bdLoad(){
   BD.greets = gr.data || [];
 }
 function bdText(p){
-  const sender = (S.me?.display_name || "").trim();
-  return BD.msg.replace(/\{الاسم\}/g, p.name1 || "").replace(/\{المرسل\}/g, sender).trim();
+  let t = BD.msg.replace(/\{الاسم\}/g, p.name1 || "");
+  t = /\{المرسل\}/.test(t) ? t.replace(/\{المرسل\}/g, BD_SIGN) : (t.includes(BD_SIGN) ? t : t.trim() + "\n" + BD_SIGN);
+  return t.trim();
 }
 function bdSentBy(p, iso){ return BD.greets.filter(g => g.person_id === p.id && g.year === +iso.slice(0, 4)); }
 
@@ -83,7 +86,7 @@ async function bdMark(p, iso, on){
 function bdEditMsg(){
   modal("نص تهنئة عيد الميلاد", `<div class="field"><label for="bdTxt">الرسالة التي تُفتح في واتساب عند الضغط على «إرسال التهنئة»</label>
     <textarea class="inp" id="bdTxt" rows="7" maxlength="1500">${esc(BD.msg || BD_DEFAULT)}</textarea></div>
-    <p class="muted" style="font-size:13px;margin:0">اكتب <b>{الاسم}</b> ليُستبدل باسم صاحب عيد الميلاد، و<b>{المرسل}</b> ليُستبدل باسمك. النص مشترك بين المديرين، وتستطيع تعديل الرسالة في واتساب قبل الإرسال.</p>`,
+    <p class="muted" style="font-size:13px;margin:0">اكتب <b>{الاسم}</b> ليُستبدل باسم صاحب عيد الميلاد، و<b>{المرسل}</b> ليُستبدل بـ«${BD_SIGN}». التهنئة تُرسل دائماً باسم العائلة لا باسم المدير. النص مشترك بين المديرين، وتستطيع تعديل الرسالة في واتساب قبل الإرسال.</p>`,
     {foot:`<button class="btn" type="button" onclick="this.closest('dialog').close()">إلغاء</button><button class="btn primary" type="button" id="bdSave">حفظ</button>`});
   $("#bdSave").onclick = async () => {
     const val = $("#bdTxt").value.trim() || BD_DEFAULT;
