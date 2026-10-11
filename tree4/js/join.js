@@ -30,7 +30,10 @@ function drawJoin(){
     b.innerHTML = `
       <p class="muted" style="margin-top:0">سجّل بياناتك، ثم اقرأ شروط البرنامج ووافق عليها ليصل طلبك إلى الإدارة.</p>
       <form id="joinForm" novalidate class="join-form">
-        <div class="field req"><label for="jName">الاسم الكامل</label><input class="inp" id="jName" maxlength="120" autocomplete="name" value="${esc(D.name || "")}" placeholder="مثال: محمد أحمد علي"></div>
+        <div class="field req"><label for="jName">الاسم الكامل</label>
+          <div class="sr-pick"><input class="inp" id="jName" maxlength="120" autocomplete="off" value="${esc(D.name || "")}" placeholder="اكتب اسمك الأول ثم اسم أبيك…" aria-describedby="jNameHint" aria-autocomplete="list" aria-controls="jNames"><div class="sr-list jn-list" id="jNames" role="listbox" hidden></div></div>
+          <div class="sr-chosen" id="jChosen" ${D.person ? "" : "hidden"}>${D.person ? jChosenHtml(D.person) : ""}</div>
+          <small class="muted" id="jNameHint">إذا كان اسمك مسجلاً في العائلة يظهر في القائمة — اختره لتحديد أسرتك.</small></div>
         <div class="field req"><label for="jEmail">البريد الإلكتروني</label><input class="inp ltr" id="jEmail" type="email" inputmode="email" autocomplete="username" maxlength="160" value="${esc(D.email || "")}"></div>
         <div class="field req"><label for="jPhone">رقم الهاتف</label><input class="inp ltr" id="jPhone" type="tel" inputmode="tel" maxlength="30" autocomplete="tel" value="${esc(D.phone || "")}" placeholder="3xxxxxxx"></div>
         <div class="field"><label for="jRel">صلتك بالعائلة</label><input class="inp" id="jRel" maxlength="200" value="${esc(D.relation || "")}" placeholder="مثال: ابن عمار احمد علي، أو زوجة فلان"></div>
@@ -42,6 +45,7 @@ function drawJoin(){
         <button class="btn primary block" type="submit">متابعة</button>
       </form>`;
     setTimeout(() => (D.name ? $("#jPass") : $("#jName")).focus(), 30);
+    bindJoinNames();
     $("#joinForm").onsubmit = e => {
       e.preventDefault();
       const v = {name:$("#jName").value.trim(), email:$("#jEmail").value.trim().toLowerCase(), phone:$("#jPhone").value.trim(), relation:$("#jRel").value.trim()};
@@ -51,6 +55,7 @@ function drawJoin(){
       if(!/^\+?[\d\s-]{7,}$/.test(v.phone)) return err("اكتب رقم هاتف صحيحاً");
       if(p1.length < 6) return err("كلمة السر 6 أحرف على الأقل");
       if(p1 !== p2) return err("كلمتا السر غير متطابقتين");
+      if(JOIN.data.person && norm(v.name) !== norm(JOIN.data.person.full_name)) JOIN.data.person = null;
       Object.assign(JOIN.data, v, {password:p1}); JOIN.step = 2; drawJoin();
     };
   }else if(JOIN.step === 2){
@@ -85,7 +90,7 @@ async function sendJoin(){
   btn.disabled = true; btn.textContent = "جارٍ الإرسال…";
   try{
     /* بدون رسائل بريد: كلمة السر تُحفظ مشفّرة، ويُنشأ الحساب عند موافقة الإدارة */
-    const {data, error} = await db.rpc("f4_request_join", {p_name:D.name, p_email:D.email, p_phone:D.phone, p_relation:D.relation || "", p_note:"", p_password:D.password});
+    const {data, error} = await db.rpc("f4_request_join2", {p_name:D.name, p_email:D.email, p_phone:D.phone, p_relation:D.relation || "", p_password:D.password, p_person:D.person ? D.person.id : null});
     if(error) throw error;
     if(data === "busy") throw new Error("طلبات كثيرة الآن، حاول بعد قليل");
     const m = /^created:(\d+)$/.exec(String(data || ""));
@@ -93,6 +98,48 @@ async function sendJoin(){
     D.result = m ? "created" : data; D.password = ""; JOIN.step = 3; drawJoin();
   }catch(e){ err(errMsg(e)); btn.disabled = false; btn.textContent = "أوافق وأرسل الطلب"; }
 }
+/* قائمة الأسماء المسجلة: يكتب العضو اسمه فتظهر كل الأسماء المطابقة مع أسرها، فيختار نفسه */
+function jChosenHtml(p){
+  return `<span>✓ ${esc(p.full_name)} <small>${p.parent ? (p.gender === "أنثى" ? "بنت " : "ابن ") + esc(p.parent) : ""} · #${p.serial}</small></span><button type="button" class="linkbtn" id="jUnpick">تغيير</button>`;
+}
+function bindJoinNames(){
+  const inp = $("#jName"), L = $("#jNames"), D = JOIN.data;
+  let timer = 0, seq = 0, rows = [];
+  const close = () => { L.hidden = true; inp.setAttribute("aria-expanded", "false"); };
+  const showChosen = () => {
+    const c = $("#jChosen");
+    if(!D.person){ c.hidden = true; c.innerHTML = ""; return; }
+    c.hidden = false; c.innerHTML = jChosenHtml(D.person);
+    $("#jUnpick").onclick = () => { D.person = null; showChosen(); inp.focus(); search(); };
+  };
+  const search = async () => {
+    const q = inp.value.trim(), my = ++seq;
+    if(norm(q).length < 2){ close(); return; }
+    const {data, error} = await db.rpc("f4_join_names", {q});
+    if(my !== seq || !$("#jNames")) return;
+    rows = error ? [] : (data || []);
+    const groups = new Map();
+    rows.forEach(r => { const k = r.parent || "—"; (groups.get(k) || groups.set(k, []).get(k)).push(r); });
+    L.innerHTML = (rows.length ? `<p class="jn-h">اختر اسمك من القائمة (${rows.length}${rows.length >= 40 ? "+" : ""}):</p>` + rows.map(r => `<button type="button" role="option" data-jid="${r.id}" ${r.taken ? "disabled" : ""}>
+        <b>${esc(r.full_name)}</b><small>${r.parent ? (r.gender === "أنثى" ? "بنت " : "ابن ") + esc(r.parent) : "الأسرة غير محددة"} · #${r.serial}${r.taken ? " · لديه حساب مسبقاً" : ""}</small></button>`).join("")
+      : `<p class="muted">لا يوجد اسم مطابق في السجل</p>`) +
+      `<button type="button" class="jn-none" data-jid="0">اسمي غير موجود في القائمة — متابعة كتسجيل جديد</button>`;
+    L.hidden = false; inp.setAttribute("aria-expanded", "true");
+  };
+  inp.addEventListener("input", () => { if(D.person){ D.person = null; showChosen(); } clearTimeout(timer); timer = setTimeout(search, 250); });
+  inp.addEventListener("focus", () => { if(!D.person && inp.value.trim()) search(); });
+  inp.addEventListener("keydown", e => { if(e.key === "Escape") close(); });
+  L.onclick = e => {
+    const b = e.target.closest("[data-jid]"); if(!b || b.disabled) return;
+    const id = +b.dataset.jid;
+    if(id){ const r = rows.find(x => x.id === id); D.person = r; inp.value = r.full_name; }
+    else D.person = null;
+    close(); showChosen(); $("#jEmail").focus();
+  };
+  if(!window._jnDoc){ window._jnDoc = true; document.addEventListener("click", e => { const l = $("#jNames"); if(l && !e.target.closest(".sr-pick")) l.hidden = true; }); }
+  if(D.person) showChosen();
+}
+
 /* رسالة واضحة عند محاولة الدخول قبل موافقة الإدارة */
 async function pendingLoginMessage(email){
   const {data} = await db.rpc("f4_request_status", {p_email:email});
@@ -130,7 +177,7 @@ async function renderRequests(focusId){
   if(!data.length){ $("#rqBody").innerHTML = `<div class="empty card">${RQ.tab === "pending" ? "لا توجد طلبات جديدة" : "لا توجد طلبات"}</div>`; return; }
   const when = t => fmtDate(new Date(t).toLocaleDateString("en-CA", {timeZone:"Asia/Bahrain"}));
   $("#rqBody").innerHTML = data.map(r => {
-    const s = RQ.sel[r.id] || (RQ.sel[r.id] = {add:false, edit:false, del:false, family:true, person:null, role:"user"});
+    const s = RQ.sel[r.id] || (RQ.sel[r.id] = {add:true, edit:true, del:false, family:true, person:r.person_id || null, role:"user"});
     const pp = s.person && S.byId.get(s.person);
     return `<article class="card rq-card" data-id="${r.id}">
       <div class="rq-h"><div><b class="rq-name">${esc(r.full_name)}</b><small>طلب بتاريخ ${when(r.created_at)} · وافق على الشروط</small></div>
@@ -139,6 +186,7 @@ async function renderRequests(focusId){
         <div><dt>البريد</dt><dd class="ltr">${esc(r.email)}</dd></div>
         <div><dt>الهاتف</dt><dd class="ltr">${esc(r.phone || "—")}</dd></div>
         <div><dt>صلته بالعائلة</dt><dd>${esc(r.relation || "—")}</dd></div>
+        ${r.person_id ? `<div><dt>اختار اسمه من السجل</dt><dd>${S.byId.get(r.person_id) ? nm(S.byId.get(r.person_id), fullName(S.byId.get(r.person_id), 5)) + ` <small class="muted">#${S.byId.get(r.person_id).serial}</small>` : "#" + r.person_id}</dd></div>` : ""}
       </dl>
       ${r.status === "pending" ? `
       <div class="rq-perms">
@@ -183,8 +231,8 @@ async function renderRequests(focusId){
     }
     if(b.dataset.act === "ok"){
       const rights = s.role === "admin" ? "مدير (كل الصلاحيات)" : [s.add && "إضافة", s.edit && "تعديل", s.del && "حذف"].filter(Boolean).join("، ") || "مشاهدة فقط";
-      if(!await ask("الموافقة على العضو", `إضافة ${r.full_name} بصلاحية: ${rights}${s.role !== "admin" ? " · فرع جده فقط" : ""}${!s.person && s.role !== "admin" ? " — وسيُطلب منه تسجيل بياناته عند أول دخول" : ""}؟`, {okText:"موافقة"})) return;
-      const {data:res, error} = await db.rpc("f4_approve_request", {p_id:id, p_role:s.role, p_add:s.add, p_edit:s.edit, p_delete:s.del, p_person:s.person, p_family_only:s.role !== "admin"});
+      if(!await ask("الموافقة على العضو", `إضافة ${r.full_name} بصلاحية: ${rights}${s.role !== "admin" ? " · يشاهد كل العائلة ويعدّل على نفسه وأسرته" : ""}${!s.person && s.role !== "admin" ? " — وسيُطلب منه تسجيل بياناته عند أول دخول" : ""}؟`, {okText:"موافقة"})) return;
+      const {data:res, error} = await db.rpc("f4_approve_request", {p_id:id, p_role:s.role, p_add:s.add, p_edit:s.edit, p_delete:s.del, p_person:s.person, p_family_only:false});
       if(error) return toast(errMsg(error), true);
       toast(res === "no_account" ? "تمت الموافقة — لكن هذا طلب قديم بدون كلمة سر، اطلب منه تسجيل طلب جديد بنفس البريد أو أنشئ له كلمة سر" : "تمت الموافقة وأُضيف العضو، ويستطيع الدخول الآن");
       refreshReqBadge(); RQ.tab = "approved"; renderRequests();

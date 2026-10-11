@@ -132,7 +132,11 @@ async function fetchAll(table, order){
   }
   return out;
 }
-const isRestricted = () => !!(S.me && S.me.role !== "admin"); /* كل عضو غير مدير يرى فرع جده فقط */
+const isRestricted = () => false; /* كل الأعضاء يشاهدون كل العائلة */
+/* التعديل: المدير على الكل، والعضو على نفسه وأسرته التي تليه وما أضافه هو */
+const ownsP = p => !!p && (S.editIds?.has(p.id) || (p.created_by || "") === S.email);
+const canEditP = p => isAdmin() || ((can("edit") || can("add")) && ownsP(p));
+const canDelP = p => isAdmin() || (can("delete") && ownsP(p) && p.id !== S.me?.person_id);
 /* تبديل البيانات: صفحة الشجرة تستخدم كل العائلة، وباقي الصفحات المسموح فقط */
 function useTreeData(on){
   if(!S.treeAll) return;
@@ -159,6 +163,8 @@ async function loadAll(){
       };
     }
   }
+  S.editIds = new Set();
+  if(S.me && !isAdmin()){ const {data} = await db.rpc("f4_edit_ids"); (data || []).forEach(x => S.editIds.add(+x)); }
   S.lookups = {}; lookups.forEach(l => (S.lookups[l.kind] ||= []).push(l));
   Object.values(S.lookups).forEach(a => a.sort((x, y) => x.sort - y.sort || x.name.localeCompare(y.name, "ar")));
 }

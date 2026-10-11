@@ -155,7 +155,7 @@ async function qrRecordButton(p){
           <span class="rq-acts"><button class="btn small primary" type="button" id="rQrMake">إنشاء رمز دخول</button></span></div>`;
         box.hidden = false;
         $("#rQrMake").onclick = async () => {
-          if(!(await ask("إنشاء رمز دخول", `إنشاء حساب ورمز دخول سريع لـ «${fullName(p, 3)}»؟ يدخل بالرمز مباشرة بدون بريد ولا كلمة سر، بصلاحية إضافة وتعديل (بدون حذف)، ويرى فرع جده فقط. تستطيع تغيير صلاحياته أو تجميده من صفحة المستخدمين.`, {okText:"إنشاء"}))) return;
+          if(!(await ask("إنشاء رمز دخول", `إنشاء حساب ورمز دخول سريع لـ «${fullName(p, 3)}»؟ يدخل بالرمز مباشرة بدون بريد ولا كلمة سر، بصلاحية إضافة وتعديل (بدون حذف)، ويشاهد كل العائلة ويعدّل على نفسه وأسرته فقط. تستطيع تغيير صلاحياته أو تجميده من صفحة المستخدمين.`, {okText:"إنشاء"}))) return;
           const {error} = await db.rpc("f4_qr_for_person", {p_person:p.id});
           if(error) return toast(errMsg(error), true);
           toast("أُنشئ رمز الدخول ✓"); qrRecordButton(p);

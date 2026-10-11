@@ -190,6 +190,7 @@ async function boot(session){
     currentHash = location.hash;
     S.mustRegister = needsSelfRegister();
     route();
+    bdBadge(true);
   }catch(err){
     $("#view").innerHTML = `<div class="card narrow"><p class="err">${esc(errMsg(err))}</p><button class="btn" type="button" onclick="location.reload()">إعادة المحاولة</button></div>`;
   }
@@ -247,7 +248,7 @@ function applyPerms(){
   $$("[data-perm]").forEach(el => el.hidden = !can(el.dataset.perm));
   $$("[data-admin]").forEach(el => el.hidden = !isAdmin());
   const mq = $("#myQrBtn"); if(mq) mq.hidden = isAdmin();
-  const rights = (isAdmin() ? "مدير" : ["add","edit","delete"].filter(can).map(p => ({add:"إضافة", edit:"تعديل", delete:"حذف"}[p])).join("، ") || "مشاهدة فقط") + (!isAdmin() ? " · فرع جده" : "");
+  const rights = (isAdmin() ? "مدير" : ["add","edit","delete"].filter(can).map(p => ({add:"إضافة", edit:"تعديل", delete:"حذف"}[p])).join("، ") || "مشاهدة فقط") + (!isAdmin() && (can("add") || can("edit")) ? " · لنفسه وأسرته" : "");
   $("#whoAmI").innerHTML = `<div class="who-l1"><b>${esc(S.me.display_name || "مرحباً")}</b><span class="who-role">${esc(rights)}</span></div><span class="who-mail ltr">${esc(S.email)}</span>`;
   $("#whoAmI").title = S.email;
 }
@@ -288,6 +289,7 @@ function renderHome(){
     </section>
 
     ${isAdmin() ? new24Html() : ""}
+    ${bdayCardHtml()}
     <div class="stats">
       <div class="stat gold"><b>${P.length}</b><span>إجمالي الأفراد</span></div>
       <div class="stat st-alive"><b>${alive}</b><span>على قيد الحياة</span></div>
@@ -315,7 +317,7 @@ function renderHome(){
       ${tile("#/data","data","استيراد وتصدير","Excel")}
     </div>
     ${recent.length ? `<div class="sec-h">آخر السجلات المحدّثة</div><div class="plist">${recent.map(p => personBtn(p, p.updated_at ? "حُدّث " + fmtDate(p.updated_at.slice(0, 10)) : "")).join("")}</div>` : ""}`;
-  applyPerms(); fillVisitStat(); homeOdo(); fillHeritageTile(); bindNew24(); if(isAdmin()) fillMarketTile();
+  applyPerms(); fillVisitStat(); homeOdo(); fillHeritageTile(); bindNew24(); if(isAdmin()){ fillMarketTile(); fillBdayCard(); }
 }
 
 /* عدّاد المضافين خلال 24 ساعة — للمدير فقط */

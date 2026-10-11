@@ -92,7 +92,7 @@ async function renderUsers(){
       </div>
       <div class="err" id="uErr"></div>
       <button class="btn primary" type="submit">إضافة المستخدم</button>
-      <p class="muted" style="font-size:13px;margin-bottom:0">بعد الإضافة: يفتح المستخدم رابط البرنامج، يكتب بريده وكلمة سر جديدة، ويضغط «أول مرة؟ أنشئ كلمة سر». المستخدم بدون أي صلاحية يستطيع المشاهدة والتقارير فقط. كل عضو غير مدير يرى فرع جده لأبيه فقط (جده والأعمام والعمات وأبناءهم إلى آخر جيل)، لذلك اربطه بسجله في العائلة.</p>
+      <p class="muted" style="font-size:13px;margin-bottom:0">بعد الإضافة: يفتح المستخدم رابط البرنامج، يكتب بريده وكلمة سر جديدة، ويضغط «أول مرة؟ أنشئ كلمة سر». المستخدم بدون أي صلاحية يستطيع المشاهدة والتقارير فقط. كل الأعضاء يشاهدون كل العائلة، والعضو يعدّل على سجله وسجلات أسرته التي تليه (أبناؤه وأحفاده وأزواجهم) فقط، لذلك اربطه بسجله في العائلة.</p>
     </form>
     <div class="qr-bar"><button class="btn" type="button" id="qrAllBtn">▦ بطاقات QR لكل الأعضاء</button><span class="muted">رمز لكل عضو يدخل به مباشرة من كاميرا الجوال بدون كلمة سر</span></div>
     <div class="card"><div class="tbl-wrap" style="border:0"><table class="tbl"><thead><tr><th>البريد</th><th>الاسم</th><th>النوع</th><th>إضافة</th><th>تعديل</th><th>حذف</th><th>سجله في العائلة</th><th>ما يراه</th><th>الحالة</th><th>الزيارات</th><th>آخر زيارة</th><th></th></tr></thead><tbody id="uBody"><tr><td colspan="12"><div class="spin"></div></td></tr></tbody></table></div></div>`;
@@ -108,7 +108,7 @@ async function renderUsers(){
         <td><select class="inp" data-u="${esc(u.email)}" data-f="role" ${me ? "disabled" : ""} style="min-width:110px"><option value="user" ${adm ? "" : "selected"}>مستخدم</option><option value="admin" ${adm ? "selected" : ""}>مدير</option></select></td>
         <td>${cb("can_add")}</td><td>${cb("can_edit")}</td><td>${cb("can_delete")}</td>
         <td><button type="button" class="btn small" data-link-u="${esc(u.email)}" style="white-space:nowrap">${u.person_id && S.byId.get(u.person_id) ? nm(S.byId.get(u.person_id), fullName(S.byId.get(u.person_id), 3)) : "ربط بسجل"}</button></td>
-        <td class="muted" style="font-size:13px;white-space:nowrap">${adm ? "الجميع" : u.person_id ? "فرع جده" : "لا شيء حتى يُربط"}</td>
+        <td class="muted" style="font-size:13px;white-space:nowrap">${adm ? "الجميع" : u.person_id ? "يشاهد الجميع · يعدّل أسرته" : "يشاهد الجميع · لا تعديل حتى يُربط"}</td>
         <td>${adm || me ? '<span class="muted" style="font-size:13px">نشط</span>' : `<button type="button" class="btn small ${u.frozen ? "fz-on" : ""}" data-freeze="${esc(u.email)}" aria-pressed="${!!u.frozen}" title="${u.frozen ? "الحساب مجمّد — اضغط لإلغاء التجميد" : "تجميد الحساب: يمنعه من الدخول دون حذفه"}">${u.frozen ? "❄ مجمّد" : "تجميد"}</button>`}</td>
         <td><b>${V.get(u.email)?.visits ?? 0}</b></td><td class="muted" style="font-size:13px;white-space:nowrap">${ago(V.get(u.email)?.last_visit)}</td>
         <td style="text-align:end">${me ? '<span class="muted" style="font-size:13px">أنت</span>' : `<span style="display:inline-flex;gap:6px">${adm ? "" : `<button class="btn small" type="button" data-qr="${esc(u.email)}" title="رمز دخول سريع">QR</button>`}<button class="btn small danger" type="button" data-rm="${esc(u.email)}">إزالة</button></span>`}</td></tr>`; }).join("");

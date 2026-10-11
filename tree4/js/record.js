@@ -49,7 +49,7 @@ async function renderRecord(id, newSerial){
   if(id){
     const p = S.byId.get(id);
     if(!p){ $("#view").innerHTML = isRestricted() ? `<div class="card narrow empty">لا تملك صلاحية الاطلاع على بيانات هذا الفرد. <a href="#/tree">العودة للشجرة</a></div>` : `<div class="card narrow empty">السجل غير موجود — ربما حُذف. <a href="#/list">العودة للبحث</a></div>`; return; }
-    R.p = {...p}; R.isNew = false; R.editable = can("edit");
+    R.p = {...p}; R.isNew = false; R.editable = canEditP(p);
     R.spouses = S.spouses.filter(s => s.person_id === p.id).map(s => ({ord:s.ord, spouse_id:s.spouse_id, spouse_name:s.spouse_name || "", spouse_nationality:s.spouse_nationality || ""}));
     // الزواج المسجل من جهة الطرف الآخر فقط يظهر هنا أيضاً (ويُحفظ للطرفين عند الحفظ)
     S.spouses.filter(s => s.spouse_id === p.id && S.byId.get(s.person_id) && !R.spouses.some(x => x.spouse_id === s.person_id)).forEach(s => {
@@ -76,14 +76,14 @@ function drawRecord(activeTab){
         <button class="btn small" type="button" id="rRepS">تقرير مختصر</button>
         <button class="btn small" type="button" id="rRepL">تقرير مطوّل</button>
         ${waLink(p.phone) ? `<a class="btn small wa" target="_blank" rel="noopener" href="${esc(waLink(p.phone))}">واتساب</a>` : ""}
-        ${can("delete") ? `<button class="btn small danger" type="button" id="rDel">حذف</button>` : ""}
+        ${canDelP(p) ? `<button class="btn small danger" type="button" id="rDel">حذف</button>` : ""}
       </div></div>
     <div class="rec-top">
       <div class="photo" id="rPhoto" role="${R.editable ? "button" : "img"}" tabindex="${R.editable ? 0 : -1}" aria-label="الصورة الشخصية">${R.editable ? "إضافة صورة" : "لا توجد صورة"}</div>
       <input type="file" id="rFile" accept="image/*" hidden>
       <div class="rec-name"><h2 id="rTitle" class="${gcls(p)}">${esc(longName(p) || "اسم جديد")}</h2>
         <div class="meta"><span class="chip gold">${p.serial ? "رقم " + esc(p.serial) : "رقم تلقائي"}</span>${p.gender ? `<span class="chip ${isM(p) ? "" : "f"}">${esc(p.gender)}</span>` : ""}${isDead(p) ? '<span class="chip dead">متوفى</span>' : ""}${ageOf(p) !== "" ? `<span class="chip">${ageOf(p)} سنة</span>` : ""}${p.branch ? `<span class="chip">فرع ${esc(p.branch)}</span>` : ""}${p.affiliation === "منتسب بالزواج" ? '<span class="chip inlaw">منتسب بالزواج</span>' : ""}</div>
-        ${R.editable ? "" : '<p class="muted" style="font-size:13px;margin:6px 0 0">للعرض فقط — ليست لديك صلاحية التعديل.</p>'}
+        ${R.editable ? "" : '<p class="muted" style="font-size:13px;margin:6px 0 0">للعرض فقط — تستطيع التعديل على سجلك وسجلات أسرتك فقط.</p>'}
       </div>
       ${R.editable && !R.isNew ? `<button class="btn small" type="button" id="rRmPhoto" ${p.photo_path ? "" : "hidden"}>حذف الصورة</button>` : ""}
       <div class="rec-qr" id="rQrSlot" hidden></div>
@@ -140,7 +140,7 @@ function derivedHtml(){
   // الجد/الجدة يُقرآن من سجل الأب أو الأم؛ زر «ربط» يحدّث سجل الوالد مباشرة
   const slot = (label, parent, key, side) => {
     const gp = parent && S.byId.get(parent[key]);
-    const canLink = parent && R.editable && can("edit");
+    const canLink = parent && R.editable;
     const btn = canLink ? ` <button type="button" class="btn small" data-gp="${parent.id}:${key}">${gp ? "تغيير" : "+ ربط"}</button>` : "";
     const empty = parent ? "—" : `<small class="muted">اربط ${side} أولاً</small>`;
     return `<div><span>${label}: </span>${gp ? lnk(gp) : empty}${btn}</div>`;
@@ -327,7 +327,7 @@ async function saveRecord(){
     setDirty(false); R.photoBlob = null; R.photoRemoved = false;
     toast(wasNew ? "تم حفظ السجل الجديد ✓" : "تم حفظ التعديلات ✓");
     if(wasNew){ R.isNew = false; skipGuard = true; location.hash = "#/rec/" + saved.id; }
-    else { R.p = {...saved}; R.editable = can("edit"); drawRecord($(".tab.on")?.dataset.tab); }
+    else { R.p = {...saved}; R.editable = canEditP(saved); drawRecord($(".tab.on")?.dataset.tab); }
     if(newNames.length) setTimeout(() => spouseInvite(saved, newNames[0]), wasNew ? 700 : 300);
   }catch(err){
     $("#rErr").textContent = errMsg(err); toast(errMsg(err), true);
