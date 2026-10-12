@@ -1097,3 +1097,58 @@ a.visits-pill:hover{border-color:var(--brand)}
 #gate .g-seal.spin{animation:gSpin 1.3s cubic-bezier(.45,0,.55,1) infinite}
 @keyframes gSpin{from{transform:rotate(0) scale(1)}to{transform:rotate(360deg) scale(1)}}
 @media (max-width:640px){#gate .g-seal{width:108px;height:108px;margin:-54px 0 0 -54px}#gate .g-seal img{width:50px}}
+
+/* ===================================================================
+   تصميم «المشربية» — النجمة الثمانية، أقواس النوافذ، كحلي وذهبي
+   =================================================================== */
+:root{--star:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cg fill='none' stroke='%23c49a45' stroke-opacity='.30'%3E%3Crect x='20' y='20' width='24' height='24'/%3E%3Crect x='20' y='20' width='24' height='24' transform='rotate(45 32 32)'/%3E%3Cpath d='M0 32h15M49 32h15M32 0v15M32 49v15'/%3E%3C/g%3E%3C/svg%3E");
+  --arch-bg:#fffaf0;--arch-edge:#e6d6ae;--arch-fill:#1c2c47;--arch-on:#f6efe0;--arch-sub-on:#d9cfb8;--med-bg:#f3e4bd;--med-line:#c49a45;--mash-k:"Reem Kufi","Tajawal",Tahoma,sans-serif;--mash-r:"Aref Ruqaa","Amiri",serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--arch-bg:#1a2233;--arch-edge:#3a3222;--arch-fill:#24365a;--med-bg:#382f20;--med-line:#d9b874}}
+:root[data-theme="dark"]{--arch-bg:#1a2233;--arch-edge:#3a3222;--arch-fill:#24365a;--med-bg:#382f20;--med-line:#d9b874}
+/* نقش النجمة الثمانية خلف كل الصفحات بدل الشبكة المائلة */
+body::before{background:var(--star),radial-gradient(520px 420px at 100% 12%,var(--blob1),transparent 70%),radial-gradient(460px 400px at 92% 78%,var(--blob2),transparent 70%);opacity:1}
+:root[data-theme="dark"] body::before{opacity:.55}
+
+/* البنر */
+.hero-banner.mash{flex-direction:column;justify-content:center;text-align:center;padding:30px 24px 58px;gap:10px;
+  background:var(--star),radial-gradient(560px 260px at 50% -10%,rgba(196,154,69,.28),transparent 70%),linear-gradient(180deg,#1c2c47 0%,#131f35 100%)}
+.hero-banner.mash::before{display:none}
+.mash .hb-rose{position:absolute;width:520px;height:520px;left:-150px;top:-190px;opacity:.55;z-index:-1;pointer-events:none}
+.mash .hb-rose.r2{left:auto;top:auto;right:-170px;bottom:-280px;width:440px;height:440px;opacity:.35}
+.mash .hb-water{display:none}
+.mash .hb-mark{width:78px}
+.mash .hb-text{align-items:center}
+.mash .hb-kick{font-family:var(--mash-r);font-size:21px;font-weight:700;color:#c49a45}
+.hero-banner.mash h1{font-family:var(--mash-k);font-weight:700;font-size:clamp(34px,6vw,62px);line-height:1.15}
+.mash .hb-orn{display:flex;align-items:center;gap:10px;color:#c49a45;font-size:14px;margin:2px 0 4px}
+.mash .hb-orn::before,.mash .hb-orn::after{content:"";width:72px;height:1px;background:linear-gradient(90deg,transparent,#c49a45)}
+.mash .hb-orn::after{transform:scaleX(-1)}
+.mash .hb-facts{justify-content:center}
+.mash .hb-acts{margin:8px 0 0;flex-direction:row;flex-wrap:wrap;justify-content:center;align-self:center}
+@media (max-width:640px){.mash .hb-rose{width:380px;height:380px;left:-150px;top:-150px}.mash .hb-mark{width:60px}.mash .hb-kick{font-size:18px}}
+
+/* بطاقات الأقواس */
+.tiles{grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:22px 14px}
+.tile.arch{align-items:center;text-align:center;gap:4px;padding:26px 14px 18px;border:0;border-radius:50% 50% 14px 14px / 76px 76px 14px 14px;background:var(--arch-bg);
+  box-shadow:0 2px 0 var(--arch-edge),0 10px 24px rgba(28,44,71,.08);position:relative;overflow:hidden;isolation:isolate;transition:color .35s,box-shadow .35s}
+.tile.arch::before{content:"";position:absolute;inset:6px;border-radius:inherit;border:1px solid color-mix(in srgb,var(--med-line) 55%,transparent);pointer-events:none;z-index:1}
+.tile.arch::after{content:"";position:absolute;inset:0;z-index:-1;background:var(--star),var(--arch-fill);clip-path:circle(0% at 50% 100%);transition:clip-path .55s cubic-bezier(.6,0,.2,1)}
+.tile.arch:hover,.tile.arch:focus-visible,.tile.arch.on{color:var(--arch-on);border-color:transparent;box-shadow:0 2px 0 var(--med-line),0 18px 34px -10px rgba(28,44,71,.35)}
+.tile.arch:hover::after,.tile.arch:focus-visible::after,.tile.arch.on::after{clip-path:circle(150% at 50% 100%)}
+html:not(.mash-js) .tile.arch:hover{transform:translateY(-6px)}
+.tile.arch .ic{width:60px;height:60px;border-radius:0;background:transparent;position:relative;color:#1c2c47;margin-bottom:8px}
+.tile.arch .ic::before,.tile.arch .ic::after{content:"";position:absolute;inset:8px;background:var(--med-bg);border:1px solid var(--med-line);transition:background-color .35s}
+.tile.arch .ic::after{transform:rotate(45deg)}
+:root[data-theme="dark"] .tile.arch .ic{color:#f1d796}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tile.arch .ic{color:#f1d796}}
+.tile.arch .ic svg{position:relative;z-index:1}
+.tile.arch:hover .ic,.tile.arch.on .ic{color:#1c2c47}
+.tile.arch:hover .ic::before,.tile.arch:hover .ic::after,.tile.arch.on .ic::before,.tile.arch.on .ic::after{background:#c49a45;border-color:#f1d796}
+.tile.arch b{font-family:var(--mash-k);font-weight:600;font-size:18px;line-height:1.35}
+.tile.arch small{transition:color .35s}
+.tile.arch:hover small,.tile.arch.on small{color:var(--arch-sub-on)}
+.tile.arch:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+@media (max-width:480px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 10px}.tile.arch{border-radius:50% 50% 12px 12px / 60px 60px 12px 12px;padding:22px 10px 14px}.tile.arch b{font-size:16px}}
+.mash-rg{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:2px solid #f1d796;pointer-events:none;z-index:2}
+#mashFx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9998}
+@media (prefers-reduced-motion:reduce){.tile.arch::after{transition:none}}

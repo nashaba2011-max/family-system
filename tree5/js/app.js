@@ -268,7 +268,7 @@ const ICON = {
   about:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
   cake:'<path d="M4 21h16v-8H4zM4 16c2 1.5 4 1.5 6 0s4-1.5 6 0 4 1.5 4 0M12 13V9M12 6.5a1.2 1.2 0 0 1 0-2.5"/>',
 };
-const tile = (href, ic, t, s, attr = "") => `<a class="tile" href="${href}" ${attr}><span class="ic"><svg viewBox="0 0 24 24">${ICON[ic]}</svg></span><b>${t}</b><small>${s}</small></a>`;
+const tile = (href, ic, t, s, attr = "") => `<a class="tile arch" href="${href}" ${attr}><span class="ic"><svg viewBox="0 0 24 24">${ICON[ic]}</svg></span><b>${t}</b><small>${s}</small></a>`;
 function renderHome(){
   const P = S.people, alive = P.filter(p => !isDead(p)).length;
   const m = P.filter(p => p.gender === "ذكر").length, f = P.filter(p => p.gender === "أنثى").length;
@@ -277,12 +277,14 @@ function renderHome(){
   const bdays = P.filter(p => p.birth_date && !isDead(p) && +p.birth_date.slice(5, 7) === mon).length;
   const recent = P.slice().sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || "")).slice(0, 6);
   $("#view").innerHTML = `
-    <section class="hero-banner" aria-label="شجرة العائلة">
+    <section class="hero-banner mash" aria-label="شجرة العائلة">
+      <svg class="hb-rose" viewBox="-100 -100 200 200" aria-hidden="true"></svg><svg class="hb-rose r2" viewBox="-100 -100 200 200" aria-hidden="true"></svg>
       <img class="hb-water" src="img/logo-mark-light.png" alt="" aria-hidden="true">
       <span class="logo-anim hb-mark"><i class="la-beam"></i><span class="la-in"><img src="img/logo-mark-light.png" alt="شعار شجرة العائلة" width="96" height="128"><i class="la-glow"></i><i class="la-shine"></i></span></span>
       <div class="hb-text">
         <span class="hb-kick">أهلاً بكم في</span>
         <h1>شجرة العائلة</h1>
+        <span class="hb-orn" aria-hidden="true">✦</span>
         <p>جذور ممتدة وأجيال متصلة</p>
         <div class="hb-facts"><span><b>${P.length}</b> فرداً</span><span><b>${P.length ? Math.max(...P.map(p => lineChain(p).length)) + 1 : 0}</b> أجيال</span><span><b>${fams}</b> أسرة</span></div>
       </div>
