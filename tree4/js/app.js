@@ -494,12 +494,15 @@ function showDeleteCard(p){
 async function deletePerson(p, after){
   if(!(await ask("تأكيد الحذف", `هل أنت متأكد من حذف سجل «${fullName(p)}» رقم ${p.serial}؟`, {okText:"نعم، احذف", danger:true}))) return;
   if(!(await ask("تأكيد أخير", "لا يمكن التراجع عن الحذف. متابعة؟", {okText:"حذف نهائي", danger:true}))) return;
+  /* حذف أسطر الزواج التي تشير لهذا الشخص في سجلات الآخرين أولاً (وإلا ترفضها قاعدة البيانات) */
+  const sx = await db.from("f4_spouses").delete().eq("spouse_id", p.id);
+  if(sx.error){ toast(errMsg(sx.error), true); return; }
   const {error} = await db.from("f4_people").delete().eq("id", p.id);
   if(error){ toast(errMsg(error), true); return; }
   if(p.photo_path) db.storage.from(PHOTO_BUCKET).remove([p.photo_path]);
   S.people = S.people.filter(x => x.id !== p.id);
   S.people.forEach(x => { if(x.father_id === p.id) x.father_id = null; if(x.mother_id === p.id) x.mother_id = null; });
-  S.spouses = S.spouses.filter(s => s.person_id !== p.id).map(s => s.spouse_id === p.id ? {...s, spouse_id:null, spouse_name:s.spouse_name || fullName(p)} : s);
+  S.spouses = S.spouses.filter(s => s.person_id !== p.id && s.spouse_id !== p.id);
   S.sel.delete(p.id); indexPeople();
   toast("تم حذف السجل"); after && after();
 }
