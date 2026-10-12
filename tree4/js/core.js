@@ -212,11 +212,12 @@ function toast(msg, bad = false){
   setTimeout(() => t.remove(), bad ? 4500 : 2600);
 }
 /* حوار تأكيد/إدخال — يعيد true/false أو النص */
-function ask(title, msg, {input = false, value = "", type = "text", okText = "موافق", danger = false} = {}){
+function ask(title, msg, {input = false, value = "", type = "text", okText = "موافق", danger = false, noCancel = false} = {}){
   return new Promise(res => {
     const d = $("#dAsk");
     $("#askT").textContent = title; $("#askMsg").textContent = msg;
     const inp = $("#askInp"); inp.hidden = !input; inp.type = type; inp.value = value;
+    $("#askNo").hidden = noCancel;
     const yes = $("#askYes"); yes.textContent = okText; yes.className = "btn " + (danger ? "danger-fill" : "primary");
     const done = v => { d.close(); yes.onclick = null; $("#askNo").onclick = null; res(v); };
     yes.onclick = () => done(input ? inp.value : true);

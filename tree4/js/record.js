@@ -286,6 +286,8 @@ async function saveRecord(){
     const t = TAB_OF(keys[0]); $(`.tab[data-tab="${t}"]`).click(); $("#f_" + keys[0])?.focus();
     $("#rErr").textContent = "راجع الحقول المظللة"; return;
   }
+  /* منع تسجيل نفس الاسم مرتين */
+  if(!(await nameDupOk(p))) return;
   const row = {};
   DATA_COLS.forEach(k => { if(k in p || k in FIELDS){ let v = p[k]; if(typeof v === "string") v = v.trim(); row[k] = v === "" || v === undefined ? null : v; } });
   if(isAdmin()) row.serial = parseInt(p.serial, 10); else delete row.serial; // للعضو يحدده البرنامج
@@ -374,3 +376,30 @@ function spouseInvite(p, name){
 /* تمديد مربع النص ليتسع لكل محتواه */
 function growTa(ta){ if(!ta || ta.offsetParent === null) return; ta.style.height = "auto"; ta.style.height = (ta.scrollHeight + 2) + "px"; }
 document.addEventListener("input", e => { if(e.target.matches?.("textarea.grow")) growTa(e.target); });
+
+/* ===== التحقق من تكرار الاسم ===== */
+const dupKey = x => norm([x.name1, x.name2, x.name3, x.name4, x.name5, x.family].filter(v => v && String(v).trim()).join(" "));
+async function findNameDup(p){
+  const key = dupKey(p); if(key.split(" ").length < 2) return null;
+  const pool = [...(S.treeAll?.people || []), ...S.people, ...(S.full?.people || [])];
+  const local = pool.find(x => x.id !== p.id && dupKey(x) === key);
+  if(local) return {serial:local.serial};
+  /* بحث في كل العائلة (يشمل ما لا يظهر للعضو) */
+  const {data} = await db.rpc("f4_join_names", {q:[p.name1, p.name2, p.name3, p.name4].filter(Boolean).join(" ")});
+  const hit = (data || []).find(r => r.id !== p.id && norm(r.full_name) === key);
+  return hit ? {serial:hit.serial} : null;
+}
+async function nameDupOk(p){
+  const old = R.isNew ? null : S.byId.get(p.id);
+  if(old && dupKey(old) === dupKey(p)) return true; // الاسم لم يتغير
+  const btn = $("#rSave"); if(btn){ btn.disabled = true; btn.textContent = "جاري التحقق…"; }
+  let dup = null; try{ dup = await findNameDup(p); }catch(e){}
+  if(btn){ btn.disabled = false; btn.textContent = R.isNew ? "حفظ السجل" : "حفظ التعديلات"; }
+  if(!dup) return true;
+  const nm = fullName(p, 6);
+  if(isAdmin())
+    return await ask("الاسم مسجل مسبقاً", `الاسم «${nm}» مسجل مسبقاً برقم التسلسل ${dup.serial}. هل تريد الحفظ رغم ذلك؟`, {okText:"حفظ رغم ذلك", danger:true});
+  await ask("الاسم مسجل مسبقاً", `الاسم «${nm}» مسجل مسبقاً في البرنامج، ولا يمكن تسجيله مرة أخرى. يرجى مراجعة الإدارة.`, {okText:"حسناً", noCancel:true});
+  $("#rErr").textContent = "هذا الاسم مسجل مسبقاً — يرجى مراجعة الإدارة";
+  return false;
+}
