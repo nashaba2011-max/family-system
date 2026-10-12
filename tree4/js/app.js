@@ -21,7 +21,6 @@ const ROUTES = {
   events:   {title:"مناسبات العائلة", render:renderEvents},
   event:    {title:"مناسبة", render:id => renderEvent(+id)},
   heritage: {title:"تراث العائلة", render:t => renderHeritage(t)},
-  puzzle:   {title:"بازل العائلة", render:renderPuzzle},
   market:   {title:"سوق العائلة", render:renderMarket, admin:true}, // مخفي عن المستخدمين مؤقتاً — للمدير فقط
 };
 let currentHash = "", skipGuard = false, restoring = false;
