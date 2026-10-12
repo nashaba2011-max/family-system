@@ -1097,3 +1097,8 @@ a.visits-pill:hover{border-color:var(--brand)}
 #gate .g-seal.spin{animation:gSpin 1.3s cubic-bezier(.45,0,.55,1) infinite}
 @keyframes gSpin{from{transform:rotate(0) scale(1)}to{transform:rotate(360deg) scale(1)}}
 @media (max-width:640px){#gate .g-seal{width:108px;height:108px;margin:-54px 0 0 -54px}#gate .g-seal img{width:50px}}
+
+/* ===== بازل العائلة ===== */
+.pz-wrap{display:flex;flex-direction:column;gap:8px}
+.pz-hint{margin:0;color:var(--ink-2);font-size:.92rem}
+.pz-frame{width:100%;height:calc(100dvh - var(--top-h) - 120px);min-height:520px;border:0;border-radius:var(--radius);background:var(--bg);display:block}
