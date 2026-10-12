@@ -1,5 +1,8 @@
-/* ===== تهاني أعياد الميلاد — تنبيه للمديرين قبل يوم، والتهنئة يرسلها المدير بنفسه من واتساب ===== */
-const BD = {msg:null, greets:[]};
+/* ===== تهاني أعياد الميلاد — تنبيه للمديرين قبل عدد أيام يختارونه، والتهنئة يرسلها المدير بنفسه من واتساب ===== */
+const BD = {msg:null, greets:[], days:1};
+/* خيارات مدة التنبيه المسبق (بالأيام) */
+const BD_DAY_OPTS = [1, 2, 3, 4, 5, 7, 10, 14, 21, 30];
+const bdDaysLabel = n => n === 1 ? "يوم واحد" : n === 2 ? "يومين" : n <= 10 ? `${n} أيام` : `${n} يوماً`;
 /* التهنئة تُرسل دائماً باسم العائلة — لا باسم المدير المرسل */
 const BD_SIGN = "عن عائلة النشابة ومنتسبيها";
 const BD_DEFAULT = "كل عام وأنت بخير يا {الاسم} 🎂\nبمناسبة عيد ميلادك، نتمنى لك عاماً مليئاً بالصحة والسعادة والتوفيق.\n{المرسل}";
@@ -20,11 +23,13 @@ const bdAge = (p, iso) => +iso.slice(0, 4) - +p.birth_date.slice(0, 4);
 
 async function bdLoad(){
   const y = +todayISO().slice(0, 4);
-  const [st, gr] = await Promise.all([
+  const [st, gr, dd] = await Promise.all([
     db.from("f4_settings").select("value").eq("key", "bday_msg").maybeSingle(),
     db.from("f4_bday_greets").select("*").in("year", [y, y + 1]),
+    db.from("f4_settings").select("value").eq("key", "bday_days").maybeSingle(),
   ]);
   BD.msg = st.data?.value || BD_DEFAULT;
+  const nd = parseInt(dd.data?.value, 10); BD.days = BD_DAY_OPTS.includes(nd) ? nd : 1;
   BD.greets = gr.data || [];
 }
 function bdText(p){
@@ -32,6 +37,13 @@ function bdText(p){
   t = /\{المرسل\}/.test(t) ? t.replace(/\{المرسل\}/g, BD_SIGN) : (t.includes(BD_SIGN) ? t : t.trim() + "\n" + BD_SIGN);
   return t.trim();
 }
+/* أعياد الميلاد القادمة خلال مدة التنبيه: [{iso, n, people}] */
+function bdUpcoming(){
+  const t = todayISO(), out = [];
+  for(let n = 1; n <= BD.days; n++){ const iso = bdAddDays(t, n), people = bdPeople(iso); if(people.length) out.push({iso, n, people}); }
+  return out;
+}
+const bdWhen = n => n === 1 ? "غداً" : n === 2 ? "بعد يومين" : n <= 10 ? `بعد ${n} أيام` : `بعد ${n} يوماً`;
 function bdSentBy(p, iso){ return BD.greets.filter(g => g.person_id === p.id && g.year === +iso.slice(0, 4)); }
 
 /* البطاقة في الرئيسية — للمدير فقط */
@@ -40,8 +52,7 @@ async function fillBdayCard(){
   const box = $("#bdayCard"); if(!box) return;
   try{ await bdLoad(); }catch(e){}
   if(!$("#bdayCard")) return;
-  const t = todayISO(), tm = bdAddDays(t, 1);
-  const tomorrow = bdPeople(tm), today = bdPeople(t);
+  const t = todayISO(), today = bdPeople(t), up = bdUpcoming();
   const row = (p, iso) => {
     const sent = bdSentBy(p, iso), mine = sent.some(g => g.sent_by === S.email);
     const wa = waLink(p.phone || p.phone2, bdText(p));
@@ -58,11 +69,20 @@ async function fillBdayCard(){
   };
   box.innerHTML = `
     <div class="bd-h"><h3><span class="bd-ic" aria-hidden="true">🎂</span>أعياد الميلاد</h3>
-      <div class="bd-acts"><button class="btn small" type="button" id="bdEdit">تعديل نص التهنئة</button><a class="btn small" href="#/report/birthdays">كل أعياد الشهر</a></div></div>
-    <div class="bd-sec">غداً · ${fmtDate(tm)} — تنبيه مسبق لترسل تهنئتك</div>
-    ${tomorrow.length ? tomorrow.map(p => row(p, tm)).join("") : `<div class="empty">لا توجد أعياد ميلاد غداً</div>`}
+      <div class="bd-acts">
+        <label class="bd-days" for="bdDays">التنبيه قبل
+          <select class="inp" id="bdDays">${BD_DAY_OPTS.map(n => `<option value="${n}" ${n === BD.days ? "selected" : ""}>${bdDaysLabel(n)}</option>`).join("")}</select></label>
+        <button class="btn small" type="button" id="bdEdit">تعديل نص التهنئة</button><a class="btn small" href="#/report/birthdays">كل أعياد الشهر</a></div></div>
+    ${up.length ? up.map(g => `<div class="bd-sec">${bdWhen(g.n)} · ${fmtDate(g.iso)} — تنبيه مسبق لترسل تهنئتك</div>${g.people.map(p => row(p, g.iso)).join("")}`).join("")
+      : `<div class="empty">لا توجد أعياد ميلاد ${BD.days === 1 ? "غداً" : "خلال " + bdDaysLabel(BD.days) + " القادمة"}</div>`}
     ${today.length ? `<div class="bd-sec">اليوم · ${fmtDate(t)}</div>${today.map(p => row(p, t)).join("")}` : ""}`;
   $("#bdEdit").onclick = bdEditMsg;
+  $("#bdDays").onchange = async e => {
+    const n = +e.target.value;
+    const {error} = await db.from("f4_settings").upsert([{key:"bday_days", value:String(n), updated_at:new Date().toISOString(), updated_by:S.email}], {onConflict:"key"});
+    if(error){ toast(errMsg(error), true); e.target.value = BD.days; return; }
+    BD.days = n; toast(`سيصلك التنبيه قبل ${bdDaysLabel(n)} من عيد الميلاد`); fillBdayCard(); bdBadge();
+  };
   box.onclick = async e => {
     const r = e.target.closest(".bd-row"); if(!r) return;
     const p = S.byId.get(+r.dataset.bp) || (S.full?.people || []).find(x => x.id === +r.dataset.bp), iso = r.dataset.iso;
@@ -96,16 +116,16 @@ function bdEditMsg(){
   };
 }
 
-/* تنبيه عند الدخول + شارة في القائمة: أعياد ميلاد الغد التي لم يرسل لها المدير تهنئته */
+/* تنبيه عند الدخول + شارة في القائمة: أعياد الميلاد القادمة (خلال مدة التنبيه) التي لم يرسل لها المدير تهنئته */
 async function bdBadge(toastIt = false){
   if(!isAdmin()) return;
   try{ if(BD.msg === null) await bdLoad(); }catch(e){ return; }
-  const tm = bdAddDays(todayISO(), 1);
-  const pending = bdPeople(tm).filter(p => !bdSentBy(p, tm).some(g => g.sent_by === S.email));
+  const pend = []; bdUpcoming().forEach(g => g.people.forEach(p => { if(!bdSentBy(p, g.iso).some(x => x.sent_by === S.email)) pend.push({p, n:g.n}); }));
+  const pending = pend.map(x => x.p), tm = bdAddDays(todayISO(), 1);
   const b = $("#bdBadge"); if(b){ b.hidden = !pending.length; b.textContent = pending.length || ""; }
   if(toastIt && pending.length){
     const k = "f4-bd-toast-" + tm; let shown = false;
     try{ shown = !!sessionStorage.getItem(k); sessionStorage.setItem(k, "1"); }catch(e){}
-    if(!shown) setTimeout(() => toast(pending.length === 1 ? `🎂 غداً عيد ميلاد ${fullName(pending[0], 3)} — أرسل تهنئتك من الرئيسية` : `🎂 غداً ${pending.length} أعياد ميلاد — أرسل تهانيك من الرئيسية`), 1200);
+    if(!shown) setTimeout(() => toast(pending.length === 1 ? `🎂 ${bdWhen(pend[0].n)} عيد ميلاد ${fullName(pending[0], 3)} — أرسل تهنئتك من الرئيسية` : `🎂 ${pending.length} أعياد ميلاد ${BD.days === 1 ? "غداً" : "خلال " + bdDaysLabel(BD.days) + " القادمة"} — أرسل تهانيك من الرئيسية`), 1200);
   }
 }
