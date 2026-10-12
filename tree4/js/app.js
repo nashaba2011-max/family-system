@@ -117,8 +117,9 @@ $("#loginForm").onsubmit = async e => {
   const email = $("#lEmail").value.trim().toLowerCase(), password = $("#lPass").value;
   if(!email || !password){ $("#lErr").textContent = "أدخل البريد وكلمة السر"; return; }
   btn.disabled = true; btn.textContent = "جاري الدخول…";
+  GATE.want = !gateReduce(); // حركة البوابة الذهبية بعد نجاح الدخول
   try{ const {error} = await db.auth.signInWithPassword({email, password}); if(error) throw error; }
-  catch(err){ $("#lErr").textContent = (/not confirmed|Invalid login/i.test(err.message || "") && await pendingLoginMessage(email)) || errMsg(err); }
+  catch(err){ GATE.want = false; $("#lErr").textContent = (/not confirmed|Invalid login/i.test(err.message || "") && await pendingLoginMessage(email)) || errMsg(err); }
   finally{ btn.disabled = false; btn.textContent = "دخول"; }
 };
 $("#lForgot").onclick = async () => {
@@ -165,6 +166,7 @@ if(QR_PENDING) qrLogin(QR_PENDING);
 
 async function boot(session){
   S.email = (session.user.email || "").toLowerCase();
+  if(GATE.want) await gateClose(); // تُغلق البوابة فوق شاشة الدخول أولاً
   $("#vLogin").hidden = true; $("#app").hidden = false;
   $("#view").innerHTML = `<div class="spin" aria-label="جاري التحميل"></div>`;
   try{
@@ -193,7 +195,7 @@ async function boot(session){
     bdBadge(true);
   }catch(err){
     $("#view").innerHTML = `<div class="card narrow"><p class="err">${esc(errMsg(err))}</p><button class="btn" type="button" onclick="location.reload()">إعادة المحاولة</button></div>`;
-  }
+  }finally{ if(GATE.el) gateOpen(); }
 }
 /* عناصر الشريط العلوي: الترحيب، «من نحن»، عداد الزيارات */
 function renderTopExtra(){

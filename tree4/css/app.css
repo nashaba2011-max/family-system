@@ -1084,3 +1084,16 @@ a.visits-pill:hover{border-color:var(--brand)}
 .bd-sent .ok{color:#1f8a4c;font-weight:700}
 .bday-card .empty{padding:6px 0;color:var(--ink-3)}
 .nav-badge.bd{background:#d9822b}
+
+/* ===== حركة الدخول: البوابة الذهبية ===== */
+#gate{position:fixed;inset:0;z-index:9999;overflow:hidden;pointer-events:auto}
+#gate .g-door{position:absolute;top:0;bottom:0;width:50.5%;background:radial-gradient(500px 300px at 50% 50%,rgba(181,149,89,.22),transparent 70%),linear-gradient(135deg,#1c2c47 0%,#131f35 100%);isolation:isolate}
+#gate .g-door::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.12;background-image:repeating-linear-gradient(135deg,#d9b874 0 1px,transparent 1px 22px),repeating-linear-gradient(45deg,#d9b874 0 1px,transparent 1px 22px)}
+#gate .g-r{right:0;border-left:2px solid #d9b874;transform:translateX(100%)}
+#gate .g-l{left:0;border-right:2px solid #d9b874;transform:translateX(-100%)}
+#gate .g-seal{position:absolute;left:50%;top:50%;width:132px;height:132px;margin:-66px 0 0 -66px;border-radius:50%;background:#131f35;border:2px solid #d9b874;
+  box-shadow:0 0 0 8px rgba(217,184,116,.10),0 20px 50px rgba(0,0,0,.45);display:grid;place-items:center;transform:scale(0)}
+#gate .g-seal img{width:62px;height:auto;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4))}
+#gate .g-seal.spin{animation:gSpin 1.3s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes gSpin{from{transform:rotate(0) scale(1)}to{transform:rotate(360deg) scale(1)}}
+@media (max-width:640px){#gate .g-seal{width:108px;height:108px;margin:-54px 0 0 -54px}#gate .g-seal img{width:50px}}
