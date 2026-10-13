@@ -639,6 +639,7 @@ function renderTree(rootId){
       : cards ? `<div class="ochart-box"><div class="ochart-wrap" id="treeBox"><div class="ochart" id="ochart"><ul>${cardHtml(root, 0, new Set(), F, false, big ? 3 : 4)}</ul></div></div>
           <div class="zoomer" role="group" aria-label="التكبير"><button type="button" id="zIn" aria-label="تكبير">+</button><span id="zPct">100%</span><button type="button" id="zOut" aria-label="تصغير">−</button><button type="button" id="zFit" aria-label="ملاءمة الشاشة" title="ملاءمة الشاشة">⤢</button></div></div>`
       : `<div class="card tree" id="treeBox"><ul>${nodeHtml(root, 0, new Set(), F, false)}</ul></div>`}`;
+  fillTreePhotos();
   $$("[data-mode]").forEach(b => b.onclick = () => { if(b.dataset.mode === TREE_MODE) return; const was = TREE_MODE; pageStep(() => { TREE_MODE = was; renderTree(root?.id); }); TREE_MODE = b.dataset.mode; renderTree(root?.id); });
   if($("#tRoot")) $("#tRoot").onchange = e => location.hash = "#/tree/" + e.target.value;
   $("#tPick").onclick = async () => { const p = await pickPerson("بداية الشجرة"); if(p) location.hash = "#/tree/" + p.id; };
@@ -700,6 +701,19 @@ function renderTree(rootId){
 let TREE_DRAG = null;
 window.addEventListener("pointermove", e => { const d = TREE_DRAG; if(!d) return; d.wrap.scrollLeft = d.l - (e.clientX - d.x); d.wrap.scrollTop = d.t - (e.clientY - d.y); });
 window.addEventListener("pointerup", () => { if(TREE_DRAG){ TREE_DRAG.wrap.classList.remove("grab"); TREE_DRAG = null; } });
+/* صور الأفراد في الشجرة: تظهر فقط لأرقام التسلسل المحددة هنا، والبقية يظهر لهم الحرف الأول */
+const TREE_PHOTO_SERIALS = [2];
+const treePhotoOn = p => !!p?.photo_path && TREE_PHOTO_SERIALS.includes(+p.serial);
+function treeAv(p, cls = ""){
+  const h = avatar(p, cls);
+  return treePhotoOn(p) ? h.replace('<span class="av ', `<span data-tph="${p.id}" class="av has-ph `) : h;
+}
+async function fillTreePhotos(){
+  const els = $$("#treeBox [data-tph]"); if(!els.length) return;
+  const ppl = [...new Set(els.map(e => +e.dataset.tph))].map(id => S.byId.get(id)).filter(Boolean);
+  const urls = await photoUrls(ppl);
+  els.forEach(e => { const p = S.byId.get(+e.dataset.tph), u = p && urls.get(p.photo_path); if(u && document.body.contains(e)) e.innerHTML = `<img src="${esc(u)}" alt="">`; });
+}
 function cardHtml(p, depth, seen, F, viaMother, openDepth){
   if(seen.has(p.id)) return ""; seen.add(p.id);
   const kids = nodeKids(p, F).reverse(); // الشجرة داخلياً من اليسار لليمين؛ نعكس ليكون الأكبر على اليمين
@@ -708,7 +722,7 @@ function cardHtml(p, depth, seen, F, viaMother, openDepth){
   const yrs = [p.birth_date?.slice(0, 4), isDead(p) ? (p.death_date?.slice(0, 4) || "متوفى") : ""].filter(Boolean).join(" – ");
   const open = depth < openDepth - 1;
   return `<li><button type="button" class="pcard ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""} ${depth === 0 ? "root" : ""} ${p._stub ? "locked" : ""}" data-open="${p.id}" style="animation-delay:${Math.min(depth, 6) * 60}ms" aria-label="${esc(fullName(p, 3))}، ${isM(p) ? "ذكر" : "أنثى"}">
-      <span class="gx">${isM(p) ? GI_M : GI_F}</span>${avatar(p)}<b class="nm">${esc(p.name1)}</b>
+      <span class="gx">${isM(p) ? GI_M : GI_F}</span>${treeAv(p)}<b class="nm">${esc(p.name1)}</b>
       <span class="sub">${esc(fa ? `ابن${isM(p) ? "" : "ة"} ${fa.name1}` : p.name2 ? (isM(p) ? "بن " : "بنت ") + p.name2 : (p.family || ""))}</span>
       <span class="sub ${isDead(p) ? "yr" : ""}">#${p.serial}${yrs ? " · " + esc(yrs) : ""}</span>
       ${sp.length ? `<span class="sp">${isM(p) ? "زوجته" : "زوجها"}: ${esc(sp.join("، "))}</span>` : ""}
@@ -718,7 +732,7 @@ function cardHtml(p, depth, seen, F, viaMother, openDepth){
 }
 function refCard(c){
   const f = S.byId.get(c.father_id);
-  return `<li><button type="button" class="pcard ref ${isM(c) ? "" : "f"} ${c._stub ? "locked" : ""}" data-open="${c.id}"><span class="gx">${isM(c) ? GI_M : GI_F}</span>${avatar(c)}<b class="nm">${esc(c.name1)}</b><span class="sub">#${c.serial}</span><span class="sub">تحت أبيه ${esc(f ? f.name1 : "")}</span></button></li>`;
+  return `<li><button type="button" class="pcard ref ${isM(c) ? "" : "f"} ${c._stub ? "locked" : ""}" data-open="${c.id}"><span class="gx">${isM(c) ? GI_M : GI_F}</span>${treeAv(c)}<b class="nm">${esc(c.name1)}</b><span class="sub">#${c.serial}</span><span class="sub">تحت أبيه ${esc(f ? f.name1 : "")}</span></button></li>`;
 }
 /* كل ذرية الشخص من جهة الأب والأم */
 function treeSet(root){
@@ -738,10 +752,10 @@ function nodeHtml(p, depth, seen, F, viaMother){
   const sp = spousesOf(p).filter(s => s.person || s.name).map(s => s.person ? s.person.name1 : s.name.split(" ")[0]);
   const fa = viaMother && S.byId.get(p.father_id);
   const sub = [`#${p.serial}`, kids.length && `${kids.length} أبناء`, sp.length && `${isM(p) ? "زوجته" : "زوجها"} ${sp.join("، ")}`, fa && `ابن${isM(p) ? "" : "ة"} ${fa.name1} ${fa.name2 || ""}`.trim()].filter(Boolean).join(" · ");
-  return `<li><button type="button" class="tog ${kids.length ? "" : "leaf"}" aria-label="فتح/طي">${depth < 2 ? "−" : "+"}</button><button type="button" class="node ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""} ${p._stub ? "locked" : ""}" data-open="${p.id}">${avatar(p, "sm")}<span><b>${esc(p.name1)}</b> <small>${esc(sub)}</small></span></button>
+  return `<li><button type="button" class="tog ${kids.length ? "" : "leaf"}" aria-label="فتح/طي">${depth < 2 ? "−" : "+"}</button><button type="button" class="node ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""} ${p._stub ? "locked" : ""}" data-open="${p.id}">${treeAv(p, "sm")}<span><b>${esc(p.name1)}</b> <small>${esc(sub)}</small></span></button>
     ${kids.length ? `<ul ${depth < 2 ? "" : "hidden"}>${kids.map(k => k.ref ? refHtml(k.p) : nodeHtml(k.p, depth + 1, seen, F, !isM(p))).join("")}</ul>` : ""}</li>`;
 }
 function refHtml(c){
   const f = S.byId.get(c.father_id);
-  return `<li><button type="button" class="tog leaf" tabindex="-1" aria-hidden="true"></button><button type="button" class="node ref ${isM(c) ? "" : "f"} ${c._stub ? "locked" : ""}" data-open="${c.id}">${avatar(c, "sm")}<span><b>${esc(c.name1)}</b> <small>#${c.serial} · يظهر تحت أبيه ${esc(f ? f.name1 : "")}</small></span></button></li>`;
+  return `<li><button type="button" class="tog leaf" tabindex="-1" aria-hidden="true"></button><button type="button" class="node ref ${isM(c) ? "" : "f"} ${c._stub ? "locked" : ""}" data-open="${c.id}">${treeAv(c, "sm")}<span><b>${esc(c.name1)}</b> <small>#${c.serial} · يظهر تحت أبيه ${esc(f ? f.name1 : "")}</small></span></button></li>`;
 }

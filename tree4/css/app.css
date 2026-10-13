@@ -1097,3 +1097,7 @@ a.visits-pill:hover{border-color:var(--brand)}
 #gate .g-seal.spin{animation:gSpin 1.3s cubic-bezier(.45,0,.55,1) infinite}
 @keyframes gSpin{from{transform:rotate(0) scale(1)}to{transform:rotate(360deg) scale(1)}}
 @media (max-width:640px){#gate .g-seal{width:108px;height:108px;margin:-54px 0 0 -54px}#gate .g-seal img{width:50px}}
+
+/* صورة الفرد داخل الشجرة */
+.av.has-ph{overflow:hidden;padding:0}
+.av.has-ph img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
