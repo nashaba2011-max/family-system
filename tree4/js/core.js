@@ -132,7 +132,7 @@ async function fetchAll(table, order){
   }
   return out;
 }
-const isRestricted = () => false; /* كل الأعضاء يشاهدون كل العائلة */
+const isRestricted = () => !isAdmin(); /* العضو يرى بيانات نفسه وأسرته التي تليه فقط، والشجرة كاملة بالأسماء — المدير يرى الكل */
 /* التعديل: المدير على الكل، والعضو على نفسه وأسرته التي تليه وما أضافه هو */
 const ownsP = p => !!p && (S.editIds?.has(p.id) || (p.created_by || "") === S.email);
 const canEditP = p => isAdmin() || ((can("edit") || can("add")) && ownsP(p));
