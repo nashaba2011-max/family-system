@@ -341,7 +341,21 @@ async function runImport(){
 }
 
 /* ---------- مراسلة واتساب ---------- */
-const WA = {msg:"السلام عليكم {الاسم}،\n", src:"sel", branch:"", gov:"", sent:new Set()};
+/* المستلمون: مربع بجانب كل اسم + أزرار مجموعات سريعة + «إرسال للتالي» يفتح المحددين واحداً بعد الآخر */
+const WA = {msg:"السلام عليكم {الاسم}،\n", src:"sel", branch:"", gov:"", sent:new Set(), pick:new Set(), grp:""};
+const WA_GROUPS = {
+  all:   {t:"الكل", f:() => true},
+  m:     {t:"الذكور", f:p => p.gender === "ذكر"},
+  f:     {t:"الإناث", f:p => p.gender === "أنثى"},
+  bday:  {t:"أعياد ميلاد هذا الشهر", f:p => !!p.birth_date && +p.birth_date.slice(5, 7) === +todayISO().slice(5, 7)},
+  fam:   {t:"من العائلة", f:p => p.affiliation === "من العائلة"},
+  inlaw: {t:"المنتسبون بالزواج", f:p => p.affiliation === "منتسب بالزواج"},
+};
+const waText = p => WA.msg.replaceAll("{الاسم_الكامل}", fullName(p, 3)).replaceAll("{الاسم}", p.name1 || "");
+function waList(){
+  const list = WA.src === "sel" ? S.people.filter(p => S.sel.has(p.id)) : S.people.filter(p => !isDead(p) && (!WA.branch || p.branch === WA.branch) && (!WA.gov || p.governorate === WA.gov));
+  return {ok:list.filter(p => waNumber(p.phone)), bad:list.filter(p => !waNumber(p.phone)).length};
+}
 function renderWhatsapp(){
   if(!S.sel.size && WA.src === "sel") WA.src = "all";
   $("#view").innerHTML = `
@@ -350,27 +364,54 @@ function renderWhatsapp(){
       <div class="field"><label for="waMsg">نص الرسالة</label><textarea class="inp" id="waMsg" maxlength="2000">${esc(WA.msg)}</textarea></div>
       <p class="muted" style="font-size:13px">اكتب <b>{الاسم}</b> ليُستبدل بالاسم الأول لكل شخص، و<b>{الاسم_الكامل}</b> للاسم الكامل.</p>
       <div class="toolbar" style="margin:0">
-        <select class="inp" id="waSrc" aria-label="المستلمون"><option value="sel" ${WA.src === "sel" ? "selected" : ""}>المحددون من شاشة البحث (${S.sel.size})</option><option value="all" ${WA.src === "all" ? "selected" : ""}>كل الأحياء الذين لديهم هاتف</option></select>
+        <select class="inp" id="waSrc" aria-label="القائمة"><option value="sel" ${WA.src === "sel" ? "selected" : ""}>المحددون من شاشة البحث (${S.sel.size})</option><option value="all" ${WA.src === "all" ? "selected" : ""}>كل الأحياء الذين لديهم هاتف</option></select>
         <select class="inp" id="waBranch" aria-label="الفرع" ${WA.src === "sel" ? "hidden" : ""}>${opt(lkUsed("branch"), WA.branch, "كل الفروع")}</select>
         <select class="inp" id="waGov" aria-label="المحافظة" ${WA.src === "sel" ? "hidden" : ""}>${opt(lk("governorate"), WA.gov, "كل المحافظات")}</select>
       </div>
     </div>
-    <div class="notice" style="margin-top:14px">واتساب لا يسمح بالإرسال الجماعي التلقائي، لذلك اضغط «إرسال» لكل شخص؛ تنفتح المحادثة والرسالة جاهزة، ثم اضغط إرسال في واتساب.</div>
-    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>الاسم</th><th>الهاتف</th><th></th></tr></thead><tbody id="waBody"></tbody></table></div>`;
+    <div class="card wa-pick">
+      <div class="wa-pick-h"><b>من يصله المسج؟</b><span class="muted" id="waCount"></span></div>
+      <div class="wa-groups" id="waGroups" role="group" aria-label="اختيار سريع">${Object.entries(WA_GROUPS).map(([k, g]) => `<button type="button" class="wa-g" data-g="${k}" aria-pressed="${WA.grp === k}">${g.t}</button>`).join("")}
+        <button type="button" class="wa-g clr" id="waNone">إلغاء التحديد</button></div>
+      <div class="wa-next"><button class="btn wa" type="button" id="waNext">إرسال للتالي</button><span id="waNextMsg" class="muted"></span></div>
+    </div>
+    <div class="notice" style="margin-top:14px">واتساب لا يسمح بالإرسال الجماعي التلقائي. حدّد المستلمين بالمربعات أو بالأزرار، ثم اضغط «إرسال للتالي» مرة لكل شخص: تنفتح المحادثة والرسالة جاهزة، فتضغط إرسال في واتساب وترجع.</div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th style="width:38px"><input type="checkbox" id="waAll" aria-label="تحديد الكل"></th><th>#</th><th>الاسم</th><th>الهاتف</th><th></th></tr></thead><tbody id="waBody"></tbody></table></div>`;
   $("#waMsg").oninput = e => { WA.msg = e.target.value; };
-  $("#waSrc").onchange = e => { WA.src = e.target.value; renderWhatsapp(); };
+  $("#waSrc").onchange = e => { WA.src = e.target.value; WA.grp = ""; renderWhatsapp(); };
   $("#waBranch").onchange = e => { WA.branch = e.target.value; drawWa(); };
   $("#waGov").onchange = e => { WA.gov = e.target.value; drawWa(); };
+  $("#waGroups").onclick = e => {
+    const b = e.target.closest("[data-g]"); if(!b) return;
+    WA.grp = b.dataset.g; WA.pick = new Set(waList().ok.filter(WA_GROUPS[WA.grp].f).map(p => p.id)); drawWa();
+  };
+  $("#waNone").onclick = () => { WA.pick.clear(); WA.grp = ""; $("#waNextMsg").textContent = ""; drawWa(); };
+  $("#waAll").onchange = e => { const ids = waList().ok.map(p => p.id); WA.grp = ""; WA.pick = e.target.checked ? new Set(ids) : new Set(); drawWa(); };
+  $("#waBody").onchange = e => { const c = e.target.closest("[data-pk]"); if(!c) return; c.checked ? WA.pick.add(+c.dataset.pk) : WA.pick.delete(+c.dataset.pk); WA.grp = ""; drawWa(); };
   $("#waBody").onclick = e => { const a = e.target.closest("[data-wa]"); if(!a) return;
-    a.href = waLink(S.byId.get(+a.dataset.wa).phone, WA.msg.replaceAll("{الاسم_الكامل}", fullName(S.byId.get(+a.dataset.wa), 3)).replaceAll("{الاسم}", S.byId.get(+a.dataset.wa).name1));
-    WA.sent.add(+a.dataset.wa); setTimeout(drawWa, 300); };
+    const p = S.byId.get(+a.dataset.wa); a.href = waLink(p.phone, waText(p)); WA.sent.add(p.id); setTimeout(drawWa, 300); };
+  $("#waNext").onclick = () => {
+    const ok = waList().ok, picked = ok.filter(p => WA.pick.has(p.id)), next = picked.find(p => !WA.sent.has(p.id)), msg = $("#waNextMsg");
+    if(!picked.length){ msg.textContent = "حدّد المستلمين أولاً"; return; }
+    if(!next){ msg.textContent = `تم فتح المحادثات لكل المحددين (${picked.length}) ✓`; return; }
+    window.open(waLink(next.phone, waText(next)), "_blank", "noopener");
+    WA.sent.add(next.id);
+    const done = picked.filter(p => WA.sent.has(p.id)).length;
+    msg.textContent = `فُتحت محادثة ${fullName(next, 3)} — ${done} من ${picked.length}`;
+    drawWa();
+  };
   drawWa();
 }
 function drawWa(){
-  let list = WA.src === "sel" ? S.people.filter(p => S.sel.has(p.id)) : S.people.filter(p => !isDead(p) && (!WA.branch || p.branch === WA.branch) && (!WA.gov || p.governorate === WA.gov));
-  const ok = list.filter(p => waNumber(p.phone)), bad = list.length - ok.length;
-  $("#waBody").innerHTML = (ok.length ? ok.map(p => `<tr><td class="num">${p.serial}</td><td>${nm(p, fullName(p, 3))}</td><td class="ltr" style="text-align:start">${esc(p.phone)}</td>
+  const {ok, bad} = waList(), ids = new Set(ok.map(p => p.id));
+  WA.pick.forEach(id => { if(!ids.has(id)) WA.pick.delete(id); }); // من خرج من القائمة بالفلترة لا يبقى محدداً
+  $("#waBody").innerHTML = (ok.length ? ok.map(p => `<tr class="${WA.pick.has(p.id) ? "picked" : ""}"><td><input type="checkbox" data-pk="${p.id}" ${WA.pick.has(p.id) ? "checked" : ""} aria-label="${esc(fullName(p, 3))}"></td><td class="num">${p.serial}</td><td>${nm(p, fullName(p, 3))}</td><td class="ltr" style="text-align:start">${esc(p.phone)}</td>
       <td style="text-align:end">${WA.sent.has(p.id) ? '<span class="chip">✓ فُتحت</span> ' : ""}<a class="btn small wa" data-wa="${p.id}" href="#" target="_blank" rel="noopener">إرسال</a></td></tr>`).join("")
-    : `<tr><td colspan="4" class="empty">${WA.src === "sel" ? "لم تحدد أحداً بعد — حدّد الأشخاص من شاشة «البحث والملفات»" : "لا يوجد أحد لديه رقم هاتف صحيح"}</td></tr>`)
-    + (bad ? `<tr><td colspan="4" class="muted" style="font-size:13px">${bad} شخص بدون رقم هاتف صالح لم يظهروا في القائمة</td></tr>` : "");
+    : `<tr><td colspan="5" class="empty">${WA.src === "sel" ? "لم تحدد أحداً بعد — حدّد الأشخاص من شاشة «البحث والملفات»" : "لا يوجد أحد لديه رقم هاتف صحيح"}</td></tr>`)
+    + (bad ? `<tr><td colspan="5" class="muted" style="font-size:13px">${bad} شخص بدون رقم هاتف صالح لم يظهروا في القائمة</td></tr>` : "");
+  const n = WA.pick.size, sent = ok.filter(p => WA.pick.has(p.id) && WA.sent.has(p.id)).length;
+  $("#waCount").textContent = n ? `محدد ${n} من ${ok.length}${sent ? ` · فُتحت ${sent}` : ""}` : `لم تحدد أحداً بعد (${ok.length} في القائمة)`;
+  const all = $("#waAll"); all.checked = ok.length > 0 && n === ok.length; all.indeterminate = n > 0 && n < ok.length;
+  $$("#waGroups [data-g]").forEach(b => b.setAttribute("aria-pressed", String(WA.grp === b.dataset.g)));
+  $("#waNext").textContent = n && sent >= n ? "تم فتح الكل ✓" : "إرسال للتالي";
 }
