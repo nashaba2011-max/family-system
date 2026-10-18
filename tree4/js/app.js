@@ -701,12 +701,9 @@ function renderTree(rootId){
 let TREE_DRAG = null;
 window.addEventListener("pointermove", e => { const d = TREE_DRAG; if(!d) return; d.wrap.scrollLeft = d.l - (e.clientX - d.x); d.wrap.scrollTop = d.t - (e.clientY - d.y); });
 window.addEventListener("pointerup", () => { if(TREE_DRAG){ TREE_DRAG.wrap.classList.remove("grab"); TREE_DRAG = null; } });
-/* صور الأفراد في الشجرة: تظهر فقط لأرقام التسلسل المحددة هنا، والبقية يظهر لهم الحرف الأول */
-const TREE_PHOTO_SERIALS = [2, 7, 10];
-/* أرقام التسلسل التي تملأ صورتها بطاقة الشجرة كاملة (عرض «بطاقات») */
-const TREE_PHOTO_FULL = [7, 10];
-const treeFullOn = p => !!p?.photo_path && TREE_PHOTO_FULL.includes(+p.serial);
-const treePhotoOn = p => !!p?.photo_path && TREE_PHOTO_SERIALS.includes(+p.serial);
+/* صور الأفراد في الشجرة: كل من له صورة في سجله تظهر صورته تملأ بطاقته (عرض «بطاقات»)، وصغيرة في عرض «قائمة» */
+const treePhotoOn = p => !!p?.photo_path;
+const treeFullOn = p => !!p?.photo_path;
 function treeAv(p, cls = ""){
   const h = avatar(p, cls);
   return treePhotoOn(p) ? h.replace('<span class="av ', `<span data-tph="${p.id}" class="av has-ph `) : h;
