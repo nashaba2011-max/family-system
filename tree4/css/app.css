@@ -1114,3 +1114,11 @@ a.visits-pill:hover{border-color:var(--brand)}
 .wa-next{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .tbl tr.picked td{background:var(--brand-l)}
 .tbl input[type=checkbox]{width:18px;height:18px;accent-color:var(--brand);cursor:pointer}
+
+/* صورة تملأ بطاقة الشجرة كاملة */
+.pcard.ph-full{width:150px;min-height:200px;justify-content:flex-end;padding:0 8px 10px;border-width:2px;
+  background:linear-gradient(to top,rgba(10,16,28,.92) 0%,rgba(10,16,28,.55) 32%,rgba(10,16,28,0) 62%),var(--ph,linear-gradient(170deg,var(--bg) 0%,var(--bg2) 75%)) center 22%/cover no-repeat}
+.pcard.ph-full .av{display:none}
+.pcard.ph-full .gx{background:rgba(255,255,255,.85)}
+.pcard.ph-full .nm{color:#fff;font-size:17px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.pcard.ph-full .sub,.pcard.ph-full .sp{color:#e8ecf3;text-shadow:0 1px 2px rgba(0,0,0,.6)}

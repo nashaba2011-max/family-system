@@ -702,13 +702,21 @@ let TREE_DRAG = null;
 window.addEventListener("pointermove", e => { const d = TREE_DRAG; if(!d) return; d.wrap.scrollLeft = d.l - (e.clientX - d.x); d.wrap.scrollTop = d.t - (e.clientY - d.y); });
 window.addEventListener("pointerup", () => { if(TREE_DRAG){ TREE_DRAG.wrap.classList.remove("grab"); TREE_DRAG = null; } });
 /* صور الأفراد في الشجرة: تظهر فقط لأرقام التسلسل المحددة هنا، والبقية يظهر لهم الحرف الأول */
-const TREE_PHOTO_SERIALS = [2];
+const TREE_PHOTO_SERIALS = [2, 10];
+/* أرقام التسلسل التي تملأ صورتها بطاقة الشجرة كاملة (عرض «بطاقات») */
+const TREE_PHOTO_FULL = [10];
+const treeFullOn = p => !!p?.photo_path && TREE_PHOTO_FULL.includes(+p.serial);
 const treePhotoOn = p => !!p?.photo_path && TREE_PHOTO_SERIALS.includes(+p.serial);
 function treeAv(p, cls = ""){
   const h = avatar(p, cls);
   return treePhotoOn(p) ? h.replace('<span class="av ', `<span data-tph="${p.id}" class="av has-ph `) : h;
 }
 async function fillTreePhotos(){
+  const full = $$("#treeBox [data-tfull]");
+  if(full.length){
+    const fu = await photoUrls([...new Set(full.map(e => +e.dataset.tfull))].map(id => S.byId.get(id)).filter(Boolean));
+    full.forEach(e => { const p = S.byId.get(+e.dataset.tfull), u = p && fu.get(p.photo_path); if(u) e.style.setProperty("--ph", `url("${u}")`); });
+  }
   const els = $$("#treeBox [data-tph]"); if(!els.length) return;
   const ppl = [...new Set(els.map(e => +e.dataset.tph))].map(id => S.byId.get(id)).filter(Boolean);
   const urls = await photoUrls(ppl);
@@ -721,7 +729,7 @@ function cardHtml(p, depth, seen, F, viaMother, openDepth){
   const fa = viaMother && S.byId.get(p.father_id);
   const yrs = [p.birth_date?.slice(0, 4), isDead(p) ? (p.death_date?.slice(0, 4) || "متوفى") : ""].filter(Boolean).join(" – ");
   const open = depth < openDepth - 1;
-  return `<li><button type="button" class="pcard ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""} ${depth === 0 ? "root" : ""} ${p._stub ? "locked" : ""}" data-open="${p.id}" style="animation-delay:${Math.min(depth, 6) * 60}ms" aria-label="${esc(fullName(p, 3))}، ${isM(p) ? "ذكر" : "أنثى"}">
+  return `<li><button type="button" class="pcard ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""} ${depth === 0 ? "root" : ""} ${p._stub ? "locked" : ""} ${treeFullOn(p) ? "ph-full" : ""}" ${treeFullOn(p) ? `data-tfull="${p.id}"` : ""} data-open="${p.id}" style="animation-delay:${Math.min(depth, 6) * 60}ms" aria-label="${esc(fullName(p, 3))}، ${isM(p) ? "ذكر" : "أنثى"}">
       <span class="gx">${isM(p) ? GI_M : GI_F}</span>${treeAv(p)}<b class="nm">${esc(p.name1)}</b>
       <span class="sub">${esc(fa ? `ابن${isM(p) ? "" : "ة"} ${fa.name1}` : p.name2 ? (isM(p) ? "بن " : "بنت ") + p.name2 : (p.family || ""))}</span>
       <span class="sub ${isDead(p) ? "yr" : ""}">#${p.serial}${yrs ? " · " + esc(yrs) : ""}</span>
@@ -732,7 +740,7 @@ function cardHtml(p, depth, seen, F, viaMother, openDepth){
 }
 function refCard(c){
   const f = S.byId.get(c.father_id);
-  return `<li><button type="button" class="pcard ref ${isM(c) ? "" : "f"} ${c._stub ? "locked" : ""}" data-open="${c.id}"><span class="gx">${isM(c) ? GI_M : GI_F}</span>${treeAv(c)}<b class="nm">${esc(c.name1)}</b><span class="sub">#${c.serial}</span><span class="sub">تحت أبيه ${esc(f ? f.name1 : "")}</span></button></li>`;
+  return `<li><button type="button" class="pcard ref ${isM(c) ? "" : "f"} ${c._stub ? "locked" : ""} ${treeFullOn(c) ? "ph-full" : ""}" ${treeFullOn(c) ? `data-tfull="${c.id}"` : ""} data-open="${c.id}"><span class="gx">${isM(c) ? GI_M : GI_F}</span>${treeAv(c)}<b class="nm">${esc(c.name1)}</b><span class="sub">#${c.serial}</span><span class="sub">تحت أبيه ${esc(f ? f.name1 : "")}</span></button></li>`;
 }
 /* كل ذرية الشخص من جهة الأب والأم */
 function treeSet(root){
