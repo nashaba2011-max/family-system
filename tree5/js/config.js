@@ -50,6 +50,7 @@ const FIELDS = {
   nationality:{label:"الجنسية", lk:"nationality", free:1, xl:"الجنسية"},
   marital:{label:"الحالة الاجتماعية", lk:"marital", xl:"الحالة الاجتماعية"},
   birth_date:{label:"تاريخ الميلاد", type:"date", xl:"تاريخ الميلاد"},
+  birth_order:{label:"الترتيب في الأسرة", xl:"الترتيب في الأسرة"},
   birth_place:{label:"مكان الميلاد", lk:"birthplace", free:1, xl:"مكان الميلاد"},
   blood:{label:"فصيلة الدم", lk:"blood", ltr:1, xl:"فصيلة الدم"},
   phone:{label:"الهاتف", type:"tel", ltr:1, xl:"الهاتف"},

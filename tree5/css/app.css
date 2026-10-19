@@ -1152,3 +1152,23 @@ html:not(.mash-js) .tile.arch:hover{transform:translateY(-6px)}
 .mash-rg{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:2px solid #f1d796;pointer-events:none;z-index:2}
 #mashFx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9998}
 @media (prefers-reduced-motion:reduce){.tile.arch::after{transition:none}}
+
+/* ===== الترتيب في الأسرة ===== */
+.bo-row{display:flex;gap:8px;align-items:center}
+.bo-row .inp{flex:1;min-width:0}
+.bo-row .btn{white-space:nowrap;flex:none}
+.bo-ladder{display:flex;flex-direction:column;gap:6px;max-width:640px}
+.bo-rung{display:flex;align-items:center;gap:10px;padding:7px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-size:15px;min-width:0}
+.bo-rung.me{border-color:var(--gold);background:var(--gold-l)}
+.bo-n{width:28px;height:28px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;background:var(--brand-l);color:var(--ink);font-variant-numeric:tabular-nums}
+.bo-rung.me .bo-n{background:var(--gold);color:#fff}
+.bo-nm{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bo-nm small{font-weight:500;color:var(--ink-3)}
+.bo-d{color:var(--ink-3);font-size:13px;font-variant-numeric:tabular-nums}
+.bo-tag{font-size:12px;font-weight:800;color:var(--danger)}
+.bo-saved{font-size:12px;color:var(--gold);background:var(--gold-l);border-radius:999px;padding:0 8px;flex:none}
+.bo-empty{margin:0;font-size:14px}
+.bo-warn,.bo-ok{font-size:14px;border-radius:8px;padding:7px 12px;margin-top:8px;line-height:1.6;max-width:640px}
+.bo-warn{color:var(--danger);background:var(--danger-l)}
+.bo-ok{color:var(--ok);background:var(--ok-l)}
+@media (max-width:480px){.bo-row{flex-wrap:wrap}.bo-row .btn{flex:1}.bo-saved{display:none}}

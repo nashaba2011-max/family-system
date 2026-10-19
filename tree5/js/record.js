@@ -5,14 +5,60 @@ const TABS = [
   ["t1","البيانات الشخصية"],["t2","النسب والزواج"],["t3","السكن والاتصال"],["t4","التعليم والعمل"],["t5","الحالة والصحة"],["t6","الملاحظات"],
 ];
 const TAB_FIELDS = {
-  t1:["serial","cpr","name1","name2","name3","name4","name5","name6","family","branch","affiliation","nickname","gender","nationality","birth_date","_age","birth_place"],
+  t1:["serial","cpr","name1","name2","name3","name4","name5","name6","family","branch","affiliation","nickname","gender","nationality","birth_date","_age","birth_order","birth_place","_sibs"],
   t3:["phone","phone2","email","governorate","area","house_no","flat_no","road_no","block_no"],
   t4:["education","specialization","job","workside","hobby"],
   t5:["status","death_date","burial_place","marital","blood"],
 };
 
+/* ===== الترتيب في الأسرة: بين أبناء الأب نفسه، ويُقارن بتواريخ الميلاد ===== */
+const ORD_M = ["الأول","الثاني","الثالث","الرابع","الخامس","السادس","السابع","الثامن","التاسع","العاشر","الحادي عشر","الثاني عشر","الثالث عشر","الرابع عشر","الخامس عشر","السادس عشر","السابع عشر","الثامن عشر","التاسع عشر","العشرون"];
+const ORD_F = ["الأولى","الثانية","الثالثة","الرابعة","الخامسة","السادسة","السابعة","الثامنة","التاسعة","العاشرة","الحادية عشرة","الثانية عشرة","الثالثة عشرة","الرابعة عشرة","الخامسة عشرة","السادسة عشرة","السابعة عشرة","الثامنة عشرة","التاسعة عشرة","العشرون"];
+const ordWord = (n, p) => n ? ((p && p.gender === "أنثى" ? ORD_F : ORD_M)[n - 1] || String(n)) : "";
+/* أبناء الأب نفسه (مع هذا الفرد بتاريخه الحالي في النموذج) */
+function fatherKids(){
+  const p = R.p; if(!p.father_id) return null;
+  const others = S.people.filter(x => x.father_id === p.father_id && x.id !== p.id);
+  return others.concat([p]);
+}
+function calcOrder(){
+  const kids = fatherKids(); if(!kids || !R.p.birth_date) return null;
+  const dated = kids.filter(x => x.birth_date).sort((a, b) => a.birth_date.localeCompare(b.birth_date) || (a === R.p ? 1 : b === R.p ? -1 : 0));
+  return dated.indexOf(R.p) + 1;
+}
+function orderFieldHtml(v){
+  const ro = !R.editable, kids = fatherKids(), n = Math.max(12, (kids ? kids.length : 0) + 2, +v || 0);
+  const opts = Array.from({length:n}, (_, i) => `<option value="${i + 1}" ${+v === i + 1 ? "selected" : ""}>${ordWord(i + 1, R.p)}</option>`).join("");
+  return `<div class="field" data-k="birth_order"><label for="f_birth_order">الترتيب في الأسرة</label>
+    <div class="bo-row"><select class="inp" id="f_birth_order" name="birth_order" ${ro ? "disabled" : ""}><option value=""></option>${opts}</select>${ro ? "" : '<button class="btn small" type="button" id="boCalc">احسب من التواريخ</button>'}</div>
+    <div class="ferr" id="e_birth_order"></div></div>`;
+}
+function sibLadderHtml(){
+  const kids = fatherKids();
+  if(!kids) return '<p class="muted bo-empty">اربط الأب من تبويب «النسب والزواج» لتظهر قائمة إخوته هنا.</p>';
+  if(kids.length === 1) return '<p class="muted bo-empty">لا يوجد إخوة مسجلون من الأب نفسه حتى الآن.</p>';
+  const dated = kids.filter(x => x.birth_date).sort((a, b) => a.birth_date.localeCompare(b.birth_date) || (a === R.p ? 1 : b === R.p ? -1 : 0));
+  const undated = kids.filter(x => !x.birth_date);
+  const row = (x, i) => `<div class="bo-rung${x === R.p ? " me" : ""}"><span class="bo-n">${x.birth_date ? i + 1 : "؟"}</span><span class="bo-nm ${gcls(x)}">${esc(x === R.p ? (x.name1 || "هذا الفرد") : fullName(x, 2))}${x === R.p ? " <small>(هذا السجل)</small>" : ""}</span>${x.birth_date ? `<span class="bo-d ltr">${esc(x.birth_date)}</span>` : '<span class="bo-tag">بلا تاريخ ميلاد</span>'}${x !== R.p && x.birth_order ? `<span class="bo-saved" title="الترتيب المحفوظ في سجله">${ordWord(x.birth_order, x)}</span>` : ""}</div>`;
+  return dated.map(row).join("") + undated.map(x => row(x, 0)).join("");
+}
+function orderMsgHtml(){
+  const v = +R.p.birth_order, c = calcOrder(), kids = fatherKids();
+  let h = "";
+  if(v && c && v !== c) h += `<div class="bo-warn">الترتيب المختار «${ordWord(v, R.p)}» يخالف تواريخ الميلاد، فحسبها يكون «${ordWord(c, R.p)}». يمكنك الحفظ كما هو إذا كانت التواريخ غير دقيقة.</div>`;
+  else if(v && c && v === c) h += '<div class="bo-ok">الترتيب يطابق تواريخ ميلاد الإخوة.</div>';
+  const miss = kids ? kids.filter(x => x !== R.p && !x.birth_date) : [];
+  if(miss.length) h += `<div class="bo-warn">تاريخ ميلاد ${miss.map(x => esc(x.name1 || "")).join("، ")} غير مسجّل، فقد يتغيّر الترتيب بعد إكماله.</div>`;
+  return h;
+}
+function refreshOrder(){
+  const l = $("#boLadder"), m = $("#boMsg"); if(l) l.innerHTML = sibLadderHtml(); if(m) m.innerHTML = orderMsgHtml();
+}
+
 function fieldHtml(k, v){
   const ro = !R.editable;
+  if(k === "birth_order") return orderFieldHtml(v);
+  if(k === "_sibs") return `<div class="field wide bo-wrap"><label>إخوته من الأب مرتبين حسب تاريخ الميلاد</label><div class="bo-ladder" id="boLadder">${sibLadderHtml()}</div><div id="boMsg" aria-live="polite">${orderMsgHtml()}</div></div>`;
   if(k === "_age") return `<div class="field"><label for="f__age">العمر</label><input class="inp" id="f__age" readonly tabindex="-1" value="${esc(ageOf(R.p))}"></div>`;
   const f = FIELDS[k], id = "f_" + k, req = (k === "serial" && isAdmin()) || k === "name1";
   if(k === "nationality" && R.p.gender === "ذكر") return `<div class="field" data-k="nationality"><label for="${id}">${esc(f.label)}</label><input class="inp" id="${id}" name="nationality" readonly tabindex="-1" value="بحريني" title="الزوج دائماً بحريني"><div class="ferr" id="e_nationality"></div></div>`;
@@ -181,6 +227,7 @@ function bindRecord(){
   form.addEventListener("input", e => { if(R.editable) setDirty(true);
     if(["name1","name2","name3","name4","name5","name6","family","gender"].includes(e.target.name)){ readForm(); $("#rTitle").textContent = longName(R.p) || "اسم جديد"; $("#rTitle").className = gcls(R.p); }
     if(e.target.name === "birth_date" || e.target.name === "death_date"){ readForm(); $("#f__age").value = ageOf(R.p); }
+    if(e.target.name === "birth_date" || e.target.name === "birth_order"){ readForm(); refreshOrder(); }
   });
   form.addEventListener("change", e => {
     const n = e.target.name; if(R.editable) setDirty(true);
@@ -188,7 +235,7 @@ function bindRecord(){
       $("#f_area").innerHTML = '<option value=""></option>' + areasOf(R.p.governorate).map(o => `<option ${o === R.p.area ? "selected" : ""}>${esc(o)}</option>`).join(""); }
     if(n === "area"){ const g = govOfArea(e.target.value); if(g){ $("#f_governorate").value = g; R.p.governorate = g; } }
     if(n === "status"){ const d = e.target.value === "متوفى"; $$('[data-k="death_date"],[data-k="burial_place"]').forEach(x => x.hidden = !d); }
-    if(n === "gender"){ readForm(); if(R.p.gender === "ذكر") R.p.nationality = "بحريني"; const nf = $('[data-k="nationality"]'); if(nf) nf.outerHTML = fieldHtml("nationality", R.p.nationality || ""); $("#spBox").innerHTML = spouseRows(); }
+    if(n === "gender"){ readForm(); if(R.p.gender === "ذكر") R.p.nationality = "بحريني"; const nf = $('[data-k="nationality"]'); if(nf) nf.outerHTML = fieldHtml("nationality", R.p.nationality || ""); const bo = $('[data-k="birth_order"]'); if(bo) bo.outerHTML = orderFieldHtml(R.p.birth_order || ""); refreshOrder(); $("#spBox").innerHTML = spouseRows(); }
   });
   form.onsubmit = e => { e.preventDefault(); saveRecord(); };
   $("#rCancel").onclick = async () => {
@@ -198,6 +245,13 @@ function bindRecord(){
   };
   // الربط بالأب والأم
   form.addEventListener("click", async e => {
+    if(e.target.closest("#boCalc")){
+      readForm(); const c = calcOrder(), err = $("#e_birth_order"); err.textContent = "";
+      if(!R.p.father_id){ err.textContent = "اربط الأب أولاً من تبويب «النسب والزواج»"; return; }
+      if(!c){ err.textContent = "أدخل تاريخ ميلاد هذا الفرد أولاً"; return; }
+      $("#f_birth_order").value = String(c); R.p.birth_order = String(c); setDirty(true); refreshOrder();
+      toast(`الترتيب حسب التواريخ: ${ordWord(c, R.p)}`); return;
+    }
     const l = e.target.closest("[data-link]");
     if(l && R.editable){
       readForm(); const key = l.dataset.link, isF = key === "father_id";
@@ -300,6 +354,7 @@ async function saveRecord(){
     else if(R.spouses.some(s => S.byId.get(s.spouse_id)?.affiliation === "من العائلة")) row.affiliation = "منتسب بالزواج";
   }
   if(row.mother_id) row.mother_name = null;
+  row.birth_order = row.birth_order ? parseInt(row.birth_order, 10) || null : null;
   delete row.photo_path;
   const btn = $("#rSave"); btn.disabled = true; btn.textContent = "جاري الحفظ…";
   try{
