@@ -1122,3 +1122,16 @@ a.visits-pill:hover{border-color:var(--brand)}
 .pcard.ph-full .gx{background:rgba(255,255,255,.85)}
 .pcard.ph-full .nm{color:#fff;font-size:17px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .pcard.ph-full .sub,.pcard.ph-full .sp{color:#e8ecf3;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+
+/* مفتاح «الصور الكاملة» في صفحة الشجرة (للمدير) */
+.sw{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:3px 12px 3px 6px;border:1.5px solid var(--line);border-radius:999px;background:var(--paper);color:var(--ink);font-weight:700;font-size:14px;cursor:pointer;transition:background .12s,border-color .12s}
+.sw:hover{background:var(--brand-l)}
+.sw:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.sw:disabled{opacity:.6;cursor:progress}
+.sw-tr{width:38px;height:22px;border-radius:999px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.sw-tr::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s ease-out}
+.sw[aria-checked="true"] .sw-tr{background:var(--ok)}
+.sw[aria-checked="true"] .sw-tr::after{transform:translateX(-16px)}
+.sw-st{font-weight:500;color:var(--ink-3)}
+.sw[aria-checked="true"] .sw-st{color:var(--ok)}
+@media (prefers-reduced-motion: reduce){.sw-tr,.sw-tr::after{transition:none}}

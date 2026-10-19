@@ -188,7 +188,7 @@ async function boot(session){
     renderTopExtra();
     logVisit();
     refreshReqBadge(true);
-    await loadAll();
+    await Promise.all([loadAll(), treeFullLoad()]);
     currentHash = location.hash;
     S.mustRegister = needsSelfRegister();
     route();
@@ -632,7 +632,7 @@ function renderTree(rootId){
       <button class="btn small" type="button" id="tPick">البدء من شخص…</button>
       <button class="btn small" type="button" id="tOpen">فتح الكل</button>
       <button class="btn small" type="button" id="tClose">طي الكل</button>
-      <button class="btn small" type="button" id="tPrint">نسخة للطباعة</button></div></div>
+      <button class="btn small" type="button" id="tPrint">نسخة للطباعة</button>${cards ? treeFullSwitch() : ""}</div></div>
     ${roots.length > 1 ? `<div class="toolbar"><select class="inp" id="tRoot" aria-label="رأس الشجرة">${roots.map(r => `<option value="${r.id}" ${r.id === root?.id ? "selected" : ""}>${esc(fullName(r, 3))} — ${descCount(r)} من الذرية</option>`).join("")}${root && !roots.includes(root) ? `<option value="${root.id}" selected>${esc(fullName(root, 3))}</option>` : ""}</select></div>` : ""}
     ${cards ? `<div class="legend"><span class="lm">${GI_M} ذكر</span><span class="lf">${GI_F} أنثى</span><span class="ld">متوفى</span><span class="lr">رأس الشجرة</span><span class="muted" style="border:0;background:none;padding:3px 0">مرّر على البطاقة (أو المسها مرة على الجوال) لتضيء سلسلة آبائها · اضغط مرة ثانية لفتح الملف · اسحب للتنقل</span></div>` : `<p class="muted" style="font-size:13px;margin:0 0 10px">الأبناء يظهرون تحت الأب وتحت الأم. الإطار المتقطع = متوفى، والإطار الباهت = يظهر كاملاً تحت أبيه. اضغط على الاسم لفتح الملف.</p>`}
     ${!root ? '<div class="card"><p class="empty">لا توجد روابط أب وأبناء بعد</p></div>'
@@ -643,6 +643,7 @@ function renderTree(rootId){
   $$("[data-mode]").forEach(b => b.onclick = () => { if(b.dataset.mode === TREE_MODE) return; const was = TREE_MODE; pageStep(() => { TREE_MODE = was; renderTree(root?.id); }); TREE_MODE = b.dataset.mode; renderTree(root?.id); });
   if($("#tRoot")) $("#tRoot").onchange = e => location.hash = "#/tree/" + e.target.value;
   $("#tPick").onclick = async () => { const p = await pickPerson("بداية الشجرة"); if(p) location.hash = "#/tree/" + p.id; };
+  if($("#tFull")) $("#tFull").onclick = treeFullToggle;
   $("#tPrint").onclick = () => { REP_ARGS.person = root?.id || null; location.hash = "#/report/tree"; };
   if(!root) return;
   /* حفظ حالة الشجرة (الفروع المفتوحة، التكبير، موضع التمرير) حتى يرجعها زر «رجوع» كما كانت،
@@ -703,7 +704,28 @@ window.addEventListener("pointermove", e => { const d = TREE_DRAG; if(!d) return
 window.addEventListener("pointerup", () => { if(TREE_DRAG){ TREE_DRAG.wrap.classList.remove("grab"); TREE_DRAG = null; } });
 /* صور الأفراد في الشجرة: كل من له صورة في سجله تظهر صورته تملأ بطاقته (عرض «بطاقات»)، وصغيرة في عرض «قائمة» */
 const treePhotoOn = p => !!p?.photo_path;
-const treeFullOn = p => !!p?.photo_path;
+/* «الصور الكاملة»: مفتاح للمدير في صفحة الشجرة، يُحفظ في f4_settings (tree_full) ويسري على الجميع. عند الإيقاف تبقى الصورة صغيرة في الدائرة */
+let TREE_FULL = true;
+async function treeFullLoad(){
+  try{ const {data} = await db.from("f4_settings").select("value").eq("key", "tree_full").maybeSingle(); TREE_FULL = data?.value !== "0"; }catch(e){}
+}
+const treeFullOn = p => TREE_FULL && treePhotoOn(p);
+function treeFullSwitch(){
+  return isAdmin() ? `<button type="button" class="sw" role="switch" id="tFull" aria-checked="${TREE_FULL}"><span class="sw-tr" aria-hidden="true"></span>الصور الكاملة <span class="sw-st">${TREE_FULL ? "مفعّلة" : "متوقفة"}</span></button>` : "";
+}
+function treeFullApply(on){
+  TREE_FULL = on;
+  $$("#ochart [data-tfull]").forEach(c => c.classList.toggle("ph-full", on));
+  const b = $("#tFull"); if(b){ b.setAttribute("aria-checked", on); b.querySelector(".sw-st").textContent = on ? "مفعّلة" : "متوقفة"; }
+}
+async function treeFullToggle(){
+  const was = TREE_FULL, on = !was, b = $("#tFull");
+  treeFullApply(on); if(b) b.disabled = true;
+  const {error} = await db.from("f4_settings").upsert([{key:"tree_full", value:on ? "1" : "0", updated_at:new Date().toISOString(), updated_by:S.email}], {onConflict:"key"});
+  if(b) b.disabled = false;
+  if(error){ treeFullApply(was); toast("تعذّر الحفظ: " + errMsg(error), true); return; }
+  toast(on ? "تم تفعيل الصور الكاملة لجميع الأعضاء" : "تم إيقاف الصور الكاملة لجميع الأعضاء");
+}
 function treeAv(p, cls = ""){
   const h = avatar(p, cls);
   return treePhotoOn(p) ? h.replace('<span class="av ', `<span data-tph="${p.id}" class="av has-ph `) : h;
@@ -726,7 +748,7 @@ function cardHtml(p, depth, seen, F, viaMother, openDepth){
   const fa = viaMother && S.byId.get(p.father_id);
   const yrs = [p.birth_date?.slice(0, 4), isDead(p) ? (p.death_date?.slice(0, 4) || "متوفى") : ""].filter(Boolean).join(" – ");
   const open = depth < openDepth - 1;
-  return `<li><button type="button" class="pcard ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""} ${depth === 0 ? "root" : ""} ${p._stub ? "locked" : ""} ${treeFullOn(p) ? "ph-full" : ""}" ${treeFullOn(p) ? `data-tfull="${p.id}"` : ""} data-open="${p.id}" style="animation-delay:${Math.min(depth, 6) * 60}ms" aria-label="${esc(fullName(p, 3))}، ${isM(p) ? "ذكر" : "أنثى"}">
+  return `<li><button type="button" class="pcard ${isM(p) ? "" : "f"} ${isDead(p) ? "dead" : ""} ${depth === 0 ? "root" : ""} ${p._stub ? "locked" : ""} ${treeFullOn(p) ? "ph-full" : ""}" ${treePhotoOn(p) ? `data-tfull="${p.id}"` : ""} data-open="${p.id}" style="animation-delay:${Math.min(depth, 6) * 60}ms" aria-label="${esc(fullName(p, 3))}، ${isM(p) ? "ذكر" : "أنثى"}">
       <span class="gx">${isM(p) ? GI_M : GI_F}</span>${treeAv(p)}<b class="nm">${esc(p.name1)}</b>
       <span class="sub">${esc(fa ? `ابن${isM(p) ? "" : "ة"} ${fa.name1}` : p.name2 ? (isM(p) ? "بن " : "بنت ") + p.name2 : (p.family || ""))}</span>
       <span class="sub ${isDead(p) ? "yr" : ""}">#${p.serial}${yrs ? " · " + esc(yrs) : ""}</span>
@@ -737,7 +759,7 @@ function cardHtml(p, depth, seen, F, viaMother, openDepth){
 }
 function refCard(c){
   const f = S.byId.get(c.father_id);
-  return `<li><button type="button" class="pcard ref ${isM(c) ? "" : "f"} ${c._stub ? "locked" : ""} ${treeFullOn(c) ? "ph-full" : ""}" ${treeFullOn(c) ? `data-tfull="${c.id}"` : ""} data-open="${c.id}"><span class="gx">${isM(c) ? GI_M : GI_F}</span>${treeAv(c)}<b class="nm">${esc(c.name1)}</b><span class="sub">#${c.serial}</span><span class="sub">تحت أبيه ${esc(f ? f.name1 : "")}</span></button></li>`;
+  return `<li><button type="button" class="pcard ref ${isM(c) ? "" : "f"} ${c._stub ? "locked" : ""} ${treeFullOn(c) ? "ph-full" : ""}" ${treePhotoOn(c) ? `data-tfull="${c.id}"` : ""} data-open="${c.id}"><span class="gx">${isM(c) ? GI_M : GI_F}</span>${treeAv(c)}<b class="nm">${esc(c.name1)}</b><span class="sub">#${c.serial}</span><span class="sub">تحت أبيه ${esc(f ? f.name1 : "")}</span></button></li>`;
 }
 /* كل ذرية الشخص من جهة الأب والأم */
 function treeSet(root){

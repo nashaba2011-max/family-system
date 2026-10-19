@@ -135,6 +135,33 @@ await test("شجرة العائلة: الصورة تملأ بطاقة صاحبه
   assert(!plain.length, "ظهرت صورة كاملة لشخص بلا صورة");
 });
 
+await test("الصور الكاملة: مفتاح المدير يشغّلها ويوقفها للجميع", async page => {
+  await login(page, ADMIN);
+  await go(page, "#/tree/1"); await page.waitForTimeout(800);
+  await page.evaluate(() => $("#tOpen")?.click()); await page.waitForTimeout(400);
+  assert(await page.$('.pcard.ph-full[data-tfull="10"]'), "الصورة الكاملة ليست مفعّلة افتراضياً");
+  assert((await page.getAttribute("#tFull", "aria-checked")) === "true", "المفتاح لا يظهر مفعّلاً");
+  await page.click("#tFull"); await page.waitForTimeout(500);
+  assert(!(await page.$(".pcard.ph-full")), "بقيت صورة كاملة بعد الإيقاف");
+  assert(await page.$('.pcard[data-tfull="10"]'), "اختفت بطاقة صاحب الصورة");
+  assert((await page.getAttribute("#tFull", "aria-checked")) === "false", "المفتاح لم يتحول إلى متوقف");
+  assert(await page.$('.pcard[data-tfull="10"] .av.has-ph'), "الصورة الصغيرة لا تظهر عند الإيقاف");
+  let st = (await tables(page, "f4_settings")).find(s => s.key === "tree_full");
+  assert(st && st.value === "0", "الإيقاف لم يُحفظ");
+  await page.click("#tFull"); await page.waitForTimeout(500);
+  assert(await page.$('.pcard.ph-full[data-tfull="10"]'), "التفعيل لم يرجع الصورة الكاملة");
+  st = (await tables(page, "f4_settings")).find(s => s.key === "tree_full");
+  assert(st && st.value === "1", "التفعيل لم يُحفظ");
+});
+
+await test("الصور الكاملة: العضو لا يرى المفتاح ويتبع اختيار المدير", async page => {
+  await page.evaluate(() => OFFLINE.tables.f4_settings.push({key:"tree_full", value:"0", updated_at:new Date().toISOString(), updated_by:"admin@test.bh"}));
+  await login(page, MEMBER);
+  await go(page, "#/tree/1"); await page.waitForTimeout(800);
+  assert(!(await page.$("#tFull")), "المفتاح ظاهر للعضو");
+  assert(!(await page.$(".pcard.ph-full")), "العضو يرى الصور الكاملة رغم إيقافها");
+});
+
 await test("مراسلة واتساب: أزرار المجموعات و«إرسال للتالي»", async (page, ctx) => {
   await login(page, ADMIN);
   await go(page, "#/whatsapp");
