@@ -204,6 +204,23 @@ await test("صلاحيات العضو: يعدّل نفسه وأسرته فقط",
   assert(!(await page.$("#rDel")), "العضو يستطيع حذف نفسه");
 });
 
+await test("الرئيسية: شريط آخر التحديثات يتحرك ويتوقف ويفتح السجل", async page => {
+  await page.emulateMedia({reducedMotion:"no-preference"});
+  await login(page, ADMIN);
+  await go(page, "#/home"); await page.waitForTimeout(500);
+  assert(await page.$(".nt .nt-chip[data-open]"), "شريط آخر التحديثات غير موجود");
+  const anim = await page.$eval(".nt-track", e => getComputedStyle(e).animationName);
+  assert(anim === "ntRun", "الشريط لا يتحرك");
+  const hidden = await page.$$eval('.nt-set[aria-hidden="true"] button', bs => bs.every(b => b.tabIndex === -1));
+  assert(hidden, "النسخة المكررة قابلة للتركيز بلوحة المفاتيح");
+  await page.click("#ntPause");
+  assert(await page.$("#ntTk.paused"), "زر الإيقاف لم يوقف الشريط");
+  assert((await page.textContent("#ntPause")).includes("تشغيل"), "نص الزر لم يتغير");
+  const id = await page.getAttribute(".nt-set:not([aria-hidden]) .nt-chip", "data-open");
+  await page.click(`.nt-set:not([aria-hidden]) .nt-chip[data-open="${id}"]`, {force:true}); await page.waitForTimeout(500);
+  assert((await page.evaluate(() => location.hash)).includes(id), "الضغط على الاسم لم يفتح السجل");
+});
+
 await test("التنقل في كل الصفحات بلا أخطاء", async page => {
   await login(page, ADMIN);
   for(const h of ["#/home", "#/list", "#/tree", "#/kinship", "#/reports", "#/events", "#/heritage", "#/whatsapp", "#/settings", "#/users", "#/requests", "#/data", "#/rec/3", "#/family/3", "#/about"]){

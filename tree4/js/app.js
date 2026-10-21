@@ -197,6 +197,22 @@ async function boot(session){
     $("#view").innerHTML = `<div class="card narrow"><p class="err">${esc(errMsg(err))}</p><button class="btn" type="button" onclick="location.reload()">إعادة المحاولة</button></div>`;
   }finally{ if(GATE.el) gateOpen(); }
 }
+/* شريط «آخر التحديثات» في الرئيسية: يمشي من اليمين إلى اليسار، يتوقف عند المرور أو اللمس وبزر الإيقاف.
+   المحتوى مكرر مرتين (الثانية مخفية عن قارئ الشاشة) ليدور بلا انقطاع */
+function newsTicker(list){
+  const item = p => `<button type="button" class="nt-chip" data-open="${p.id}"><b>${nm(p, fullName(p, 3))}</b>${p.updated_at ? `<small>حُدّث ${fmtDate(p.updated_at.slice(0, 10))}</small>` : ""}</button><span class="nt-sep" aria-hidden="true">✦</span>`;
+  const L = list.length < 6 ? Array.from({length:Math.ceil(6 / list.length)}, () => list).flat() : list; // سجلات قليلة: تُكرر حتى يمتلئ الشريط
+  const set = L.map(item).join("");
+  const dur = Math.max(24, list.length * 4.5);
+  return `<div class="sec-h nt-h">آخر السجلات المحدّثة</div>
+    <div class="nt" role="region" aria-label="آخر السجلات المحدّثة"><span class="nt-lbl"><i aria-hidden="true"></i>آخر التحديثات</span>
+      <div class="nt-tk" id="ntTk"><div class="nt-track" style="--nt-dur:${dur}s"><div class="nt-set">${set}</div><div class="nt-set" aria-hidden="true">${set.replace(/<button /g, '<button tabindex="-1" ')}</div></div></div>
+      <button type="button" class="nt-pause" id="ntPause" aria-pressed="false">إيقاف</button></div>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("#ntPause"); if(!b) return;
+  const on = $("#ntTk").classList.toggle("paused"); b.setAttribute("aria-pressed", on); b.textContent = on ? "تشغيل" : "إيقاف";
+});
 /* عناصر الشريط العلوي: الترحيب، «من نحن»، عداد الزيارات */
 function renderTopExtra(){
   const el = $("#topExtra"); if(!el) return;
@@ -275,7 +291,7 @@ function renderHome(){
   const fams = new Set(P.filter(p => childrenOf(p).length && isM(p)).map(p => p.id)).size;
   const mon = +todayISO().slice(5, 7);
   const bdays = P.filter(p => p.birth_date && !isDead(p) && +p.birth_date.slice(5, 7) === mon).length;
-  const recent = P.slice().sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || "")).slice(0, 6);
+  const recent = P.slice().sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || "")).slice(0, 10);
   $("#view").innerHTML = `
     <section class="hero-banner" aria-label="شجرة العائلة">
       <img class="hb-water" src="img/logo-mark-light.png" alt="" aria-hidden="true">
@@ -318,7 +334,7 @@ function renderHome(){
       ${tile("#/users","users","المستخدمون","صلاحيات الإضافة والتعديل والحذف", "data-admin")}
       ${tile("#/data","data","استيراد وتصدير","Excel")}
     </div>
-    ${recent.length ? `<div class="sec-h">آخر السجلات المحدّثة</div><div class="plist">${recent.map(p => personBtn(p, p.updated_at ? "حُدّث " + fmtDate(p.updated_at.slice(0, 10)) : "")).join("")}</div>` : ""}`;
+    ${recent.length ? newsTicker(recent) : ""}`;
   applyPerms(); fillVisitStat(); homeOdo(); fillHeritageTile(); bindNew24(); if(isAdmin()){ fillMarketTile(); fillBdayCard(); }
 }
 

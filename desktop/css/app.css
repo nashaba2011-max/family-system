@@ -1135,3 +1135,27 @@ a.visits-pill:hover{border-color:var(--brand)}
 .sw-st{font-weight:500;color:var(--ink-3)}
 .sw[aria-checked="true"] .sw-st{color:var(--ok)}
 @media (prefers-reduced-motion: reduce){.sw-tr,.sw-tr::after{transition:none}}
+
+/* شريط «آخر التحديثات» في الرئيسية (يمشي من اليمين إلى اليسار) */
+.nt-h{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.nt{display:flex;align-items:stretch;margin-top:22px;border-radius:var(--radius);overflow:hidden;background:linear-gradient(90deg,var(--bar),var(--bar-2));color:#fff;min-height:48px;box-shadow:var(--shadow)}
+.nt-lbl{flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;background:var(--gold);color:#17110a;font-weight:800;font-size:14px}
+.nt-lbl i{width:8px;height:8px;border-radius:50%;background:#17110a;animation:ntBlink 1.6s ease-in-out infinite}
+@keyframes ntBlink{50%{opacity:.25}}
+.nt-tk{flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;direction:ltr;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
+.nt-track{display:flex;width:max-content;animation:ntRun var(--nt-dur,40s) linear infinite}
+.nt-set{display:flex;align-items:center;gap:14px;padding-inline-end:14px}
+.nt-set>*{direction:rtl}
+@keyframes ntRun{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.nt-tk:hover .nt-track,.nt-tk:focus-within .nt-track,.nt-tk.paused .nt-track{animation-play-state:paused}
+.nt-chip{font:inherit;font-size:14px;color:#fff;background:none;border:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:0 4px;min-height:44px;white-space:nowrap}
+.nt-chip b,.nt-chip b *{font-weight:700;color:#fff!important}
+.nt-chip:hover b{text-decoration:underline}
+.nt-chip small{color:#c9d3e6;font-size:12.5px}
+.nt-chip:focus-visible{outline:2px solid var(--gold);outline-offset:-2px;border-radius:6px}
+.nt-sep{color:var(--gold)}
+.nt-pause{flex:none;font:inherit;font-size:13px;font-weight:700;border:0;border-inline-start:1px solid rgba(255,255,255,.15);background:transparent;color:#fff;padding:0 14px;min-height:48px;cursor:pointer}
+.nt-pause:hover{background:rgba(255,255,255,.08)}
+.nt-pause:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
+@media (max-width:640px){.nt-lbl{padding:0 10px;font-size:13px}.nt-pause{padding:0 10px}}
+@media (prefers-reduced-motion: reduce){.nt-track{animation:none}.nt-lbl i{animation:none}.nt-tk{overflow-x:auto;-webkit-mask-image:none;mask-image:none}.nt-set+.nt-set{display:none}.nt-pause{display:none}}
